@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c//**)",
+      "PowerShell(python --version)",
+      "PowerShell(pip --version)",
+      "PowerShell(Rename-Item \"C:\\\\Users\\\\Usuario\\\\Desktop\\\\ASAP\\\\Cobranzas\\\\sharepoint_agent\\\\credentials.json.json\" \"credentials.json\")",
+      "PowerShell($f = \"C:\\\\Users\\\\Usuario\\\\.claude\\\\projects\\\\c--Users-Usuario-Desktop-ASAP-Cobranzas\\\\c7bbf62a-1066-46f3-b762-21aa6e666fef.jsonl\"; \\(Get-Item $f\\).Length / 1MB)",
+      "PowerShell($bytes = [System.IO.File]::ReadAllBytes\\(\"C:\\\\Users\\\\Usuario\\\\Desktop\\\\ASAP\\\\Cobranzas\\\\cobranzas-app.html\"\\); $text = [System.Text.Encoding]::UTF8.GetString\\($bytes\\); $idx = $text.IndexOf\\('Cobranzas'\\); $sample = $text.Substring\\($idx, 25\\); Write-Host \"Text: $sample\"; Write-Host \"Codepoints:\"; for\\($i=0;$i -lt $sample.Length;$i++\\) { Write-Host \"  [$i] $\\([int][char]$sample[$i]\\) $\\(\\([char][int]$sample[$i]\\).ToString\\(\\)\\)\" })",
+      "PowerShell($bytes = [System.IO.File]::ReadAllBytes\\(\"C:\\\\Users\\\\Usuario\\\\Desktop\\\\ASAP\\\\Cobranzas\\\\cobranzas-app.html\"\\); $text = [System.Text.Encoding]::UTF8.GetString\\($bytes\\); $idx = $text.IndexOf\\('Condici'\\); $sample = $text.Substring\\($idx, 12\\); Write-Host \"Text: $sample\"; for\\($i=0;$i -lt $sample.Length;$i++\\) { Write-Host \"  [$i] $\\([int][char]$sample[$i]\\) $\\(\\([char][int]$sample[$i]\\).ToString\\(\\)\\)\" })",
+      "PowerShell($bytes = [System.IO.File]::ReadAllBytes\\(\"C:\\\\Users\\\\Usuario\\\\Desktop\\\\ASAP\\\\Cobranzas\\\\cobranzas-app.html\"\\); $text = [System.Text.Encoding]::UTF8.GetString\\($bytes\\); $idx = $text.IndexOf\\('Cobranzas'\\); $sample = $text.Substring\\($idx, 20\\); Write-Host \"Title: $sample\"; $idx2 = $text.IndexOf\\('Condici'\\); $sample2 = $text.Substring\\($idx2, 12\\); Write-Host \"Condicion: $sample2\"; $idx3 = $text.IndexOf\\('Emisi'\\); $sample3 = $text.Substring\\($idx3, 10\\); Write-Host \"Emision: $sample3\")",
+      "PowerShell($proc = Get-NetTCPConnection -LocalPort 3001 -State Listen -ErrorAction SilentlyContinue | Select-Object -First 1; if \\($proc\\) { Stop-Process -Id $proc.OwningProcess -Force; Write-Host \"Proceso $\\($proc.OwningProcess\\) terminado\" } else { Write-Host \"No habia proceso en 3001\" })",
+      "PowerShell(cd \"C:\\\\Users\\\\Usuario\\\\Desktop\\\\ASAP\\\\Cobranzas\\\\backend\"; Start-Process powershell -ArgumentList \"-NoExit\", \"-Command\", \"cd 'C:\\\\Users\\\\Usuario\\\\Desktop\\\\ASAP\\\\Cobranzas\\\\backend'; npm run dev\" -WindowStyle Normal)",
+      "PowerShell(Start-Sleep -Seconds 4; $conn = Get-NetTCPConnection -LocalPort 3001 -State Listen -ErrorAction SilentlyContinue; if \\($conn\\) { Write-Host \"Backend corriendo en puerto 3001 \\(PID $\\($conn.OwningProcess\\)\\)\" } else { Write-Host \"Backend NO esta corriendo\" })",
+      "PowerShell(Get-NetTCPConnection -LocalPort 3001 -State Listen -ErrorAction SilentlyContinue)"
+    ]
+  }
+}

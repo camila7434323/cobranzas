@@ -1,0 +1,18 @@
+
+> backend@1.0.0 dev
+> ts-node src/index.ts
+
+◇ injected env (6) from .env // tip: ◈ encrypted .env [www.dotenvx.com]
+◇ injected env (0) from .env // tip: ⌘ enable debugging { debug: true }
+⏰ Cron de alertas configurado para las 9am
+✅ Backend + Frontend corriendo en http://localhost:3001
+Archivo recibido: CCD_CSC_2.xml
+Archivo recibido: CCD_CSC_2.xml
+Archivo recibido: CCD_CSC_2.xml
+Archivo recibido: CCD_CSC_2.xml
+Archivo recibido: CCD_CSC_2.xml
+Archivo recibido: CCD_CSC_2.xml
+Archivo recibido: CCD_CSC_2.xml
+Archivo recibido: CCD_CSC_2.xml
+Archivo recibido: CCD_CSC_2.xml
+Archivo recibido: CCD_CSC_2.xml

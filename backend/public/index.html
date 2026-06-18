@@ -1,0 +1,1821 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cobranzas · ASAP Consulting</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --navy-900: #0a1628;
+  --navy-800: #0f2040;
+  --navy-700: #163358;
+  --navy-600: #1d4170;
+  --navy-500: #2554a0;
+  --navy-400: #3b6bc9;
+  --navy-300: #6b97e8;
+  --navy-200: #a8c4f5;
+  --navy-100: #ddeafd;
+  --navy-50:  #f0f5ff;
+  --bg:       #f4f6fb;
+  --surface:  #ffffff;
+  --surface2: #f8faff;
+  --surface3: #eef2fa;
+  --border:   #dde3f0;
+  --border2:  #c4d0ea;
+  --text:     #0d1b38;
+  --text2:    #3d5278;
+  --muted:    #7a8fbb;
+  --muted2:   #a0b0d0;
+  --green:      #059669; --green-dim:  #d1fae5; --green-text: #065f46;
+  --amber:      #d97706; --amber-dim:  #fef3c7; --amber-text: #92400e;
+  --red:        #dc2626; --red-dim:    #fee2e2; --red-text:   #991b1b;
+  --crit:       #7c3aed; --crit-dim:   #ede9fe; --crit-text:  #4c1d95;
+  --font: 'Inter', sans-serif;
+  --mono: 'JetBrains Mono', monospace;
+  --radius: 10px;
+  --shadow: 0 1px 3px rgba(10,22,40,0.08), 0 1px 2px rgba(10,22,40,0.05);
+  --shadow-md: 0 4px 24px rgba(10,22,40,0.14);
+}
+
+html, body { height: 100%; background: var(--bg); color: var(--text); font-family: var(--font); font-size: 14px; }
+
+.shell { display: grid; grid-template-columns: 252px 1fr; grid-template-rows: auto 1fr; min-height: 100vh; }
+
+/* ── Sidebar ── */
+.sidebar { grid-row: 1/3; background: var(--navy-900); display: flex; flex-direction: column; box-shadow: 2px 0 12px rgba(10,22,40,0.18); }
+.sidebar-logo { padding: 24px 20px 18px; border-bottom: 1px solid rgba(255,255,255,0.07); }
+.logo-mark { display: flex; align-items: center; gap: 10px; margin-bottom: 3px; }
+.logo-icon { width: 34px; height: 34px; background: var(--navy-500); border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.logo-icon svg { width: 17px; height: 17px; }
+.logo-name { font-size: 15px; font-weight: 600; color: #fff; letter-spacing: -0.2px; }
+.logo-sub { font-size: 10px; color: rgba(255,255,255,0.3); text-transform: uppercase; letter-spacing: 1px; margin-left: 44px; }
+
+.login-chip { margin: 12px 16px 0; display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 8px 10px; }
+.login-avatar { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: #fff; flex-shrink: 0; background: var(--navy-500); }
+.login-name { font-size: 12px; font-weight: 500; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.login-mail { font-size: 10px; color: rgba(255,255,255,0.35); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.sidebar-section { padding: 18px 14px 4px; }
+.sidebar-label { font-size: 9px; font-weight: 600; letter-spacing: 1.4px; text-transform: uppercase; color: rgba(255,255,255,0.28); padding: 0 8px; margin-bottom: 5px; }
+
+.nav-item { display: flex; align-items: center; gap: 9px; padding: 8px 10px; border-radius: 8px; cursor: pointer; font-size: 13px; color: rgba(255,255,255,0.5); transition: all 0.15s; border: 1px solid transparent; margin-bottom: 2px; }
+.nav-item:hover { background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.85); }
+.nav-item.active { background: rgba(53,100,201,0.35); color: #fff; border-color: rgba(107,151,232,0.2); }
+.nav-icon { width: 15px; height: 15px; flex-shrink: 0; opacity: 0.6; }
+.nav-item.active .nav-icon { opacity: 1; }
+.nav-badge { margin-left: auto; font-size: 10px; font-weight: 600; background: rgba(220,38,38,0.25); color: #fca5a5; padding: 1px 7px; border-radius: 20px; }
+
+.exec-list { padding: 4px 14px; flex: 1; overflow-y: auto; }
+.exec-item { display: flex; align-items: center; gap: 9px; padding: 7px 10px; border-radius: 8px; cursor: pointer; font-size: 13px; color: rgba(255,255,255,0.48); transition: all 0.15s; margin-bottom: 2px; }
+.exec-item:hover { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.8); }
+.exec-item.active { background: rgba(255,255,255,0.1); color: #fff; }
+.exec-avatar { width: 26px; height: 26px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; }
+.exec-amount { margin-left: auto; font-size: 11px; color: rgba(255,255,255,0.28); font-family: var(--mono); }
+.exec-mora-dot { width: 6px; height: 6px; border-radius: 50%; background: #fca5a5; flex-shrink: 0; }
+
+.sidebar-footer { padding: 14px 20px; border-top: 1px solid rgba(255,255,255,0.07); font-size: 11px; color: rgba(255,255,255,0.28); display: flex; align-items: center; gap: 8px; }
+.status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); flex-shrink: 0; }
+
+/* ── Topbar ── */
+.topbar { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 28px; display: flex; align-items: center; gap: 14px; height: 56px; box-shadow: var(--shadow); }
+.topbar-title { font-size: 18px; font-weight: 700; color: var(--text); letter-spacing: -0.3px; }
+.topbar-spacer { flex: 1; }
+.search-wrap { position: relative; }
+.search-wrap svg { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); width: 14px; height: 14px; color: var(--muted); pointer-events: none; }
+.search-input { background: var(--surface2); border: 1px solid var(--border); color: var(--text); font-family: var(--font); font-size: 13px; padding: 7px 12px 7px 32px; border-radius: 8px; width: 220px; outline: none; transition: all 0.15s; }
+.search-input:focus { border-color: var(--navy-400); box-shadow: 0 0 0 3px rgba(37,84,160,0.1); }
+.search-input::placeholder { color: var(--muted2); }
+.topbar-btn { background: var(--navy-500); color: #fff; border: none; cursor: pointer; font-family: var(--font); font-size: 13px; font-weight: 500; padding: 7px 16px; border-radius: 8px; transition: background 0.15s; display: flex; align-items: center; gap: 6px; }
+.topbar-btn:hover { background: var(--navy-600); }
+.topbar-btn svg { width: 13px; height: 13px; }
+
+/* ── Main ── */
+.main { padding: 24px 28px; overflow-y: auto; }
+
+/* ── Alert banner ── */
+.alert-banner { background: #fffbeb; border: 1px solid #fcd34d; border-left: 4px solid var(--amber); border-radius: var(--radius); padding: 11px 16px; display: flex; align-items: center; gap: 10px; margin-bottom: 20px; animation: fadeUp 0.3s ease both; }
+.alert-banner svg { width: 16px; height: 16px; color: var(--amber); flex-shrink: 0; }
+.alert-text { font-size: 13px; color: #78350f; }
+.alert-text strong { font-weight: 600; }
+.alert-close { margin-left: auto; cursor: pointer; color: #b45309; font-size: 18px; line-height: 1; }
+
+/* ── KPIs ── */
+.kpi-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; margin-bottom: 20px; }
+.kpi-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px 20px; box-shadow: var(--shadow); position: relative; overflow: hidden; animation: fadeUp 0.4s ease both; }
+.kpi-card:nth-child(1){animation-delay:.05s}.kpi-card:nth-child(2){animation-delay:.1s}.kpi-card:nth-child(3){animation-delay:.15s}.kpi-card:nth-child(4){animation-delay:.2s}
+.kpi-card.k-red   { border-top: 3px solid var(--red); }
+.kpi-card.k-amber { border-top: 3px solid var(--amber); }
+.kpi-card.k-crit  { border-top: 3px solid var(--crit); }
+.kpi-card.k-navy  { border-top: 3px solid var(--navy-500); }
+.kpi-stripe { position: absolute; top: 0; right: 0; width: 70px; height: 70px; border-radius: 0 var(--radius) 0 70px; opacity: 0.06; }
+.k-red .kpi-stripe{background:var(--red)}.k-amber .kpi-stripe{background:var(--amber)}.k-crit .kpi-stripe{background:var(--crit)}.k-navy .kpi-stripe{background:var(--navy-500)}
+.kpi-label { font-size: 10px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.9px; margin-bottom: 8px; }
+.kpi-value { font-size: 22px; font-weight: 700; letter-spacing: -0.5px; line-height: 1; margin-bottom: 5px; font-family: var(--mono); }
+.k-red .kpi-value{color:var(--red)}.k-amber .kpi-value{color:var(--amber)}.k-crit .kpi-value{color:var(--crit)}.k-navy .kpi-value{color:var(--navy-600)}
+.kpi-sub { font-size: 11px; color: var(--muted); }
+
+/* ── Filtros ── */
+.filter-row { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
+.chip { padding: 5px 13px; border-radius: 20px; font-size: 12px; font-weight: 500; cursor: pointer; border: 1px solid var(--border); background: var(--surface); color: var(--text2); font-family: var(--font); transition: all 0.15s; }
+.chip:hover { border-color: var(--navy-300); color: var(--navy-600); }
+.chip.active { background: var(--navy-500); color: #fff; border-color: var(--navy-500); }
+.chip.c-red   { background: var(--red-dim);   color: var(--red-text);   border-color: #fca5a5; }
+.chip.c-amber { background: var(--amber-dim); color: var(--amber-text); border-color: #fcd34d; }
+.chip.c-green { background: var(--green-dim); color: var(--green-text); border-color: #6ee7b7; }
+
+/* ── Tabla ── */
+.table-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); animation: fadeUp 0.4s ease 0.25s both; }
+.table-header { padding: 13px 18px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; background: var(--surface2); }
+.table-title { font-size: 13px; font-weight: 600; color: var(--text); }
+.table-count { font-size: 12px; color: var(--muted); }
+.table-spacer { flex: 1; }
+table { width: 100%; border-collapse: collapse; }
+thead th { padding: 9px 16px; text-align: left; font-size: 10px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.9px; background: var(--surface2); border-bottom: 1px solid var(--border); white-space: nowrap; }
+tbody tr { border-bottom: 1px solid var(--border); transition: background 0.1s; }
+tbody tr:last-child { border-bottom: none; }
+tbody tr:hover { background: var(--navy-50); }
+td { padding: 11px 16px; font-size: 13px; vertical-align: middle; }
+.comp-code { font-family: var(--mono); font-size: 11px; color: var(--text2); font-weight: 500; }
+.client-name { font-weight: 600; color: var(--text); font-size: 13px; }
+.client-code { font-size: 10px; color: var(--muted); margin-top: 1px; text-transform: uppercase; letter-spacing: 0.5px; }
+.exec-tag { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 500; padding: 3px 8px; border-radius: 20px; }
+.exec-dot { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
+.condicion { font-size: 11px; color: var(--muted); }
+.fecha { font-size: 12px; color: var(--text2); }
+.monto { font-family: var(--mono); font-size: 12px; font-weight: 600; color: var(--text); }
+.mora-badge { display: inline-flex; align-items: center; gap: 3px; padding: 3px 9px; border-radius: 20px; font-size: 11px; font-weight: 600; font-family: var(--mono); white-space: nowrap; }
+.m-none { background: #f0fdf4; color: #166534; border: 1px solid #86efac; }
+.m-av1  { background: #fef9c3; color: #854d0e; border: 1px solid #fde047; }
+.m-av2  { background: #ffedd5; color: #9a3412; border: 1px solid #fb923c; }
+.m-av3  { background: #fee2e2; color: #7f1d1d; border: 1px solid #f87171; }
+.m-crit { background: #dc2626; color: #fff;     border: 1px solid #991b1b; }
+
+.pdf-btn { display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: 8px; font-size: 12px; font-weight: 600; border: none; background: var(--navy-500); color: #fff; cursor: pointer; font-family: var(--font); transition: all 0.15s; white-space: nowrap; box-shadow: 0 1px 4px rgba(37,84,160,0.25); text-decoration: none; }
+.pdf-btn:hover { background: var(--navy-600); transform: translateY(-1px); }
+
+.empty { text-align: center; padding: 48px; color: var(--muted); font-size: 13px; }
+
+.detected-banner { background: #f0fdf4; border: 1px solid #86efac; border-left: 4px solid var(--green); border-radius: var(--radius); padding: 11px 16px; display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+.detected-text { font-size: 13px; color: #166534; }
+
+@keyframes fadeUp { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body>
+
+<div class="shell">
+
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-mark">
+        <div class="logo-icon">
+          <svg viewBox="0 0 20 20" fill="none"><path d="M4 5h12M4 10h8M4 15h5" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </div>
+        <span class="logo-name">Cobranzas</span>
+      </div>
+      <div class="logo-sub">ASAP Consulting</div>
+    </div>
+
+    <div class="login-chip">
+      <div class="login-avatar" id="s-avatar">—</div>
+      <div style="flex:1;min-width:0">
+        <div class="login-name" id="s-name">Seleccioná ejecutivo</div>
+        <div class="login-mail" id="s-mail">Microsoft 365</div>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-label">Vista global</div>
+      <div class="nav-item" id="nav-dashboard" onclick="setView('dashboard',this)">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none"><rect x="2" y="8" width="3" height="6" rx="0.5" stroke="currentColor" stroke-width="1.3"/><rect x="6.5" y="4" width="3" height="10" rx="0.5" stroke="currentColor" stroke-width="1.3"/><rect x="11" y="2" width="3" height="12" rx="0.5" stroke="currentColor" stroke-width="1.3"/></svg>
+        Dashboard
+      </div>
+      <div class="nav-item active" id="nav-todas" onclick="setView('todas',this)">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="9" y="2" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="2" y="9" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="9" y="9" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.3"/></svg>
+        Todos los comprobantes
+        <span class="nav-badge" id="badge-total">0</span>
+      </div>
+      <div class="nav-item" id="nav-historial" onclick="setView('historial',this)">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.3"/><path d="M5 8l2 2 4-4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Historial cobranzas
+        <span class="nav-badge" id="badge-historial" style="background:rgba(5,150,105,0.2);color:#6ee7b7">0</span>
+      </div>
+      <div class="nav-item" id="nav-clientes" onclick="setView('clientes',this)">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none"><circle cx="6" cy="5" r="2.5" stroke="currentColor" stroke-width="1.3"/><path d="M1.5 13.5c0-2.485 2.015-4.5 4.5-4.5s4.5 2.015 4.5 4.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><circle cx="11.5" cy="5" r="2" stroke="currentColor" stroke-width="1.3"/><path d="M13.5 13c0-1.657-1.343-3-3-3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+        Listado de clientes
+      </div>
+    </div>
+
+    <div class="exec-list">
+      <div class="sidebar-label" style="padding:0 8px;margin:10px 0 6px">Vista por ejecutivo</div>
+      <div id="exec-nav"></div>
+    </div>
+
+    <div class="sidebar-footer">
+      <div class="status-dot"></div>
+      Actualizado: <span id="footer-date"></span>
+    </div>
+  </aside>
+
+  <header class="topbar">
+    <div>
+      <span class="topbar-title" id="view-title">Todos los comprobantes</span>
+    </div>
+    <div class="topbar-spacer"></div>
+    <div class="search-wrap">
+      <svg viewBox="0 0 16 16" fill="none"><circle cx="7" cy="7" r="4.5" stroke="currentColor" stroke-width="1.3"/><path d="M11 11l2.5 2.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+      <input class="search-input" type="text" placeholder="Buscar cliente o factura..." id="search" oninput="render()">
+    </div>
+    <button id="admin-toggle-btn" class="topbar-btn" onclick="toggleAdmin()" style="background:var(--surface2);color:var(--text2);border:1px solid var(--border)">☰ Admin</button>
+    <button id="btn-limpiar" class="topbar-btn" onclick="limpiarSupabase()" style="display:none;background:#fee2e2;color:#991b1b;border:1px solid #fca5a5">🗑 Limpiar datos</button>
+    <button class="topbar-btn" onclick="exportCurrentView()">
+      <svg viewBox="0 0 16 16" fill="none"><path d="M2 11l4-4 3 3 5-7" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Exportar
+    </button>
+  </header>
+
+  <main class="main">
+    <input type="file" id="file-update" accept=".xml,.csv" style="display:none" onchange="processUpdate(this)">
+    <input type="file" id="file-excel"  accept=".xlsx,.xls,.xml" style="display:none" onchange="uploadExcel(this)">
+    <input type="file" id="file-desc"   accept=".xml"      style="display:none" onchange="loadDescXML(this)">
+    <div id="detected-banner" style="display:none"></div>
+
+    <div class="alert-banner" id="alert-banner" style="display:none">
+      <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.645-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"/></svg>
+      <span class="alert-text" id="alert-text"></span>
+      <span class="alert-close" onclick="document.getElementById('alert-banner').style.display='none'">×</span>
+    </div>
+
+    <div class="kpi-grid" id="kpi-grid"></div>
+
+    <div id="filter-row" style="display:none;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:14px;padding:12px 16px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow)">
+      <select id="filter-exec" onchange="populateFilterDropdowns();render()" style="border:1px solid var(--border);border-radius:8px;padding:6px 10px;font-size:12px;background:var(--surface2);color:var(--text);font-family:var(--font);cursor:pointer;outline:none;min-width:160px">
+        <option value="">👤 Todos los ejecutivos</option>
+      </select>
+      <select id="filter-client" onchange="render()" style="border:1px solid var(--border);border-radius:8px;padding:6px 10px;font-size:12px;background:var(--surface2);color:var(--text);font-family:var(--font);cursor:pointer;outline:none;min-width:160px">
+        <option value="">👥 Todos los clientes</option>
+      </select>
+      <div style="width:1px;height:24px;background:var(--border);margin:0 2px"></div>
+      <select id="filter-estado" onchange="setEstado(this.value)" style="border:1px solid var(--border);border-radius:8px;padding:6px 10px;font-size:12px;background:var(--surface2);color:var(--text);font-family:var(--font);cursor:pointer;outline:none">
+        <option value="all">📋 Todos los estados</option>
+        <option value="sinvencer">🟢 Sin vencer</option>
+        <option value="av1">🔴 Vencidas</option>
+        <option value="proximas">🟡 Próximas a vencer</option>
+      </select>
+      <select id="filter-mora-range" onchange="render()" style="display:none;border:1px solid var(--amber);border-radius:8px;padding:6px 10px;font-size:12px;background:#fffbeb;color:#92400e;font-family:var(--font);cursor:pointer;outline:none">
+        <option value="all">Todas las vencidas</option>
+        <option value="recien">🟡 Recién vencida — 1 a 7 días</option>
+        <option value="atencion">🟠 Atención — 8 a 15 días</option>
+        <option value="critica">🔴 Crítica — 16 a 30 días</option>
+        <option value="urgente">🚨 Urgente — más de 30 días</option>
+      </select>
+      <button onclick="resetFilters()" style="padding:6px 12px;border-radius:8px;border:1px solid var(--border);background:transparent;font-size:12px;color:var(--muted);cursor:pointer;font-family:var(--font)">✕ Limpiar</button>
+      <span id="filter-count" style="font-size:11px;color:var(--muted);margin-left:auto"></span>
+    </div>
+
+    <div id="dashboard-panel" style="display:none"></div>
+
+    <div class="table-card" id="main-table-card">
+      <div class="table-header">
+        <span class="table-title">Comprobantes</span>
+        <span class="table-count" id="count-label"></span>
+        <button id="btn-export-view" onclick="exportCurrentView()"
+          style="display:none;align-items:center;gap:5px;padding:5px 10px;border-radius:6px;border:1px solid #c4d0ea;background:#f8faff;color:#2554a0;font-size:11px;font-weight:600;cursor:pointer;font-family:var(--font);margin-left:8px">
+          ↓ .xlsx
+        </button>
+        <div class="table-spacer"></div>
+      </div>
+      <table>
+        <thead>
+          <tr id="thead-row">
+            <th>Comprobante</th><th>Cliente</th><th>Ejecutivo</th>
+            <th>Emisión</th><th>Condición</th><th>Vencimiento</th>
+            <th style="text-align:right">Monto</th>
+            <th style="text-align:center">Mora</th>
+            <th style="text-align:center">Factura</th>
+            <th style="text-align:center" id="th-delete"></th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+      <div style="padding:8px 16px;border-top:1px solid var(--border);background:var(--surface2);text-align:right;font-size:10px;color:var(--muted)">
+        📎 PDFs en SharePoint · Microsoft 365
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!--  JAVASCRIPT                                               -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<script>
+// ── Backend API base ──────────────────────────────────────────
+const API_BASE = '';   // mismo origen; vacío = usa la URL actual
+
+// ── Mapa cliente → ejecutivo (vacío — se asigna desde Supabase o con override manual) ──
+const CLIENT_EXEC_MAP = {};
+
+// Lista dinámica de ejecutivos — se construye a partir de los datos cargados
+function getAllExecs(){
+  const names = new Set();
+  RAW_DATA.forEach(r => { if(r.exec?.name && r.exec.name !== 'Sin asignar') names.add(r.exec.name); });
+  Object.values(EXEC_OVERRIDES || {}).forEach(n => { if(n && n !== 'Sin asignar') names.add(n); });
+  return [...names].sort();
+}
+
+const EXEC_STYLES = {
+  'Agustin Fazio':         {color:'#1e3a5f',bg:'#ddeafd'},
+  'Agustina Miranda':      {color:'#7c2d12',bg:'#ffedd5'},
+  'Agustina Soria':        {color:'#134e4a',bg:'#d1fae5'},
+  'Edgardo Mastrangelo':   {color:'#3b0764',bg:'#ede9fe'},
+  'Emiliano Angelinetta':  {color:'#1d4170',bg:'#dbeafe'},
+  'Ezequiel Kronengold':   {color:'#7f1d1d',bg:'#fee2e2'},
+  'Fabio Zilberman':       {color:'#713f12',bg:'#fef3c7'},
+  'Guillermo Buffa':       {color:'#0c4a6e',bg:'#e0f2fe'},
+  'Horacio Ramirez':       {color:'#166534',bg:'#dcfce7'},
+  'Joaquin Ramirez':       {color:'#065f46',bg:'#d1fae5'},
+  'Julieta Salvucci':      {color:'#4c1d95',bg:'#ede9fe'},
+  'Leonardo Nocera':       {color:'#1e40af',bg:'#dbeafe'},
+  'Lorena Corbillon':      {color:'#9d174d',bg:'#fce7f3'},
+  'Lucas Roca':            {color:'#1d4170',bg:'#ddeafd'},
+  'Luis Soria':            {color:'#1a365d',bg:'#e8edf5'},
+  'Maria Fernanda Dugini': {color:'#b45309',bg:'#fef3c7'},
+  'Milagros Sanjurjo':     {color:'#22543d',bg:'#c6f6d5'},
+  'Silvina Buczer':        {color:'#744210',bg:'#fef3c7'},
+};
+
+const SP_BASE = 'https://asapconsulting-my.sharepoint.com/personal/fileserver_asap-consulting_net/Documents/FileServer/ASAP-Share/Contabilidad/1.PLANILLA%20POR%20CLIENTE%20PARA%20FACTURAR/PYF/Cobranzas/Facturas%20en%20PDF';
+
+function buildPdfUrl(comp, clientCode) {
+  const base = comp.replace(/\s+/g,'').toUpperCase();
+  const withCode    = clientCode ? `${base}-${clientCode}.pdf` : null;
+  const withoutCode = `${base}.pdf`;
+  return {
+    withCode:    withCode    ? `${SP_BASE}/${encodeURIComponent(withCode)}`    : null,
+    withoutCode: `${SP_BASE}/${encodeURIComponent(withoutCode)}`,
+  };
+}
+
+// ── Overrides ejecutivo (localStorage) ───────────────────────
+function loadOverrides(){ try{ return JSON.parse(safeGet('cobranzas_overrides')||'{}'); }catch{return{};} }
+function saveOverrides(o){ safeSet('cobranzas_overrides', JSON.stringify(o)); }
+let EXEC_OVERRIDES = loadOverrides();
+
+function getExecForClient(clientName){
+  const override = EXEC_OVERRIDES[clientName];
+  const base     = override || CLIENT_EXEC_MAP[clientName] || 'Sin asignar';
+  const style    = EXEC_STYLES[base] || {color:'#6b7280',bg:'#f3f4f6'};
+  return { name: base, color: style.color, bg: style.bg };
+}
+
+// ── Admin mode ────────────────────────────────────────────────
+let IS_ADMIN = false;
+const ADMIN_PASS = 'asap2026';
+function toggleAdmin(){
+  if(IS_ADMIN){ IS_ADMIN=false; render(); return; }
+  const p = prompt('Contraseña de administrador:');
+  if(p===ADMIN_PASS){ IS_ADMIN=true; render(); alert('✅ Modo administrador activado'); }
+  else if(p!==null) alert('Contraseña incorrecta');
+}
+
+async function limpiarSupabase(){
+  if(!IS_ADMIN) return;
+  if(!confirm('⚠️ Esto eliminará TODOS los comprobantes pendientes de la base de datos.\n¿Estás seguro?')) return;
+  try {
+    const r = await fetch(API_BASE+'/api/reportes/limpiar', { method:'DELETE' });
+    const d = await r.json();
+    if(d.success){
+      RAW_DATA.length=0;
+      HISTORIAL=[]; saveHistorial(HISTORIAL);
+      DELETED=[]; saveDeleted(DELETED);
+      initExecNav(); populateFilterDropdowns(); render();
+      showToast(`✅ Se eliminaron ${d.eliminados} comprobantes`);
+    } else {
+      alert('Error: '+d.error);
+    }
+  } catch(e){ alert('Error al conectar con el servidor: '+e.message); }
+}
+
+// ── Storage ───────────────────────────────────────────────────
+const STORAGE_KEY = 'cobranzas_historial';
+const DELETED_KEY = 'cobranzas_deleted';
+function safeGet(k){ try{ return localStorage.getItem(k); }catch{ return null; } }
+function safeSet(k,v){ try{ localStorage.setItem(k,v); }catch{} }
+function loadHistorial(){ try{ return JSON.parse(safeGet(STORAGE_KEY)||'[]'); }catch{ return []; } }
+function saveHistorial(h){ safeSet(STORAGE_KEY, JSON.stringify(h)); }
+function loadDeleted(){ try{ return JSON.parse(safeGet(DELETED_KEY)||'[]'); }catch{ return []; } }
+function saveDeleted(d){ safeSet(DELETED_KEY, JSON.stringify(d)); }
+function loadDescEdits(){ try{ return JSON.parse(safeGet('cobranzas_desc_edits')||'{}'); }catch{return{};} }
+function saveDescEdits(d){ safeSet('cobranzas_desc_edits', JSON.stringify(d)); }
+function loadPeriodEdits(){ try{ return JSON.parse(safeGet('cobranzas_period_edits')||'{}'); }catch{return{};} }
+function savePeriodEdits(d){ safeSet('cobranzas_period_edits', JSON.stringify(d)); }
+
+let HISTORIAL   = loadHistorial();
+let DELETED     = loadDeleted();
+let DESC_MAP    = {};
+let DESC_EDITS  = loadDescEdits();
+let PERIOD_EDITS = loadPeriodEdits();
+
+// ── Datos en memoria ──────────────────────────────────────────
+const RAW_DATA = [];
+
+function getData(){ return RAW_DATA.filter(r => !DELETED.includes(r.comp)); }
+
+function getEffectiveData(){
+  return getData().map(r => {
+    const ec = DESC_EDITS[r.comp+'_condicion'] || '';
+    const condFinal = ec || r.condicion || '';
+    const newVto  = condFinal ? (calcVtoFromCondicion(r.emision, condFinal) || r.vto) : r.vto;
+    const newMora = newVto ? calcMora(newVto) : r.mora;
+    const newVencida = newMora > 0;
+    const newProxima7 = (()=>{
+      if(newMora > 0 || !newVto) return false;
+      const p = newVto.split('/');
+      if(p.length!==3) return false;
+      const vtoDate = new Date(+p[2],+p[1]-1,+p[0]);
+      const today = new Date(); today.setHours(0,0,0,0);
+      const diff = Math.floor((vtoDate-today)/86400000);
+      return diff>=0 && diff<=7;
+    })();
+    return {...r, condicion:condFinal, vto:newVto, mora:newMora, vencida:newVencida, proxima7:newProxima7};
+  });
+}
+
+// ── Utilidades de fecha / mora ────────────────────────────────
+function fmtDate(d){
+  if(!d) return '—';
+  d = String(d).trim();
+  if(/^\d{4}-\d{2}-\d{2}$/.test(d)){
+    const [y,m,dy]=d.split('-'); return `${dy}/${m}/${y}`;
+  }
+  if(/^\d{2}\/\d{2}\/\d{4}$/.test(d)){
+    const [a,b,y]=d.split('/');
+    if(parseInt(a)>12) return d;
+    if(parseInt(b)>12) return `${b}/${a}/${y}`;
+    return d;
+  }
+  if(/^\d{2}\/\d{2}\/\d{2}$/.test(d)){
+    const [a,b,y]=d.split('/'); return `${b}/${a}/20${y}`;
+  }
+  return d;
+}
+
+function calcVtoFromCondicion(emision, condicion){
+  if(!emision||!condicion) return '';
+  const diasMatch = condicion.match(/(\d+)/);
+  const dias = diasMatch ? parseInt(diasMatch[1]) : 0;
+  if(!dias) return '';
+  const parts = emision.split('/');
+  if(parts.length!==3) return '';
+  const emisDate = new Date(+parts[2],+parts[1]-1,+parts[0]);
+  emisDate.setDate(emisDate.getDate()+dias);
+  return `${String(emisDate.getDate()).padStart(2,'0')}/${String(emisDate.getMonth()+1).padStart(2,'0')}/${emisDate.getFullYear()}`;
+}
+
+function calcMora(vto){
+  if(!vto) return 0;
+  const parts = vto.split('/');
+  if(parts.length!==3) return 0;
+  const vtoDate = new Date(+parts[2],+parts[1]-1,+parts[0]);
+  const today = new Date(); today.setHours(0,0,0,0);
+  const diff = Math.floor((today-vtoDate)/86400000);
+  return diff>0 ? diff : 0;
+}
+
+function fmt(n){ return '$'+Math.round(n).toLocaleString('es-AR'); }
+
+function moraBadgeHtml(mora){
+  if(mora<=0)  return '<span class="mora-badge m-none">🟢 Sin vencer</span>';
+  if(mora<=7)  return `<span class="mora-badge m-av1">🟡 ${mora}d</span>`;
+  if(mora<=15) return `<span class="mora-badge m-av2">🟠 ${mora}d</span>`;
+  if(mora<=30) return `<span class="mora-badge m-av3">🔴 ${mora}d</span>`;
+  return `<span class="mora-badge m-crit">🚨 ${mora}d</span>`;
+}
+
+function showToast(msg){
+  let t = document.getElementById('save-toast');
+  if(!t){
+    t = document.createElement('div');
+    t.id = 'save-toast';
+    t.style.cssText = 'position:fixed;bottom:24px;right:24px;background:#059669;color:#fff;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;font-family:var(--font);z-index:9999;box-shadow:0 4px 12px rgba(0,0,0,0.15);transition:opacity 0.3s';
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  t.style.opacity = '1';
+  clearTimeout(t._timeout);
+  t._timeout = setTimeout(()=>{ t.style.opacity='0'; }, 2200);
+}
+
+// ── Estado de vista / sort ────────────────────────────────────
+let currentExec = null, currentView = 'todas';
+let sortCol = 'mora', sortDir = 'desc';
+
+function setSort(col){
+  if(sortCol===col) sortDir = sortDir==='asc'?'desc':'asc';
+  else { sortCol=col; sortDir=col==='mora'||col==='monto'||col==='vto'||col==='emision'?'desc':'asc'; }
+  render();
+}
+function sortArrow(col){
+  if(sortCol!==col) return '<span style="opacity:0.25;font-size:10px;margin-left:3px">↕</span>';
+  return sortDir==='asc'
+    ? '<span style="font-size:10px;margin-left:3px;color:var(--navy-400)">↑</span>'
+    : '<span style="font-size:10px;margin-left:3px;color:var(--navy-400)">↓</span>';
+}
+
+// ══════════════════════════════════════════════════════════════
+//  INTEGRACIÓN CON BACKEND / SUPABASE
+// ══════════════════════════════════════════════════════════════
+
+async function loadFromSupabase(){
+  try {
+    const [compResp, histResp] = await Promise.all([
+      fetch(API_BASE + '/api/reportes/comprobantes'),
+      fetch(API_BASE + '/api/reportes/historial'),
+    ]);
+
+    if(compResp.ok){
+      const comprobantes = await compResp.json();
+      if(Array.isArray(comprobantes) && comprobantes.length > 0){
+        RAW_DATA.length = 0;
+        comprobantes.forEach(c => {
+          const name      = c.nombre_cliente || '';
+          const emisionStr = c.fecha_emision      ? fmtDate(c.fecha_emision)      : '';
+          const vtoStr     = c.fecha_vencimiento  ? fmtDate(c.fecha_vencimiento)  : '';
+          const mora       = c.dias_mora || 0;
+          let proxima7 = false;
+          if(mora<=0 && vtoStr){
+            try{
+              const p = vtoStr.split('/');
+              if(p.length===3){
+                const vtoDate = new Date(+p[2],+p[1]-1,+p[0]);
+                const today = new Date(); today.setHours(0,0,0,0);
+                const diff = Math.floor((vtoDate-today)/86400000);
+                proxima7 = diff>=0 && diff<=7;
+              }
+            }catch(e){}
+          }
+          const execName = EXEC_OVERRIDES[name] || c.ejecutivo || 'Sin asignar';
+          const execStyle = EXEC_STYLES[execName] || {color:'#6b7280',bg:'#f3f4f6'};
+          RAW_DATA.push({
+            code:      c.codigo        || '',
+            name,
+            comp:      c.comprobante   || '',
+            emision:   emisionStr,
+            vto:       vtoStr,
+            condicion: (c.condicion||'').replace(/^\d+\s*/,'').trim(),
+            monto:     c.monto         || 0,
+            mora,
+            moneda:    '$',
+            exec:      { name: execName, color: execStyle.color, bg: execStyle.bg },
+            vencida:   mora > 0,
+            proxima7,
+          });
+        });
+        return true;
+      }
+    }
+  } catch(e){ console.log('Backend no disponible — usando datos locales', e.message); }
+
+  try {
+    // Si el backend falla, intentar cargar historial igual
+    const histResp2 = await fetch(API_BASE + '/api/reportes/historial');
+    if(histResp2.ok){
+      const histData = await histResp2.json();
+      if(Array.isArray(histData) && histData.length > 0) _applyHistorial(histData);
+    }
+  } catch(e){}
+
+  return false;
+}
+
+function _applyHistorial(histData){
+  HISTORIAL = histData.map(h => ({
+    comp:      h.comprobante_numero || '',
+    name:      h.cliente            || '',
+    code:      '',
+    exec:      { name: h.ejecutivo||'Sin asignar', color:'#2554a0', bg:'#ddeafd' },
+    monto:     h.monto              || 0,
+    mora:      0,
+    cobradoEl: h.fecha_cobro ? new Date(h.fecha_cobro).toLocaleDateString('es-AR') : '—',
+    emision:   '',
+    vto:       '',
+    condicion: '',
+  }));
+  saveHistorial(HISTORIAL);
+}
+
+async function syncToSupabase(records){
+  try {
+    const resp = await fetch(API_BASE + '/api/reportes/comprobantes/sync', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ comprobantes: records, usuario: 'web' }),
+    });
+    if(resp.ok){
+      const result = await resp.json();
+      console.log('✅ Sincronizado con Supabase:', result);
+      // Recargar historial actualizado
+      try {
+        const h = await fetch(API_BASE + '/api/reportes/historial');
+        if(h.ok){ const d = await h.json(); if(Array.isArray(d)&&d.length) _applyHistorial(d); }
+      } catch(e){}
+    }
+  } catch(e){ console.log('No se pudo sincronizar con Supabase'); }
+}
+
+// ══════════════════════════════════════════════════════════════
+//  PARSER XML (Crystal Reports)
+// ══════════════════════════════════════════════════════════════
+
+function parseXML(xmlText){
+  const parser = new DOMParser();
+  const doc    = parser.parseFromString(xmlText, 'text/xml');
+  const NS     = 'urn:crystal-reports:schemas';
+  const objs   = doc.getElementsByTagNameNS(NS,'FormattedReportObject');
+
+  const records = [];
+  let currentCode=null, currentName=null, pending={};
+  let nextName=null, nextCode=null;
+
+  function flush(){
+    if(pending.comp && currentCode){
+      let vtoCalc='';
+      if(pending.emision && pending.condicion){
+        const diasMatch = pending.condicion.match(/(\d+)/);
+        const dias = diasMatch ? parseInt(diasMatch[1]) : 30;
+        const parts = pending.emision.split('/');
+        if(parts.length===3){
+          const d = new Date(+parts[2],+parts[1]-1,+parts[0]);
+          d.setDate(d.getDate()+dias);
+          vtoCalc = `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
+        }
+      } else if(pending.fecha21){
+        vtoCalc = fmtDate(pending.fecha21);
+      }
+      records.push({
+        code:      currentCode,
+        name:      currentName||currentCode,
+        comp:      pending.comp,
+        emision:   pending.emision||'',
+        vto:       vtoCalc,
+        condicion: pending.condicion||'',
+        monto:     (pending.moneda&&pending.moneda!=='$'&&pending.monto_ars)
+                     ? parseFloat(pending.monto_ars)
+                     : parseFloat(pending.monto)||0,
+        mora:      parseInt(pending.mora)||0,
+        moneda:    pending.moneda||'$',
+      });
+    }
+    pending={};
+  }
+
+  for(let obj of objs){
+    const xtype = obj.getAttributeNS('http://www.w3.org/2000/10/XMLSchema-instance','type')||'';
+    const on  = (obj.getElementsByTagNameNS(NS,'ObjectName')[0]?.textContent||'').trim();
+    const fv  = (obj.getElementsByTagNameNS(NS,'FormattedValue')[0]?.textContent||'').trim();
+    const val = (obj.getElementsByTagNameNS(NS,'Value')[0]?.textContent||'').trim();
+    const tv  = (obj.getElementsByTagNameNS(NS,'TextValue')[0]?.textContent||'').trim();
+
+    if(on==='cliRazSoc1') nextName=fv;
+    if(xtype==='CTFormattedText'&&tv.includes('Cliente:')){
+      const m=tv.match(/Cliente:\s+(\S+)/); if(m) nextCode=m[1];
+    }
+    if(on==='Comprobante1'){
+      flush();
+      if(nextName){ currentName=nextName; nextName=null; }
+      if(nextCode){ currentCode=nextCode; nextCode=null; }
+      pending.comp=val;
+    }
+    if(on==='Fecha11')         pending.emision   = fmtDate(val);
+    if(on==='Fecha21')         pending.fecha21   = val;
+    if(on==='CondicionVenta1') pending.condicion = val.replace(/^\d+\s*/,'').trim();
+    if(on==='Simbolo2')        pending.moneda    = val.toLowerCase().trim();
+    if(on==='acSaldo1'&&val)   pending.monto_ars = val;
+    if(on==='cveSaldoMonCC1')  pending.monto     = val;
+    if(on==='Mora1')           pending.mora      = val;
+  }
+  flush();
+  return records;
+}
+
+function parseDescXML(xmlText){
+  xmlText = xmlText.replace(/<CC%>/g,'<CCPct>').replace(/<\/CC%>/g,'</CCPct>');
+  try{
+    const doc   = new DOMParser().parseFromString(xmlText,'text/xml');
+    const datos = doc.querySelectorAll('DATO');
+    const map   = {};
+    datos.forEach(d=>{
+      const comp = (d.querySelector('Comp')?.textContent||'').trim();
+      const item = (d.querySelector('Item_Desc')?.textContent||'').trim();
+      const cc   = (d.querySelector('CCDescripcion')?.textContent||'').trim();
+      const tipo = (d.querySelector('CoditemDesc')?.textContent||'').trim();
+      if(comp&&!map[comp]) map[comp]={item,cc,tipo};
+    });
+    return map;
+  }catch(e){ return {}; }
+}
+
+// ══════════════════════════════════════════════════════════════
+//  SUBIDA DE EXCEL AL BACKEND
+// ══════════════════════════════════════════════════════════════
+
+async function uploadExcel(input){
+  const file = input.files[0]; if(!file) return;
+  const banner = document.getElementById('detected-banner');
+  banner.style.display='';
+  banner.className='detected-banner detected-info';
+  banner.innerHTML=`<span class="detected-text">⏳ Procesando <strong>${file.name}</strong>...</span>`;
+
+  try {
+    const fd = new FormData();
+    fd.append('archivo', file);
+    fd.append('usuario', 'web');
+    const r = await fetch(API_BASE+'/api/reportes/subir', { method:'POST', body:fd });
+    const d = await r.json();
+    if(!r.ok) throw new Error(d.error || 'Error del servidor');
+
+    const loaded = await loadFromSupabase();
+    if(loaded){ initExecNav(); populateFilterDropdowns(); render(); }
+
+    banner.className='detected-banner detected-ok';
+    banner.innerHTML=`<span class="detected-text">✅ <strong>${d.total}</strong> comprobantes procesados — ${d.nuevos} nuevos, ${d.actualizados} actualizados, ${d.cobradas} cobrados.</span>
+      <span style="margin-left:auto;cursor:pointer;color:#166534;font-size:16px" onclick="this.parentElement.style.display='none'">×</span>`;
+  } catch(e){
+    banner.className='detected-banner detected-error';
+    banner.innerHTML=`<span class="detected-text">❌ Error: ${e.message}</span>
+      <span style="margin-left:auto;cursor:pointer;color:#991b1b;font-size:16px" onclick="this.parentElement.style.display='none'">×</span>`;
+  }
+  input.value='';
+}
+
+// ══════════════════════════════════════════════════════════════
+//  PROCESAMIENTO DE ARCHIVO XML / CSV
+// ══════════════════════════════════════════════════════════════
+
+function processUpdate(input){
+  const file = input.files[0]; if(!file) return;
+  const ext  = file.name.split('.').pop().toLowerCase();
+  const reader = new FileReader();
+
+  reader.onload = e => {
+    let newRecords = [];
+    if(ext==='xml'){
+      newRecords = parseXML(e.target.result);
+    } else if(ext==='csv'){
+      const lines   = e.target.result.trim().split('\n');
+      const headers = lines[0].split(',').map(h=>h.replace(/"/g,'').trim());
+      newRecords = lines.slice(1).map(line=>{
+        const cols=line.split(',').map(v=>v.replace(/"/g,'').trim());
+        const r={};
+        headers.forEach((h,i)=>r[h]=cols[i]||'');
+        return {
+          code:r.cliente_code, name:r.cliente_nombre,
+          comp:r.comprobante,  emision:r.fecha_emision,
+          vto:r.vto,           condicion:(r.condicion||'').replace(/^\d+\s*/,'').trim(),
+          monto:parseFloat(r.monto)||0, mora:parseInt(r.mora)||0,
+        };
+      }).filter(r=>r.comp);
+    }
+
+    if(!newRecords.length){
+      alert('No se encontraron comprobantes en el archivo. Verificá el formato.');
+      input.value=''; return;
+    }
+
+    // Agregar clientes nuevos al mapa
+    newRecords.forEach(r=>{ if(r.name&&!CLIENT_EXEC_MAP[r.name]) CLIENT_EXEC_MAP[r.name]='Sin asignar'; });
+
+    // Detectar cobradas (estaban en los datos y ya no aparecen)
+    const currentData = getData();
+    const newComps    = new Set(newRecords.map(r=>r.comp));
+    const cobradas    = currentData.filter(r=>r.vencida&&!newComps.has(r.comp));
+    const today       = new Date().toLocaleDateString('es-AR');
+    cobradas.forEach(r=>{
+      if(!HISTORIAL.find(h=>h.comp===r.comp))
+        HISTORIAL.push({...r, cobradoEl:today, exec:{name:r.exec.name,color:r.exec.color,bg:r.exec.bg}});
+    });
+    saveHistorial(HISTORIAL);
+
+    // Actualizar RAW_DATA
+    RAW_DATA.length=0;
+    newRecords.forEach(r=>{
+      const mora = r.mora||0;
+      let proxima7=false;
+      if(mora<=0&&r.vto){
+        try{
+          const p=r.vto.split('/');
+          if(p.length===3){
+            const vtoDate=new Date(+p[2],+p[1]-1,+p[0]);
+            const t=new Date(); t.setHours(0,0,0,0);
+            const diff=Math.floor((vtoDate-t)/86400000);
+            proxima7=diff>=0&&diff<=7;
+          }
+        }catch(e){}
+      }
+      RAW_DATA.push({...r, exec:getExecForClient(r.name), vencida:mora>0, proxima7, moneda:r.moneda||'$'});
+    });
+
+    // Sincronizar con Supabase (sin bloquear la UI)
+    syncToSupabase(RAW_DATA.slice());
+
+    if(cobradas.length) showDetectedBanner(cobradas);
+    else {
+      const b=document.getElementById('detected-banner');
+      b.style.display='flex'; b.className='detected-banner';
+      b.innerHTML=`<svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor" style="flex-shrink:0"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"/></svg>
+        <span class="detected-text"><strong>${newRecords.length} comprobantes cargados.</strong> Sin novedades en el historial.</span>
+        <span style="margin-left:auto;cursor:pointer;color:#166534;font-size:16px" onclick="this.parentElement.style.display='none'">×</span>`;
+    }
+
+    initExecNav(); populateFilterDropdowns(); render();
+    input.value='';
+  };
+  reader.readAsText(file,'utf-8');
+}
+
+function loadDescXML(input){
+  const file=input.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    DESC_MAP=parseDescXML(e.target.result);
+    const count=Object.keys(DESC_MAP).length;
+    const b=document.getElementById('detected-banner');
+    b.style.display='flex'; b.className='detected-banner';
+    b.innerHTML=`<svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor" style="flex-shrink:0"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"/></svg>
+      <span class="detected-text"><strong>${count} descripciones cargadas.</strong> La tabla ahora muestra el detalle de cada servicio.</span>
+      <span style="margin-left:auto;cursor:pointer;color:#166534;font-size:16px" onclick="this.parentElement.style.display='none'">×</span>`;
+    render();
+    input.value='';
+  };
+  reader.readAsText(file,'utf-8');
+}
+
+function showDetectedBanner(cobradas){
+  const b=document.getElementById('detected-banner');
+  b.style.display='flex'; b.className='detected-banner';
+  b.innerHTML=`<svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor" style="flex-shrink:0"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"/></svg>
+    <span class="detected-text"><strong>${cobradas.length} factura${cobradas.length>1?'s':''} movida${cobradas.length>1?'s':''} al historial de cobradas.</strong> Podés verlas en Historial.</span>
+    <span style="margin-left:auto;cursor:pointer;color:#166534;font-size:16px" onclick="this.parentElement.style.display='none'">×</span>`;
+  document.getElementById('badge-historial').textContent=HISTORIAL.length;
+}
+
+// ══════════════════════════════════════════════════════════════
+//  NAVEGACIÓN Y FILTROS
+// ══════════════════════════════════════════════════════════════
+
+function initExecNav(){
+  const DATA=getData();
+  const byExec={};
+  DATA.forEach(r=>{
+    const n=r.exec.name;
+    if(!byExec[n]) byExec[n]={...r.exec,count:0,moraCount:0};
+    byExec[n].count++;
+    if(r.vencida) byExec[n].moraCount++;
+  });
+  const seen=new Set(); let html='';
+  DATA.forEach(r=>{
+    const n=r.exec.name; if(seen.has(n)) return; seen.add(n);
+    const i=byExec[n], ini=n.split(' ').map(w=>w[0]).join('').slice(0,2);
+    html+=`<div class="exec-item ${currentExec===n?'active':''}" onclick="setExec('${n.replace(/'/g,"\\'")}')">
+      <div class="exec-avatar" style="background:${i.bg};color:${i.color}">${ini}</div>
+      <span style="flex:1">${n}</span>
+      ${i.moraCount>0?`<div class="exec-mora-dot" title="${i.moraCount} en mora"></div>`:''}
+      <span class="exec-amount">${i.count}</span>
+    </div>`;
+  });
+  document.getElementById('exec-nav').innerHTML=html;
+}
+
+function setExec(name){
+  currentExec=name; currentView='todas';
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('nav-todas').classList.add('active');
+  document.getElementById('view-title').textContent=name||'Todos los comprobantes';
+  const execDropdown=document.getElementById('filter-exec');
+  if(execDropdown) execDropdown.value=name||'';
+  if(name){
+    const ex=EXEC_STYLES[name]||{color:'#2554a0'};
+    const ini=name.split(' ').map(w=>w[0]).join('').slice(0,2);
+    document.getElementById('s-avatar').textContent=ini;
+    document.getElementById('s-avatar').style.background=ex.color||'#2554a0';
+    document.getElementById('s-name').textContent=name;
+    document.getElementById('s-mail').textContent='Microsoft 365';
+  } else {
+    document.getElementById('s-avatar').textContent='—';
+    document.getElementById('s-avatar').style.background='rgba(255,255,255,0.08)';
+    document.getElementById('s-name').textContent='Todos los ejecutivos';
+    document.getElementById('s-mail').textContent='Microsoft 365';
+  }
+  resetFilters();
+  initExecNav();
+  if(name) renderExecPanel(name); else render();
+}
+
+function setView(v,el){
+  currentView=v; currentExec=null;
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('view-title').textContent={
+    dashboard:'Dashboard ejecutivo',
+    todas:'Todos los comprobantes',
+    historial:'Historial de cobrados',
+    clientes:'Listado de clientes y ejecutivos',
+  }[v]||v;
+  initExecNav(); render();
+}
+
+function setEstado(v){
+  const moraRange=document.getElementById('filter-mora-range');
+  if(moraRange) moraRange.style.display = v==='av1' ? '' : 'none';
+  if(moraRange && v!=='av1') moraRange.value='all';
+  render();
+}
+
+function resetFilters(){
+  ['filter-client','filter-exec'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.selectedIndex=0;
+  });
+  ['filter-estado','filter-mora-range'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.value='all';
+  });
+  const moraRange=document.getElementById('filter-mora-range');
+  if(moraRange) moraRange.style.display='none';
+  const s=document.getElementById('search'); if(s) s.value='';
+  render();
+}
+
+function populateFilterDropdowns(){
+  const DATA=getData();
+  const execSelect=document.getElementById('filter-exec');
+  if(execSelect){
+    const ev=execSelect.value;
+    const execs=[...new Set(DATA.map(r=>r.exec.name))].sort();
+    execSelect.innerHTML='<option value="">👤 Todos los ejecutivos</option>'+
+      execs.map(e=>`<option value="${e}"${e===ev?' selected':''}>${e}</option>`).join('');
+  }
+  const clientSelect=document.getElementById('filter-client');
+  if(clientSelect){
+    const cv=clientSelect.value, ev=execSelect?.value||'';
+    const names=[...new Set(DATA.filter(r=>!ev||r.exec.name===ev).map(r=>r.name))].sort();
+    clientSelect.innerHTML='<option value="">👥 Todos los clientes</option>'+
+      names.map(n=>`<option value="${n}"${n===cv?' selected':''}>${n}</option>`).join('');
+    if(cv&&!names.includes(cv)) clientSelect.value='';
+  }
+}
+
+function getFiltered(){
+  const DATA=getEffectiveData();
+  const q         = document.getElementById('search')?.value?.toLowerCase()||'';
+  const clientVal = document.getElementById('filter-client')?.value||'';
+  const execVal   = document.getElementById('filter-exec')?.value||'';
+  const estadoVal = document.getElementById('filter-estado')?.value||'all';
+  const moraRVal  = document.getElementById('filter-mora-range')?.value||'all';
+
+  return DATA.filter(r=>{
+    if(currentExec&&r.exec.name!==currentExec) return false;
+    if(clientVal&&r.name!==clientVal) return false;
+    if(execVal&&r.exec.name!==execVal) return false;
+    if(estadoVal==='sinvencer'&&r.vencida) return false;
+    if(estadoVal==='av1'&&!r.vencida) return false;
+    if(estadoVal==='proximas'&&!r.proxima7) return false;
+    if(moraRVal==='recien'&&!(r.mora>=1&&r.mora<=7)) return false;
+    if(moraRVal==='atencion'&&!(r.mora>=8&&r.mora<=15)) return false;
+    if(moraRVal==='critica'&&!(r.mora>=16&&r.mora<=30)) return false;
+    if(moraRVal==='urgente'&&r.mora<31) return false;
+    if(q){
+      const xmlD=DESC_MAP[r.comp];
+      const extra=[xmlD?.item,xmlD?.cc,xmlD?.tipo,
+        DESC_EDITS[r.comp],PERIOD_EDITS[r.comp],
+        DESC_EDITS[r.comp+'_desc'],DESC_EDITS[r.comp+'_cc'],DESC_EDITS[r.comp+'_tipo']
+      ].filter(Boolean).join(' ').toLowerCase();
+      if(!r.name.toLowerCase().includes(q)&&!r.comp.toLowerCase().includes(q)&&
+         !r.exec.name.toLowerCase().includes(q)&&!extra.includes(q)) return false;
+    }
+    return true;
+  }).sort((a,b)=>{
+    function dateVal(s){
+      if(!s) return 0;
+      const p=s.split('/');
+      if(p.length===3) return parseInt(p[2])*10000+parseInt(p[1])*100+parseInt(p[0]);
+      return 0;
+    }
+    let va,vb,cmp;
+    if(sortCol==='comp')      { va=a.comp;      vb=b.comp; }
+    else if(sortCol==='name') { va=a.name;      vb=b.name; }
+    else if(sortCol==='exec') { va=a.exec.name; vb=b.exec.name; }
+    else if(sortCol==='condicion') { va=a.condicion; vb=b.condicion; }
+    else if(sortCol==='emision') return sortDir==='asc'?dateVal(a.emision)-dateVal(b.emision):dateVal(b.emision)-dateVal(a.emision);
+    else if(sortCol==='vto')  return sortDir==='asc'?dateVal(a.vto)-dateVal(b.vto):dateVal(b.vto)-dateVal(a.vto);
+    else if(sortCol==='monto') return sortDir==='asc'?a.monto-b.monto:b.monto-a.monto;
+    else                       return sortDir==='asc'?a.mora-b.mora:b.mora-a.mora;
+    if(va===vb) return 0;
+    cmp=va<vb?-1:1;
+    return sortDir==='asc'?cmp:-cmp;
+  });
+}
+
+// ══════════════════════════════════════════════════════════════
+//  EDICIÓN DE CAMPOS (admin)
+// ══════════════════════════════════════════════════════════════
+
+function toggleDesc(idx){
+  const el=document.getElementById('desc-row-'+idx);
+  if(!el) return;
+  const isOpen=el.style.display!=='none';
+  document.querySelectorAll('[id^="desc-row-"]').forEach(e=>{ e.style.display='none'; });
+  document.querySelectorAll('[data-toggle-desc]').forEach(b=>{ b.textContent='+'; });
+  if(!isOpen){
+    el.style.display='';
+    const btn=document.querySelector(`[data-toggle-desc="${idx}"]`);
+    if(btn) btn.textContent='−';
+  }
+}
+
+function saveFieldEdit(idx,comp,field,value){
+  const key=comp+field;
+  if(value.trim()) DESC_EDITS[key]=value.trim();
+  else delete DESC_EDITS[key];
+  saveDescEdits(DESC_EDITS);
+  showToast('✅ Guardado exitosamente');
+  if(field==='_condicion'){ render(); setTimeout(()=>toggleDesc(idx),50); }
+}
+
+function savePeriodEdit(idx,comp,value){
+  if(value.trim()) PERIOD_EDITS[comp]=value.trim();
+  else delete PERIOD_EDITS[comp];
+  savePeriodEdits(PERIOD_EDITS);
+  showToast('✅ Guardado exitosamente');
+}
+
+function saveDescEdit(idx,comp,value){
+  if(value.trim()) DESC_EDITS[comp]=value.trim();
+  else delete DESC_EDITS[comp];
+  saveDescEdits(DESC_EDITS);
+  showToast('✅ Guardado exitosamente');
+}
+
+function deleteComp(comp){
+  if(!IS_ADMIN) return;
+  if(!confirm(`¿Eliminar el comprobante ${comp}?\nEsta acción no se puede deshacer.`)) return;
+  DELETED.push(comp); saveDeleted(DELETED); render();
+}
+
+function buildDescContent(r,idx){
+  const xmlD  = DESC_MAP[r.comp];
+  const editD = DESC_EDITS[r.comp]||'';
+  const LBL   = 'font-size:10px;font-weight:700;color:#7a8fbb;text-transform:uppercase;letter-spacing:0.7px;margin-bottom:3px';
+  const VAL   = 'font-size:13px;color:#0d1b38';
+  const INPUT = 'flex:1;border:1px solid #c4d0ea;border-radius:6px;padding:6px 10px;font-size:12px;font-family:var(--font);color:#0d1b38;background:#fff;outline:none';
+  const SAVEBTN = 'padding:6px 14px;border-radius:6px;border:none;background:#2554a0;color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font)';
+  let out='';
+
+  const fields=[
+    {key:'_desc', label:'Descripción',      val:DESC_EDITS[r.comp+'_desc']||xmlD?.item||''},
+    {key:'_cc',   label:'Centro de costo',  val:DESC_EDITS[r.comp+'_cc']  ||xmlD?.cc  ||''},
+    {key:'_tipo', label:'Tipo de servicio', val:DESC_EDITS[r.comp+'_tipo']||xmlD?.tipo||''},
+  ];
+
+  fields.forEach(f=>{
+    out+=`<div style="margin-bottom:10px"><div style="${LBL}">${f.label}</div>`;
+    if(IS_ADMIN){
+      const safeComp=r.comp.replace(/'/g,"\\'");
+      out+=`<div style="display:flex;gap:8px;align-items:center">
+        <input id="fi-${idx}${f.key}" type="text" value="${f.val.replace(/"/g,'&quot;')}" style="${INPUT}">
+        <button onclick="saveFieldEdit('${idx}','${safeComp}','${f.key}',document.getElementById('fi-${idx}${f.key}').value)" style="${SAVEBTN}">✓</button>
+      </div>`;
+    } else {
+      out+=`<div style="${VAL}">${f.val||'<span style="font-style:italic;color:#7a8fbb">—</span>'}</div>`;
+    }
+    out+=`</div>`;
+  });
+
+  // Condición de pago
+  const condVal=DESC_EDITS[r.comp+'_condicion']||r.condicion||'';
+  const condOptions=['Cuenta Corriente 7 días','Cuenta Corriente a 15 días','Cuenta Corriente 30 días','Cuenta Corriente 45 días','Cuenta Corriente 60 días','Cuenta Corriente 90 días','Contado'];
+  out+=`<div style="margin-bottom:10px"><div style="${LBL}">Condición de pago</div>`;
+  if(IS_ADMIN){
+    const safeComp=r.comp.replace(/'/g,"\\'");
+    out+=`<div style="display:flex;gap:8px;align-items:center"><select id="fc-${idx}" style="${INPUT}">`;
+    condOptions.forEach(opt=>{ out+=`<option value="${opt}"${opt===condVal?' selected':''}>${opt}</option>`; });
+    out+=`</select><button onclick="saveFieldEdit('${idx}','${safeComp}','_condicion',document.getElementById('fc-${idx}').value)" style="${SAVEBTN}">✓</button></div>`;
+  } else {
+    out+=`<div style="${VAL}">${condVal||'<span style="font-style:italic;color:#7a8fbb">—</span>'}</div>`;
+  }
+  out+=`</div>`;
+
+  // Período
+  const periodVal=PERIOD_EDITS[r.comp]||'';
+  out+=`<div style="margin-bottom:8px"><div style="${LBL}">📅 Período del servicio</div>`;
+  if(IS_ADMIN){
+    const safeComp=r.comp.replace(/'/g,"\\'");
+    out+=`<div style="display:flex;gap:8px;align-items:center">
+      <input id="fp-${idx}" type="text" value="${periodVal.replace(/"/g,'&quot;')}" placeholder="Ej: Mayo 2026..." style="${INPUT}">
+      <button onclick="savePeriodEdit('${idx}','${safeComp}',document.getElementById('fp-${idx}').value)" style="padding:6px 14px;border-radius:6px;border:none;background:#0f766e;color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font)">Guardar</button>
+    </div>`;
+  } else {
+    out+=`<div style="${VAL}">${periodVal||'<span style="font-style:italic;color:#7a8fbb">No especificado</span>'}</div>`;
+  }
+  out+=`</div>`;
+
+  // Nota
+  if(editD&&!IS_ADMIN) out+=`<div><div style="${LBL}">✏ Nota del equipo</div><div style="${VAL}">${editD}</div></div>`;
+  if(IS_ADMIN){
+    const safeComp=r.comp.replace(/'/g,"\\'");
+    out+=`<div style="display:flex;gap:8px;align-items:center;margin-top:4px">
+      <input id="fn-${idx}" type="text" value="${editD.replace(/"/g,'&quot;')}" placeholder="Nota adicional..." style="${INPUT}">
+      <button onclick="saveDescEdit('${idx}','${safeComp}',document.getElementById('fn-${idx}').value)" style="${SAVEBTN}">Guardar nota</button>
+      ${editD?`<button onclick="saveDescEdit('${idx}','${safeComp}','')" style="padding:6px 10px;border-radius:6px;border:1px solid #dde3f0;background:transparent;color:#7a8fbb;font-size:12px;cursor:pointer;font-family:var(--font)">Borrar</button>`:''}
+    </div>`;
+  }
+  return out;
+}
+
+// ══════════════════════════════════════════════════════════════
+//  RENDER PRINCIPAL — TABLA DE COMPROBANTES
+// ══════════════════════════════════════════════════════════════
+
+function render(){
+  const DATA=getData();
+  document.getElementById('filter-row').style.display='flex';
+  document.getElementById('alert-banner').style.display='';
+  document.getElementById('badge-historial').textContent=HISTORIAL.length;
+  document.getElementById('badge-total').textContent=DATA.length;
+
+  // Admin UI
+  const thDel=document.getElementById('th-delete');
+  if(thDel) thDel.textContent=IS_ADMIN?'🗑 Eliminar':'';
+  const adminBtn=document.getElementById('admin-toggle-btn');
+  if(adminBtn) adminBtn.textContent=IS_ADMIN?'🔐 Admin ON':'☰ Admin';
+  const btnLimpiar=document.getElementById('btn-limpiar');
+  if(btnLimpiar) btnLimpiar.style.display=IS_ADMIN?'':'none';
+
+  if(currentView==='dashboard'){ renderDashboard(); return; }
+  document.getElementById('dashboard-panel').style.display='none';
+  document.getElementById('main-table-card').style.display='';
+  const exportBtn=document.getElementById('btn-export-view');
+  if(exportBtn) exportBtn.style.display='inline-flex';
+  if(currentView==='historial'){ renderHistorial(); return; }
+  if(currentView==='clientes'){  renderClientes();  return; }
+
+  document.querySelector('thead').style.display='';
+  const thStyle='cursor:pointer;user-select:none;white-space:nowrap';
+  document.getElementById('thead-row').innerHTML=`
+    <th style="${thStyle};min-width:180px" onclick="setSort('comp')">Comprobante${sortArrow('comp')}</th>
+    <th style="${thStyle}" onclick="setSort('name')">Cliente${sortArrow('name')}</th>
+    <th style="${thStyle}" onclick="setSort('exec')">Ejecutivo${sortArrow('exec')}</th>
+    <th style="${thStyle};min-width:90px" onclick="setSort('emision')">Emisión${sortArrow('emision')}</th>
+    <th style="${thStyle}" onclick="setSort('condicion')">Condición${sortArrow('condicion')}</th>
+    <th style="${thStyle};min-width:90px" onclick="setSort('vto')">Vencimiento${sortArrow('vto')}</th>
+    <th style="${thStyle};text-align:right" onclick="setSort('monto')">Monto${sortArrow('monto')}</th>
+    <th style="${thStyle};text-align:center" onclick="setSort('mora')">Mora${sortArrow('mora')}</th>
+    <th style="text-align:center">Factura</th>
+    <th style="text-align:center" id="th-delete">${IS_ADMIN?'🗑 Eliminar':''}</th>`;
+
+  const filtered=getFiltered();
+  const allVenc=DATA.filter(r=>r.vencida);
+
+  document.getElementById('count-label').textContent=`${filtered.length} registros`;
+  const fc=document.getElementById('filter-count');
+  if(fc) fc.textContent=filtered.length!==DATA.length?`${filtered.length} de ${DATA.length} comprobantes`:`${DATA.length} comprobantes`;
+
+  const alertEl=document.getElementById('alert-banner');
+  if(allVenc.length>0){
+    alertEl.style.display='flex';
+    document.getElementById('alert-text').innerHTML=`<strong>${allVenc.length} facturas</strong> con mora activa.`;
+  } else {
+    alertEl.style.display='none';
+  }
+
+  document.getElementById('kpi-grid').innerHTML='';
+
+  // ── render de vistas especiales ──
+  const tbody=document.getElementById('tbody');
+  if(!filtered.length){
+    tbody.innerHTML=getData().length===0
+      ? `<tr><td colspan="10"><div class="empty" style="padding:60px 20px">
+          <div style="font-size:40px;margin-bottom:16px">📂</div>
+          <div style="font-size:16px;font-weight:600;color:var(--text);margin-bottom:8px">No hay datos cargados</div>
+          <div style="font-size:13px;color:var(--muted);margin-bottom:20px">Cargá el Excel o XML del sistema para comenzar</div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center">
+            <button onclick="document.getElementById('file-excel').click()" style="padding:10px 24px;border-radius:8px;border:none;background:var(--navy-500);color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font)">📊 Cargar Excel</button>
+            <button onclick="document.getElementById('file-update').click()" style="padding:10px 24px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font)">📄 Cargar XML</button>
+          </div>
+        </div></td></tr>`
+      : '<tr><td colspan="10" class="empty">No hay comprobantes para esta selección.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML=filtered.map((r,idx)=>{
+    const delBtn=IS_ADMIN?`<button onclick="deleteComp('${r.comp.replace(/'/g,"\\'")}') " style="background:var(--red-dim);color:var(--red-text);border:1px solid #fca5a5;border-radius:6px;padding:3px 8px;font-size:11px;cursor:pointer;font-family:var(--font)">Eliminar</button>`:'';
+    const _ec=DESC_EDITS[r.comp+'_condicion']||'';
+    const _cf=_ec||r.condicion||'';
+    const _vf=_cf?(calcVtoFromCondicion(r.emision,_cf)||r.vto):r.vto;
+    const _mf=_vf?calcMora(_vf):r.mora;
+    const urls=buildPdfUrl(r.comp,r.code);
+    const href=urls.withCode||urls.withoutCode;
+    return `<tr>
+      <td class="comp-code" style="white-space:nowrap">
+        <div style="display:flex;align-items:center;gap:6px">
+          <span>${r.comp}${r.moneda&&r.moneda!=='$'?`<span style="font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;background:#fef3c7;border:1px solid #fde68a;color:#92400e;vertical-align:middle;margin-left:4px">${r.moneda.toUpperCase()}</span>`:''}</span>
+          <button data-toggle-desc="${idx}" onclick="toggleDesc(${idx})" style="width:18px;height:18px;border-radius:50%;border:1px solid var(--border2);background:var(--surface2);color:var(--text2);font-size:11px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;padding:0;line-height:1" title="Ver detalle">+</button>
+        </div>
+      </td>
+      <td><div class="client-name">${r.name}</div><div class="client-code">${r.code}</div></td>
+      <td><span class="exec-tag" style="background:${r.exec.bg};color:${r.exec.color}"><span class="exec-dot" style="background:${r.exec.color}"></span>${r.exec.name}</span></td>
+      <td class="fecha" style="white-space:nowrap">${fmtDate(r.emision)}</td>
+      <td class="condicion">${_cf||'—'}</td>
+      <td class="fecha" style="white-space:nowrap">${fmtDate(_vf)}</td>
+      <td style="text-align:right"><span class="monto">${fmt(r.monto)}</span></td>
+      <td style="text-align:center">${moraBadgeHtml(_mf)}</td>
+      <td style="text-align:center"><a href="${href}" target="_blank" class="pdf-btn">📄 Abrir PDF</a></td>
+      <td style="text-align:center">${delBtn}</td>
+    </tr>
+    <tr id="desc-row-${idx}" style="display:none">
+      <td colspan="10" style="padding:0;border-bottom:2px solid var(--border)">
+        <div style="padding:12px 16px 14px 40px;background:#f8faff;border-left:3px solid var(--navy-300)">
+          ${buildDescContent(r,idx)}
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════════════════════════
+//  RENDER — HISTORIAL
+// ══════════════════════════════════════════════════════════════
+
+function renderHistorial(){
+  document.getElementById('kpi-grid').innerHTML='';
+  document.getElementById('filter-row').style.display='none';
+  document.getElementById('alert-banner').style.display='none';
+  document.getElementById('dashboard-panel').style.display='none';
+  document.getElementById('main-table-card').style.display='';
+  document.querySelector('thead').style.display='';
+
+  const h=HISTORIAL.filter(r=>!currentExec||r.exec.name===currentExec);
+  document.getElementById('count-label').textContent=`${h.length} registros`;
+  document.getElementById('badge-historial').textContent=HISTORIAL.length;
+  const eb=document.getElementById('btn-export-view'); if(eb) eb.style.display='none';
+
+  document.getElementById('thead-row').innerHTML=`
+    <th>Comprobante</th><th>Cliente</th><th>Ejecutivo</th>
+    <th>Condición</th><th>Emisión</th><th>Vencimiento</th>
+    <th style="text-align:right">Monto</th>
+    <th style="text-align:center">Estado</th>
+    <th style="text-align:center">Cobrado el</th>`;
+
+  const tbody=document.getElementById('tbody');
+  if(!h.length){
+    tbody.innerHTML=`<tr><td colspan="9"><div class="empty" style="padding:48px">
+      <div style="font-size:32px;margin-bottom:12px">✅</div>
+      <div style="font-weight:600;margin-bottom:6px">Sin historial todavía</div>
+      <div style="font-size:12px">Cuando cargues un nuevo reporte se detectarán las facturas cobradas automáticamente.</div>
+    </div></td></tr>`;
+    return;
+  }
+
+  const totalCobrado=h.reduce((s,r)=>s+r.monto,0);
+  document.getElementById('kpi-grid').innerHTML=`
+    <div class="kpi-card k-navy" style="grid-column:span 2"><div class="kpi-stripe"></div>
+      <div class="kpi-label">Total cobrado</div>
+      <div class="kpi-value" style="color:var(--green)">${fmt(totalCobrado)}</div>
+      <div class="kpi-sub">${h.length} facturas cobradas</div></div>
+    <div class="kpi-card k-navy"><div class="kpi-stripe"></div>
+      <div class="kpi-label">Clientes</div>
+      <div class="kpi-value">${new Set(h.map(r=>r.name)).size}</div>
+      <div class="kpi-sub">con cobros registrados</div></div>
+    <div class="kpi-card k-navy"><div class="kpi-stripe"></div>
+      <div class="kpi-label">Último cobro</div>
+      <div class="kpi-value" style="font-size:16px">${h[h.length-1]?.cobradoEl||'—'}</div>
+      <div class="kpi-sub">Fecha de detección</div></div>`;
+
+  tbody.innerHTML=h.slice().sort((a,b)=>{
+    const da=new Date(a.cobradoEl?.split('/').reverse().join('-')||0);
+    const db=new Date(b.cobradoEl?.split('/').reverse().join('-')||0);
+    return db-da;
+  }).map(r=>`<tr>
+    <td class="comp-code">${r.comp}</td>
+    <td><div class="client-name">${r.name}</div><div class="client-code">${r.code}</div></td>
+    <td><span class="exec-tag" style="background:${r.exec.bg};color:${r.exec.color}"><span class="exec-dot" style="background:${r.exec.color}"></span>${r.exec.name}</span></td>
+    <td class="condicion">${r.condicion||'—'}</td>
+    <td class="fecha">${fmtDate(r.emision)}</td>
+    <td class="fecha">${fmtDate(r.vto)}</td>
+    <td style="text-align:right"><span class="monto">${fmt(r.monto)}</span></td>
+    <td style="text-align:center"><span style="background:#d1fae5;color:#065f46;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600">✅ Cobrado</span></td>
+    <td style="text-align:center;font-size:12px;color:var(--text2)">${r.cobradoEl}</td>
+  </tr>`).join('');
+}
+
+// ══════════════════════════════════════════════════════════════
+//  RENDER — PANEL POR EJECUTIVO
+// ══════════════════════════════════════════════════════════════
+
+function renderExecPanel(execName){
+  const DATA=getEffectiveData();
+  const myData=DATA.filter(r=>r.exec.name===execName);
+  const vencidas=myData.filter(r=>r.vencida).sort((a,b)=>b.mora-a.mora);
+  const proximas=myData.filter(r=>r.proxima7);
+  const sinVencer=myData.filter(r=>!r.vencida&&!r.proxima7);
+  const totalVencido=vencidas.reduce((s,r)=>s+r.monto,0);
+  const totalCartera=myData.reduce((s,r)=>s+r.monto,0);
+
+  document.getElementById('filter-row').style.display='none';
+  document.getElementById('alert-banner').style.display='none';
+  document.getElementById('dashboard-panel').style.display='none';
+  document.getElementById('main-table-card').style.display='';
+  document.querySelector('thead').style.display='';
+  document.getElementById('count-label').textContent=`${myData.length} comprobantes`;
+  const eb=document.getElementById('btn-export-view'); if(eb) eb.style.display='none';
+
+  document.getElementById('kpi-grid').innerHTML=`
+    <div class="kpi-card k-navy"><div class="kpi-stripe"></div>
+      <div class="kpi-label">Cartera total</div>
+      <div class="kpi-value">${fmt(totalCartera)}</div>
+      <div class="kpi-sub">${myData.length} comprobantes</div></div>
+    <div class="kpi-card k-red"><div class="kpi-stripe"></div>
+      <div class="kpi-label">Revisión urgente</div>
+      <div class="kpi-value">${fmt(totalVencido)}</div>
+      <div class="kpi-sub">${vencidas.length} facturas en mora</div></div>
+    <div class="kpi-card k-amber"><div class="kpi-stripe"></div>
+      <div class="kpi-label">Próximas a vencer</div>
+      <div class="kpi-value">${proximas.length}</div>
+      <div class="kpi-sub">vencen en 7 días</div></div>
+    <div class="kpi-card" style="border-top:3px solid var(--green)"><div class="kpi-stripe" style="background:var(--green)"></div>
+      <div class="kpi-label">Al día</div>
+      <div class="kpi-value" style="color:var(--green)">${sinVencer.length}</div>
+      <div class="kpi-sub">comprobantes sin vencer</div></div>`;
+
+  const thStyle='cursor:pointer;user-select:none;white-space:nowrap';
+  document.getElementById('thead-row').innerHTML=`
+    <th style="${thStyle};min-width:180px">Comprobante</th>
+    <th style="${thStyle}">Cliente</th>
+    <th style="${thStyle};min-width:90px">Emisión</th>
+    <th style="${thStyle}">Condición</th>
+    <th style="${thStyle};min-width:90px">Vencimiento</th>
+    <th style="${thStyle};text-align:right">Monto</th>
+    <th style="${thStyle};text-align:center">Mora</th>
+    <th style="text-align:center">Factura</th>
+    <th style="text-align:center" id="th-delete">${IS_ADMIN?'🗑':''}</th>`;
+
+  function buildRows(rows,sectionId,sectionLabel,sectionStyle){
+    if(!rows.length) return '';
+    let html=`<tr id="${sectionId}"><td colspan="9" style="padding:10px 16px 6px;${sectionStyle}">
+      <span style="font-size:12px;font-weight:700">${sectionLabel}</span></td></tr>`;
+    rows.forEach((r,i)=>{
+      const idx=sectionId+'-'+i;
+      const _ec=DESC_EDITS[r.comp+'_condicion']||'';
+      const _cf=_ec||r.condicion||'';
+      const _vf=_cf?(calcVtoFromCondicion(r.emision,_cf)||r.vto):r.vto;
+      const _mf=_vf?calcMora(_vf):r.mora;
+      const urls=buildPdfUrl(r.comp,r.code);
+      const href=urls.withCode||urls.withoutCode;
+      const delBtn=IS_ADMIN?`<button onclick="deleteComp('${r.comp.replace(/'/g,"\\'")}') " style="background:var(--red-dim);color:var(--red-text);border:1px solid #fca5a5;border-radius:6px;padding:3px 8px;font-size:11px;cursor:pointer;font-family:var(--font)">Eliminar</button>`:'';
+      html+=`<tr>
+        <td class="comp-code" style="white-space:nowrap">
+          <div style="display:flex;align-items:center;gap:6px">
+            <span>${r.comp}</span>
+            <button data-toggle-desc="${idx}" onclick="toggleDesc('${idx}')" style="width:18px;height:18px;border-radius:50%;border:1px solid var(--border2);background:var(--surface2);color:var(--text2);font-size:11px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;padding:0" title="Ver detalle">+</button>
+          </div>
+        </td>
+        <td><div class="client-name">${r.name}</div><div class="client-code">${r.code}</div></td>
+        <td class="fecha" style="white-space:nowrap">${fmtDate(r.emision)}</td>
+        <td class="condicion">${_cf||'—'}</td>
+        <td class="fecha" style="white-space:nowrap">${fmtDate(_vf)}</td>
+        <td style="text-align:right"><span class="monto">${fmt(r.monto)}</span></td>
+        <td style="text-align:center">${moraBadgeHtml(_mf)}</td>
+        <td style="text-align:center"><a href="${href}" target="_blank" class="pdf-btn">📄 Abrir PDF</a></td>
+        <td style="text-align:center">${delBtn}</td>
+      </tr>
+      <tr id="desc-row-${idx}" style="display:none">
+        <td colspan="9" style="padding:0;border-bottom:2px solid var(--border)">
+          <div style="padding:12px 16px 14px 40px;background:#f8faff;border-left:3px solid var(--navy-300)">
+            ${buildDescContent(r,idx)}
+          </div>
+        </td>
+      </tr>`;
+    });
+    return html;
+  }
+
+  document.getElementById('tbody').innerHTML=[
+    buildRows(vencidas,  'sec-revision','⚠️ Vencidas — '+vencidas.length+' factura'+(vencidas.length!==1?'s':''),'background:var(--red-dim);border-bottom:2px solid #fca5a5'),
+    buildRows(proximas,  'sec-proximas','🟡 Próximas a vencer — '+proximas.length+' factura'+(proximas.length!==1?'s':''),'background:var(--amber-dim);border-bottom:2px solid #fde68a'),
+    buildRows(sinVencer, 'sec-aldia','✅ Al día — '+sinVencer.length+' factura'+(sinVencer.length!==1?'s':''),'background:var(--green-dim);border-bottom:2px solid #6ee7b7'),
+  ].join('')||`<tr><td colspan="9" class="empty">No tenés comprobantes asignados.</td></tr>`;
+}
+
+// ══════════════════════════════════════════════════════════════
+//  RENDER — LISTADO DE CLIENTES
+// ══════════════════════════════════════════════════════════════
+
+function renderClientes(){
+  document.getElementById('kpi-grid').innerHTML='';
+  document.getElementById('filter-row').style.display='none';
+  document.getElementById('alert-banner').style.display='none';
+  document.getElementById('dashboard-panel').style.display='none';
+  document.getElementById('main-table-card').style.display='';
+  document.querySelector('thead').style.display='';
+
+  const searchQ=(document.getElementById('search')?.value||'').toLowerCase();
+  const effectiveData=getEffectiveData();
+  const clientCondMap={};
+  effectiveData.forEach(r=>{
+    if(!r.condicion) return;
+    if(!clientCondMap[r.name]) clientCondMap[r.name]=new Set();
+    const c=r.condicion.replace(/^\d+\s*/,'').trim();
+    if(c) clientCondMap[r.name].add(c);
+  });
+
+  const clientsWithDebt=new Set(RAW_DATA.map(r=>r.name));
+  const allClients=Object.keys(CLIENT_EXEC_MAP)
+    .filter(name=>clientsWithDebt.has(name))
+    .map(name=>({name,exec:getExecForClient(name),unassigned:getExecForClient(name).name==='Sin asignar'}))
+    .sort((a,b)=>{
+      if(a.unassigned&&!b.unassigned) return -1;
+      if(!a.unassigned&&b.unassigned) return 1;
+      return a.exec.name.localeCompare(b.exec.name)||a.name.localeCompare(b.name);
+    });
+
+  const filtered=allClients.filter(c=>
+    !searchQ||c.name.toLowerCase().includes(searchQ)||c.exec.name.toLowerCase().includes(searchQ));
+  const unassignedCount=allClients.filter(c=>c.unassigned).length;
+
+  document.getElementById('count-label').textContent=`Clientes con deuda activa: ${filtered.length}${unassignedCount>0?' · '+unassignedCount+' sin asignar':''}`;
+  const eb=document.getElementById('btn-export-view');
+  if(eb){ eb.style.display='inline-flex'; eb.onclick=exportClientList; }
+
+  const alertEl=document.getElementById('alert-banner');
+  if(unassignedCount>0){
+    alertEl.style.display='flex';
+    document.getElementById('alert-text').innerHTML=`<strong>${unassignedCount} cliente${unassignedCount>1?'s':''} sin ejecutivo asignado.</strong>`;
+  } else { alertEl.style.display='none'; }
+
+  document.getElementById('thead-row').innerHTML=`
+    <th>Cliente</th>
+    <th>Ejecutivo asignado</th>
+    <th>Condición habitual</th>
+    <th style="text-align:center">Cambiar ejecutivo</th>`;
+
+  const execOptions=getAllExecs().map(e=>`<option value="${e}">${e}</option>`).join('');
+  document.getElementById('tbody').innerHTML=filtered.map(c=>{
+    const conds=clientCondMap[c.name];
+    const condHtml=(conds&&conds.size)
+      ? [...conds].map(cond=>`<span style="font-size:11px;color:#475569;background:#f1f5f9;padding:2px 8px;border-radius:20px;display:inline-block;margin:1px 2px">${cond}</span>`).join('')
+      : '<span style="font-size:11px;color:var(--muted);font-style:italic">—</span>';
+    return `<tr style="${c.unassigned?'background:#fff8f0;':''}">
+      <td style="font-weight:500">${c.name}</td>
+      <td>${c.unassigned
+        ? '<span style="font-size:12px;font-weight:600;color:#d97706;background:#fef3c7;padding:3px 10px;border-radius:20px;border:1px solid #fde68a">⚠ Sin asignar</span>'
+        : `<span class="exec-tag" style="background:${c.exec.bg};color:${c.exec.color}"><span class="exec-dot" style="background:${c.exec.color}"></span>${c.exec.name}</span>`
+      }</td>
+      <td>${condHtml}</td>
+      <td style="text-align:center">
+        <select onchange="changeExec('${c.name.replace(/'/g,"\\'")}',this.value)"
+          style="border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:12px;background:var(--surface);color:var(--text);font-family:var(--font);cursor:pointer">
+          <option value="">— cambiar —</option>${execOptions}
+        </select>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function changeExec(clientName,newExec){
+  if(!newExec) return;
+  EXEC_OVERRIDES[clientName]=newExec; saveOverrides(EXEC_OVERRIDES);
+  RAW_DATA.forEach(r=>{ if(r.name===clientName) r.exec=getExecForClient(clientName); });
+  renderClientes(); initExecNav();
+}
+
+function exportClientList(){
+  const eff=getEffectiveData();
+  const condMap={};
+  eff.forEach(r=>{
+    if(!r.condicion) return;
+    if(!condMap[r.name]) condMap[r.name]=new Set();
+    condMap[r.name].add(r.condicion.replace(/^\d+\s*/,'').trim());
+  });
+  const rows=[['Cliente','Ejecutivo','Condición habitual']];
+  const debt=new Set(RAW_DATA.map(r=>r.name));
+  Object.keys(CLIENT_EXEC_MAP).filter(n=>debt.has(n)).sort().forEach(n=>{
+    rows.push([n,getExecForClient(n).name,condMap[n]?[...condMap[n]].join(' / '):'—']);
+  });
+  const ws=XLSX.utils.aoa_to_sheet(rows); ws['!cols']=[{wch:35},{wch:22},{wch:30}];
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'Clientes');
+  XLSX.writeFile(wb,`Clientes_${new Date().toLocaleDateString('es-AR').replace(/\//g,'-')}.xlsx`);
+}
+
+// ══════════════════════════════════════════════════════════════
+//  RENDER — DASHBOARD
+// ══════════════════════════════════════════════════════════════
+
+function renderDashboard(){
+  const DATA=getEffectiveData();
+  document.getElementById('kpi-grid').innerHTML='';
+  document.getElementById('filter-row').style.display='none';
+  document.getElementById('alert-banner').style.display='none';
+  document.getElementById('dashboard-panel').style.display='block';
+  document.getElementById('main-table-card').style.display='none';
+  document.querySelector('thead').style.display='none';
+  document.getElementById('count-label').textContent='';
+  const eb=document.getElementById('btn-export-view'); if(eb) eb.style.display='none';
+
+  if(!DATA.length){
+    document.getElementById('dashboard-panel').innerHTML=`
+      <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:80px 20px;text-align:center">
+        <div style="font-size:48px;margin-bottom:20px">📂</div>
+        <div style="font-size:18px;font-weight:600;color:var(--text);margin-bottom:8px">Bienvenido al panel de cobranzas</div>
+        <div style="font-size:13px;color:var(--muted);margin-bottom:24px;max-width:400px">Cargá el reporte XML del sistema para ver el dashboard con todos los indicadores de tu cartera</div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center">
+          <button onclick="document.getElementById('file-excel').click()" style="padding:11px 28px;border-radius:8px;border:none;background:var(--navy-500);color:#fff;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--font)">
+            📊 Cargar Excel cobranzas
+          </button>
+          <button onclick="document.getElementById('file-update').click()" style="padding:11px 28px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:14px;font-weight:600;cursor:pointer;font-family:var(--font)">
+            📄 Cargar XML cobranzas
+          </button>
+          <button onclick="document.getElementById('file-desc').click()" style="padding:11px 28px;border-radius:8px;border:none;background:#0d9488;color:#fff;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--font)">
+            📤 Cargar XML descripciones
+          </button>
+        </div>
+      </div>`;
+    return;
+  }
+
+  const allVenc=DATA.filter(r=>r.vencida);
+  const proximas7=DATA.filter(r=>r.proxima7);
+  const totalVencido=allVenc.reduce((s,r)=>s+r.monto,0);
+  const totalProx7=proximas7.reduce((s,r)=>s+r.monto,0);
+  const totalSinVenc=DATA.filter(r=>!r.vencida&&!r.proxima7).reduce((s,r)=>s+r.monto,0);
+  const totalCartera=DATA.reduce((s,r)=>s+r.monto,0);
+  const moraPromGlobal=allVenc.length?Math.round(allVenc.reduce((s,r)=>s+r.mora,0)/allVenc.length):0;
+  const pctMora=totalCartera>0?Math.round(totalVencido/totalCartera*100):0;
+
+  const byClient={};
+  allVenc.forEach(r=>{
+    if(!byClient[r.name]) byClient[r.name]={monto:0,facturas:0,moraTotal:0,exec:r.exec.name};
+    byClient[r.name].monto+=r.monto; byClient[r.name].facturas+=1; byClient[r.name].moraTotal+=r.mora;
+  });
+  const clientList=Object.entries(byClient)
+    .map(([name,d])=>({name,exec:d.exec,monto:d.monto,facturas:d.facturas,moraProm:Math.round(d.moraTotal/d.facturas),pct:totalVencido>0?Math.round(d.monto/totalVencido*100):0}))
+    .sort((a,b)=>b.monto-a.monto);
+
+  const byExec={};
+  allVenc.forEach(r=>{
+    const n=r.exec.name;
+    if(!byExec[n]) byExec[n]={monto:0,facturas:0,moraTotal:0,color:r.exec.color,bg:r.exec.bg};
+    byExec[n].monto+=r.monto; byExec[n].facturas+=1; byExec[n].moraTotal+=r.mora;
+  });
+  const execList=Object.entries(byExec)
+    .map(([name,d])=>({name,monto:d.monto,facturas:d.facturas,moraProm:Math.round(d.moraTotal/d.facturas),pct:totalVencido>0?Math.round(d.monto/totalVencido*100):0,color:d.color,bg:d.bg}))
+    .sort((a,b)=>b.monto-a.monto);
+
+  const BAR_COLORS=['#2554a0','#dc2626','#059669','#d97706','#7c3aed','#0891b2','#9d174d','#65a30d','#ea580c','#0f766e'];
+  const clientesConMora=new Set(allVenc.map(r=>r.name));
+  const clientesAlDia=[...new Set(DATA.filter(r=>!r.vencida).map(r=>r.name))].filter(n=>!clientesConMora.has(n)).sort();
+  const cobrados=HISTORIAL.filter(r=>r.mora!==undefined&&r.mora>0);
+  const avgCobro=cobrados.length?Math.round(cobrados.reduce((s,r)=>s+(r.mora||0),0)/cobrados.length):null;
+
+  const rowHtml=(c,i)=>`
+    <div style="margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:3px">
+        <span style="font-size:12px;font-weight:600;color:#1d4170;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1" title="${c.name}">${c.name}</span>
+        <span style="display:flex;align-items:center;gap:5px;flex-shrink:0">
+          <span style="font-size:12px;font-weight:700;color:#0f172a;font-family:var(--mono);min-width:120px;text-align:right">${fmt(c.monto)}</span>
+          <span style="font-size:10px;font-weight:600;padding:1px 6px;border-radius:20px;background:${BAR_COLORS[i%BAR_COLORS.length]}15;border:1px solid ${BAR_COLORS[i%BAR_COLORS.length]}35;color:${BAR_COLORS[i%BAR_COLORS.length]};font-family:var(--mono);min-width:36px;text-align:center">${c.pct}%</span>
+          <span style="font-size:10px;font-weight:600;padding:1px 6px;border-radius:20px;background:#fef3c7;border:1px solid #fde68a;color:#92400e;font-family:var(--mono);min-width:36px;text-align:center">${c.moraProm}d</span>
+        </span>
+      </div>
+      <div style="height:4px;background:#eef2fa;border-radius:3px;overflow:hidden">
+        <div style="height:100%;width:${c.pct}%;background:${BAR_COLORS[i%BAR_COLORS.length]};border-radius:3px"></div>
+      </div>
+    </div>`;
+
+  const top10=clientList.slice(0,10);
+  const rest=clientList.slice(10);
+  const restMonto=rest.reduce((s,c)=>s+c.monto,0);
+
+  function buildPie(items,total,size=150){
+    if(!items.length) return '';
+    let angle=-Math.PI/2;
+    const cx=size/2,cy=size/2,r=size/2-4;
+    let slices='';
+    items.forEach(item=>{
+      const slice=(item.monto/total)*Math.PI*2;
+      const x1=cx+r*Math.cos(angle),y1=cy+r*Math.sin(angle);
+      angle+=slice;
+      const x2=cx+r*Math.cos(angle),y2=cy+r*Math.sin(angle);
+      const large=slice>Math.PI?1:0;
+      slices+=`<path d="M${cx},${cy} L${x1.toFixed(1)},${y1.toFixed(1)} A${r},${r} 0 ${large},1 ${x2.toFixed(1)},${y2.toFixed(1)} Z" fill="${item.color}" stroke="#fff" stroke-width="2"/>`;
+    });
+    return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">${slices}</svg>`;
+  }
+
+  document.getElementById('dashboard-panel').innerHTML=`
+    <!-- Import / Export bar -->
+    <div style="display:flex;align-items:center;gap:12px;padding:14px 18px;background:#fff;border:1px solid var(--border2);border-radius:10px;box-shadow:var(--shadow);margin-bottom:16px">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:600;color:var(--text)">Actualizar datos</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:1px">Cargá el XML del sistema — detecta cobros automáticamente</div>
+      </div>
+      <button onclick="document.getElementById('file-excel').click()" style="flex-shrink:0;display:inline-flex;align-items:center;gap:7px;padding:8px 18px;border-radius:8px;font-size:13px;font-weight:600;border:none;background:var(--navy-500);color:#fff;cursor:pointer;font-family:var(--font)">📊 Cargar Excel</button>
+      <button onclick="document.getElementById('file-update').click()" style="flex-shrink:0;display:inline-flex;align-items:center;gap:7px;padding:8px 18px;border-radius:8px;font-size:13px;font-weight:600;border:1px solid var(--border);background:var(--surface2);color:var(--text);cursor:pointer;font-family:var(--font)">📄 Cargar XML</button>
+      <button onclick="document.getElementById('file-desc').click()" style="flex-shrink:0;display:inline-flex;align-items:center;gap:7px;padding:8px 18px;border-radius:8px;font-size:13px;font-weight:600;border:none;background:#0d9488;color:#fff;cursor:pointer;font-family:var(--font)">📤 XML descripciones</button>
+      <button onclick="exportDashboard()" style="flex-shrink:0;display:inline-flex;align-items:center;gap:7px;padding:8px 18px;border-radius:8px;font-size:13px;font-weight:600;border:none;background:#059669;color:#fff;cursor:pointer;font-family:var(--font)">↓ Exportar Excel</button>
+    </div>
+
+    <!-- KPIs grandes -->
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:16px">
+      <div style="background:#fff;border:1px solid #dde3f0;border-radius:12px;padding:22px 24px;box-shadow:var(--shadow);border-left:5px solid #dc2626">
+        <div style="font-size:10px;font-weight:700;color:#7a8fbb;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">💸 Total vencido</div>
+        <div style="font-size:28px;font-weight:800;color:#dc2626;font-family:var(--mono);line-height:1;margin-bottom:6px">${fmt(totalVencido)}</div>
+        <div style="font-size:12px;color:#7a8fbb">${allVenc.length} factura${allVenc.length!==1?'s':''} · ${clientList.length} cliente${clientList.length!==1?'s':''}</div>
+      </div>
+      <div style="background:#fff;border:1px solid #dde3f0;border-radius:12px;padding:22px 24px;box-shadow:var(--shadow);border-left:5px solid #d97706">
+        <div style="font-size:10px;font-weight:700;color:#7a8fbb;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">⏳ Vence en 7 días</div>
+        <div style="font-size:28px;font-weight:800;color:#d97706;font-family:var(--mono);line-height:1;margin-bottom:6px">${fmt(totalProx7)}</div>
+        <div style="font-size:12px;color:#7a8fbb">${proximas7.length} factura${proximas7.length!==1?'s':''} próximas a vencer</div>
+      </div>
+      <div style="background:#fff;border:1px solid #dde3f0;border-radius:12px;padding:22px 24px;box-shadow:var(--shadow);border-left:5px solid #059669">
+        <div style="font-size:10px;font-weight:700;color:#7a8fbb;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">✅ Sin vencer</div>
+        <div style="font-size:28px;font-weight:800;color:#059669;font-family:var(--mono);line-height:1;margin-bottom:6px">${fmt(totalSinVenc)}</div>
+        <div style="font-size:12px;color:#7a8fbb">${DATA.filter(r=>!r.vencida&&!r.proxima7).length} facturas al día</div>
+      </div>
+    </div>
+
+    <!-- Métricas slim -->
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px">
+      <div style="background:#fff;border:1px solid #dde3f0;border-radius:8px;padding:10px 16px;box-shadow:var(--shadow);display:flex;align-items:center;gap:14px">
+        <div style="font-size:22px">📊</div>
+        <div style="flex:1">
+          <div style="font-size:9px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.8px">Cartera en mora</div>
+          <div style="height:4px;background:#eef2fa;border-radius:3px;margin-top:5px;overflow:hidden"><div style="height:100%;width:${Math.min(pctMora,100)}%;background:#7c3aed;border-radius:3px"></div></div>
+        </div>
+        <div style="font-size:22px;font-weight:800;color:#7c3aed;font-family:var(--mono)">${pctMora}%</div>
+      </div>
+      <div style="background:#fff;border:1px solid #dde3f0;border-radius:8px;padding:10px 16px;box-shadow:var(--shadow);display:flex;align-items:center;gap:14px">
+        <div style="font-size:22px">⏱</div>
+        <div style="flex:1">
+          <div style="font-size:9px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.8px">Mora promedio</div>
+          <div style="font-size:10px;color:#c4d0ea;margin-top:3px">sobre ${allVenc.length} facturas</div>
+        </div>
+        <div style="font-size:22px;font-weight:800;color:#d97706;font-family:var(--mono)">${moraPromGlobal}d</div>
+      </div>
+      <div style="background:#fff;border:1px solid #dde3f0;border-radius:8px;padding:10px 16px;box-shadow:var(--shadow);display:flex;align-items:center;gap:14px">
+        <div style="font-size:22px">💰</div>
+        <div style="flex:1">
+          <div style="font-size:9px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.8px">Prom. cobro histórico</div>
+          <div style="font-size:10px;color:#c4d0ea;margin-top:3px">${avgCobro!==null?cobrados.length+' cobros registrados':'sin cobros aún'}</div>
+        </div>
+        <div style="font-size:22px;font-weight:800;color:${avgCobro!==null?'#0284c7':'#c4d0ea'};font-family:var(--mono)">${avgCobro!==null?avgCobro+'d':'—'}</div>
+      </div>
+    </div>
+
+    <!-- Clientes + Torta ejecutivos -->
+    <div style="display:grid;grid-template-columns:3fr 2fr;gap:14px;margin-bottom:16px">
+      <div style="background:#fff;border:1px solid #dde3f0;border-radius:10px;padding:20px;box-shadow:var(--shadow)">
+        <div style="font-size:10px;font-weight:700;color:#7a8fbb;text-transform:uppercase;letter-spacing:1px;margin-bottom:14px">Deuda por cliente</div>
+        ${clientList.length===0
+          ? '<div style="text-align:center;color:#7a8fbb;font-size:13px;padding:20px">Sin facturas vencidas</div>'
+          : top10.map((c,i)=>rowHtml(c,i)).join('')+
+            (rest.length>0?`
+              <div id="dash-clients-extra" style="display:none">${rest.map((c,i)=>rowHtml(c,i+10)).join('')}</div>
+              <button onclick="const el=document.getElementById('dash-clients-extra'),btn=this;if(el.style.display==='none'){el.style.display='block';btn.textContent='▲ Ver menos'}else{el.style.display='none';btn.textContent='▼ Ver ${rest.length} clientes más (${fmt(restMonto)})'}"
+                style="width:100%;margin-top:4px;padding:7px;border-radius:8px;border:1px dashed #c4d0ea;background:#f8faff;color:#2554a0;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font)">
+                ▼ Ver ${rest.length} clientes más (${fmt(restMonto)})
+              </button>`:'')
+        }
+      </div>
+      <div style="background:#fff;border:1px solid #dde3f0;border-radius:10px;padding:20px;box-shadow:var(--shadow)">
+        <div style="font-size:10px;font-weight:700;color:#7a8fbb;text-transform:uppercase;letter-spacing:1px;margin-bottom:16px">Distribución por ejecutivo</div>
+        <div style="display:flex;align-items:center;justify-content:center;margin-bottom:16px">${buildPie(execList,totalVencido,150)}</div>
+        <div style="display:flex;flex-direction:column;gap:7px">
+          ${execList.map(e=>`
+            <div style="display:flex;align-items:center;gap:8px">
+              <span style="width:10px;height:10px;border-radius:3px;background:${e.color};flex-shrink:0"></span>
+              <span style="font-size:11px;color:#1e293b;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${e.name}</span>
+              <span style="font-size:11px;font-weight:600;color:#1e293b;font-family:var(--mono)">${fmt(e.monto)}</span>
+              <span style="font-size:10px;font-weight:700;padding:1px 5px;border-radius:20px;background:${e.color}15;border:1px solid ${e.color}35;color:${e.color};font-family:var(--mono)">${e.pct}%</span>
+            </div>`).join('')}
+        </div>
+      </div>
+    </div>
+
+    <!-- Distribución mora + Clientes al día -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+      <div style="background:#fff;border:1px solid #dde3f0;border-radius:10px;padding:18px 20px;box-shadow:var(--shadow)">
+        <div style="font-size:10px;font-weight:700;color:#7a8fbb;text-transform:uppercase;letter-spacing:1px;margin-bottom:12px">Distribución de mora</div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">
+          ${[
+            {label:'1–7d',   color:'#d97706',bg:'#fef3c7',items:allVenc.filter(r=>r.mora>=1&&r.mora<=7)},
+            {label:'8–15d',  color:'#ea580c',bg:'#ffedd5',items:allVenc.filter(r=>r.mora>7&&r.mora<=15)},
+            {label:'16–30d', color:'#dc2626',bg:'#fee2e2',items:allVenc.filter(r=>r.mora>15&&r.mora<=30)},
+            {label:'+30d',   color:'#7c3aed',bg:'#ede9fe',items:allVenc.filter(r=>r.mora>30)},
+          ].map(b=>`
+            <div style="background:${b.bg};border:1px solid ${b.color}30;border-radius:8px;padding:11px 12px">
+              <div style="font-size:10px;font-weight:700;color:${b.color};margin-bottom:5px">${b.label}</div>
+              <div style="font-size:22px;font-weight:700;color:${b.color};font-family:var(--mono);line-height:1">${b.items.length}</div>
+              <div style="font-size:10px;font-weight:600;color:#64748b;margin-top:4px;font-family:var(--mono)">${fmt(b.items.reduce((s,r)=>s+r.monto,0))}</div>
+            </div>`).join('')}
+        </div>
+      </div>
+      <div style="background:#fff;border:1px solid #dde3f0;border-radius:10px;padding:18px 20px;box-shadow:var(--shadow)">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+          <div style="font-size:10px;font-weight:700;color:#7a8fbb;text-transform:uppercase;letter-spacing:1px">✅ Clientes al día</div>
+          <span style="font-size:10px;font-weight:700;padding:1px 8px;border-radius:20px;background:#d1fae5;color:#065f46">${clientesAlDia.length}</span>
+        </div>
+        ${clientesAlDia.length===0
+          ? '<div style="font-size:12px;color:#7a8fbb">Todos los clientes tienen deuda vencida.</div>'
+          : `<div style="display:flex;flex-wrap:wrap;gap:5px;max-height:180px;overflow-y:auto">
+              ${clientesAlDia.map(n=>`<span style="font-size:11px;padding:3px 10px;border-radius:20px;background:#f0fdf4;border:1px solid #bbf7d0;color:#065f46;white-space:nowrap">${n}</span>`).join('')}
+            </div>`}
+      </div>
+    </div>`;
+}
+
+// ══════════════════════════════════════════════════════════════
+//  EXPORTAR EXCEL — tabla actual y dashboard
+// ══════════════════════════════════════════════════════════════
+
+function exportCurrentView(){
+  if(currentView==='clientes'){ exportClientList(); return; }
+  const filtered=getFiltered();
+  if(!filtered.length){ showToast('No hay datos para exportar'); return; }
+  const rows=[['Comprobante','Cliente','Ejecutivo','Emisión','Condición','Vencimiento','Monto','Mora (días)','Estado','Descripción','CC','Tipo','Período','Nota']];
+  filtered.forEach(r=>{
+    const _ec=DESC_EDITS[r.comp+'_condicion']||'';
+    const _cf=_ec||r.condicion||'';
+    const _vf=_cf?(calcVtoFromCondicion(r.emision,_cf)||r.vto):r.vto;
+    const _mf=_vf?calcMora(_vf):r.mora;
+    const estado=_mf<=0?'Sin vencer':_mf<=7?'Recién vencida':_mf<=15?'Atención':_mf<=30?'Crítica':'Urgente';
+    const xmlD=DESC_MAP[r.comp];
+    rows.push([r.comp,r.name,r.exec.name,r.emision,_cf,_vf,r.monto,_mf,estado,
+      DESC_EDITS[r.comp+'_desc']||xmlD?.item||'',
+      DESC_EDITS[r.comp+'_cc']  ||xmlD?.cc  ||'',
+      DESC_EDITS[r.comp+'_tipo']||xmlD?.tipo ||'',
+      PERIOD_EDITS[r.comp]||'',DESC_EDITS[r.comp]||'']);
+  });
+  const ws=XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols']=[{wch:24},{wch:30},{wch:20},{wch:12},{wch:22},{wch:12},{wch:15},{wch:10},{wch:16},{wch:35},{wch:20},{wch:22},{wch:15},{wch:25}];
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'Comprobantes');
+  XLSX.writeFile(wb,`Cobranzas_${new Date().toLocaleDateString('es-AR').replace(/\//g,'-')}.xlsx`);
+}
+
+function exportDashboard(){
+  const DATA=getData();
+  const allVenc=DATA.filter(r=>r.vencida);
+  const totalVencido=allVenc.reduce((s,r)=>s+r.monto,0);
+  const wb=XLSX.utils.book_new();
+  const today=new Date().toLocaleDateString('es-AR');
+  const wsRes=XLSX.utils.aoa_to_sheet([
+    ['Dashboard Cobranzas — ASAP Consulting'],['Generado el',today],[],
+    ['Total vencido',totalVencido],['Facturas en mora',allVenc.length],
+    ['Mora promedio',allVenc.length?Math.round(allVenc.reduce((s,r)=>s+r.mora,0)/allVenc.length):0],
+    ['Total cartera',DATA.reduce((s,r)=>s+r.monto,0)],
+  ]);
+  XLSX.utils.book_append_sheet(wb,wsRes,'Resumen');
+  const wsD=XLSX.utils.aoa_to_sheet([
+    ['Comprobante','Cliente','Ejecutivo','Emisión','Vencimiento','Condición','Monto','Días mora'],
+    ...allVenc.map(r=>[r.comp,r.name,r.exec.name,r.emision,r.vto,r.condicion,r.monto,r.mora]),
+  ]);
+  XLSX.utils.book_append_sheet(wb,wsD,'Detalle facturas');
+  XLSX.writeFile(wb,`Cobranzas_ASAP_${today.replace(/\//g,'-')}.xlsx`);
+}
+
+// ══════════════════════════════════════════════════════════════
+//  INICIALIZACIÓN
+// ══════════════════════════════════════════════════════════════
+
+try {
+  const fd=document.getElementById('footer-date');
+  if(fd) fd.textContent=new Date().toLocaleDateString('es-AR');
+
+  // Arrancar en Dashboard
+  currentView='dashboard';
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  const navDash=document.getElementById('nav-dashboard');
+  if(navDash) navDash.classList.add('active');
+  document.getElementById('view-title').textContent='Dashboard ejecutivo';
+
+  // Render inicial (estado vacío)
+  initExecNav(); populateFilterDropdowns(); render();
+
+  // Cargar datos desde Supabase (asíncrono — re-renderiza al terminar)
+  loadFromSupabase().then(loaded=>{
+    if(loaded){
+      initExecNav(); populateFilterDropdowns(); render();
+    }
+  });
+
+} catch(e){
+  console.error('Init error:', e);
+  document.body.innerHTML='<div style="padding:2rem;font-family:sans-serif;color:#dc2626">Error al iniciar la app: '+e.message+'</div>';
+}
+</script>
+</body>
+</html>
