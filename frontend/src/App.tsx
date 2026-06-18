@@ -531,7 +531,7 @@ function AppInterna() {
 
         {(errorCarga || errorComprobantes || errorHistorial) && (
           <div style={{ background: '#fee2e2', border: '1px solid #fca5a5', borderRadius: '8px', padding: '10px 16px', marginBottom: '14px', fontSize: '13px', color: '#dc2626', fontWeight: 500 }}>
-            ⚠ {errorCarga || errorComprobantes || errorHistorial}
+            ⚠ {String(errorCarga || errorComprobantes || errorHistorial)}
           </div>
         )}
 

@@ -135,7 +135,10 @@ export function SubirReporte() {
 
       setTimeout(() => { window.location.reload() }, 2500)
     } catch (err: any) {
-      const errorMsg = err?.response?.data?.error || err?.message || 'Error al procesar el archivo.'
+      const raw = err?.response?.data?.error
+      const errorMsg = (typeof raw === 'string' ? raw : raw?.message)
+        || err?.message
+        || 'Error al procesar el archivo.'
       console.error('Error:', err)
       mostrarOverlayError(errorMsg)
       setError(errorMsg)
