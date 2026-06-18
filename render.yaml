@@ -2,18 +2,19 @@ services:
   - type: web
     name: cobranzas-backend
     runtime: node
-    buildCommand: cd backend && npm install && npm run build
-    startCommand: cd backend && npm start
+    root: backend
+    buildCommand: npm install && npm run build
+    startCommand: npm start
     envVars:
       - key: SUPABASE_URL
-        value: https://hnawclmgtopbylubzoos.supabase.co
+        fromDatabase: SUPABASE_URL
       - key: SUPABASE_SERVICE_KEY
-        value: sb_secret_hoUKXjdBKCNMeW-uq65PHA_SQxSiCfy
+        fromDatabase: SUPABASE_SERVICE_KEY
       - key: PORT
         value: 3000
       - key: MAIL_USER
-        value: kamiruberto100@gmail.com
+        fromDatabase: MAIL_USER
       - key: MAIL_PASS
-        value: ypvjknmcssfzhksg
+        fromDatabase: MAIL_PASS
       - key: MAIL_FROM
         value: Cobranzas ASAP <kamiruberto100@gmail.com>
