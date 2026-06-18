@@ -125,16 +125,6 @@ function AppInterna() {
   const criticas     = dataSel.filter(r => r.dias_mora > 60).length
   const carteraTotal = dataSel.reduce((s, r) => s + r.monto, 0)
 
-  const dashboardPorEjecutivo = ejecutivos
-    .map(exec => {
-      const registros = data.filter(r => r.ejecutivo === exec)
-      const vencido   = registros.filter(r => r.dias_mora > 0).reduce((s, r) => s + r.monto, 0)
-      const total     = registros.reduce((s, r) => s + r.monto, 0)
-      const moraMax   = registros.reduce((mx, r) => Math.max(mx, r.dias_mora), 0)
-      return { exec, registros, vencido, total, moraMax }
-    })
-    .sort((a, b) => b.vencido - a.vencido)
-
   // ── mapa de clientes (usado en dashboard y vista clientes) ────────────────
   type ClienteRow = { cliente: string; ejecutivo: string; monto: number; vencido: number; facturas: number; moraMax: number }
   const clientesMap = data.reduce<Map<string, ClienteRow>>((acc, r) => {
@@ -153,10 +143,6 @@ function AppInterna() {
   const sinAsignarClientesCount = Array.from(clientesMap.values())
     .filter(c => c.ejecutivo === 'Sin asignar').length
 
-  const _dashboardPorCliente = Array.from(clientesMap.values())
-    .sort((a, b) => b.vencido - a.vencido)
-    .slice(0, 8)
-
   const clientesFiltrados = Array.from(clientesMap.values())
     .filter(c => {
       if (filtroEjecutivoClientes && c.ejecutivo !== filtroEjecutivoClientes) return false
@@ -166,13 +152,6 @@ function AppInterna() {
       return true
     })
     .sort((a, b) => b.vencido - a.vencido)
-
-  const _rangosMora = [
-    { label: 'Sin vencer', total: data.filter(r => r.dias_mora <= 0).reduce((s, r) => s + r.monto, 0), color: '#059669' },
-    { label: '1-30 días',  total: data.filter(r => r.dias_mora >= 1 && r.dias_mora <= 30).reduce((s, r) => s + r.monto, 0), color: '#2563eb' },
-    { label: '31-60 días', total: data.filter(r => r.dias_mora > 30 && r.dias_mora <= 60).reduce((s, r) => s + r.monto, 0), color: '#d97706' },
-    { label: '+60 días',   total: data.filter(r => r.dias_mora > 60).reduce((s, r) => s + r.monto, 0), color: '#dc2626' },
-  ]
 
   // ── métricas adicionales para nuevo dashboard ─────────────────────────────
   const hoyDate = new Date(); hoyDate.setHours(0,0,0,0)
@@ -184,7 +163,6 @@ function AppInterna() {
   })
   const totalProxAVencer = proxAVencer.reduce((s, r) => s + r.monto, 0)
   const totalSinVencer   = dataSel.filter(r => r.dias_mora <= 0).reduce((s, r) => s + r.monto, 0)
-  const clientesConMora  = new Set(dataSel.filter(r => r.dias_mora > 0).map(r => r.nombre_cliente)).size
   const porcentajeMora   = carteraTotal > 0 ? Math.round((totalVencido / carteraTotal) * 100) : 0
   const vencidasArr      = dataSel.filter(r => r.dias_mora > 0)
   const moraPromedio     = vencidasArr.length > 0
