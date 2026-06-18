@@ -1,8 +1,6 @@
 import { useRef, useState } from 'react'
 import axios from 'axios'
 
-const API_URL = import.meta.env.VITE_API_URL || ''
-
 function mostrarOverlay(mensaje: string, submensaje: string) {
   eliminarOverlay()
   const overlay = document.createElement('div')
@@ -129,7 +127,7 @@ export function SubirReporte() {
     formData.append('usuario', 'usuario@asap.com')
 
     try {
-      const { data } = await axios.post(`${API_URL}/api/reportes/subir`, formData, {
+      const { data } = await axios.post('/api/reportes/subir', formData, {
         timeout: 600000
       })
 
