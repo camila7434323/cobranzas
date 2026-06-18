@@ -20,8 +20,10 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_KEY!
 )
 
-// POST /api/reportes/subir
-app.post('/api/reportes/subir', upload.single('archivo'), async (req, res) => {
+const paths = (p: string) => [p, `/api${p}`]
+
+// POST /reportes/subir
+app.post(paths('/reportes/subir'), upload.single('archivo'), async (req, res) => {
   try {
     if (!req.file) { res.status(400).json({ error: 'No se recibió archivo' }); return }
     const resultado = await procesarArchivo(req.file.buffer, req.body.usuario || 'sistema', req.file.originalname)
@@ -32,8 +34,8 @@ app.post('/api/reportes/subir', upload.single('archivo'), async (req, res) => {
   }
 })
 
-// POST /api/reportes/cobros
-app.post('/api/reportes/cobros', upload.single('archivo'), async (req, res) => {
+// POST /reportes/cobros
+app.post(paths('/reportes/cobros'), upload.single('archivo'), async (req, res) => {
   try {
     if (!req.file) { res.status(400).json({ error: 'No se recibió archivo' }); return }
     const resultado = await registrarCobros(req.file.buffer, req.body.usuario || 'sistema')
@@ -43,8 +45,8 @@ app.post('/api/reportes/cobros', upload.single('archivo'), async (req, res) => {
   }
 })
 
-// GET /api/reportes/comprobantes
-app.get('/api/reportes/comprobantes', async (_req, res) => {
+// GET /reportes/comprobantes
+app.get(paths('/reportes/comprobantes'), async (_req, res) => {
   try {
     const { data, error } = await supabase
       .from('comprobantes').select('*').eq('estado', 'pendiente').order('dias_mora', { ascending: false })
@@ -55,8 +57,8 @@ app.get('/api/reportes/comprobantes', async (_req, res) => {
   }
 })
 
-// GET /api/reportes/historial
-app.get('/api/reportes/historial', async (_req, res) => {
+// GET /reportes/historial
+app.get(paths('/reportes/historial'), async (_req, res) => {
   try {
     const { data, error } = await supabase
       .from('historial_cobros').select('*').order('fecha_cobro', { ascending: false }).limit(500)
@@ -67,13 +69,13 @@ app.get('/api/reportes/historial', async (_req, res) => {
   }
 })
 
-// GET /api/health
-app.get('/api/health', (_req, res) => {
+// GET /health
+app.get(paths('/health'), (_req, res) => {
   res.json({ status: 'ok' })
 })
 
-// POST /api/reportes/enviar-alertas
-app.post('/api/reportes/enviar-alertas', async (_req, res) => {
+// POST /reportes/enviar-alertas
+app.post(paths('/reportes/enviar-alertas'), async (_req, res) => {
   try {
     await enviarAlertas()
     res.json({ success: true })
