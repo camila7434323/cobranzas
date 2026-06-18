@@ -12,7 +12,10 @@
       "PowerShell($proc = Get-NetTCPConnection -LocalPort 3001 -State Listen -ErrorAction SilentlyContinue | Select-Object -First 1; if \\($proc\\) { Stop-Process -Id $proc.OwningProcess -Force; Write-Host \"Proceso $\\($proc.OwningProcess\\) terminado\" } else { Write-Host \"No habia proceso en 3001\" })",
       "PowerShell(cd \"C:\\\\Users\\\\Usuario\\\\Desktop\\\\ASAP\\\\Cobranzas\\\\backend\"; Start-Process powershell -ArgumentList \"-NoExit\", \"-Command\", \"cd 'C:\\\\Users\\\\Usuario\\\\Desktop\\\\ASAP\\\\Cobranzas\\\\backend'; npm run dev\" -WindowStyle Normal)",
       "PowerShell(Start-Sleep -Seconds 4; $conn = Get-NetTCPConnection -LocalPort 3001 -State Listen -ErrorAction SilentlyContinue; if \\($conn\\) { Write-Host \"Backend corriendo en puerto 3001 \\(PID $\\($conn.OwningProcess\\)\\)\" } else { Write-Host \"Backend NO esta corriendo\" })",
-      "PowerShell(Get-NetTCPConnection -LocalPort 3001 -State Listen -ErrorAction SilentlyContinue)"
+      "PowerShell(Get-NetTCPConnection -LocalPort 3001 -State Listen -ErrorAction SilentlyContinue)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git push *)"
     ]
   }
 }

@@ -55,7 +55,7 @@ function AppInterna() {
   const { data, loading, error: errorComprobantes, refetch, asignarEjecutivo, updateEjecutivoLocal } = useComprobantes()
   const { data: historial, loading: loadingHistorial, error: errorHistorial, refetch: refetchHistorial } = useHistorial()
   const [vista, setVista] = useState<Vista>('dashboard')
-  const [tableKey, setTableKey] = useState(0)
+  const [tableKey] = useState(0)
   const [busqueda, setBusqueda] = useState('')
   const [ejecutivoSeleccionado, setEjecutivoSeleccionado] = useState<string | null>(null)
   const [sidebarAbierto, setSidebarAbierto] = useState(true)
