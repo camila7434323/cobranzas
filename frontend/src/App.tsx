@@ -55,6 +55,7 @@ function AppInterna() {
   const { data, loading, error: errorComprobantes, refetch, asignarEjecutivo, updateEjecutivoLocal } = useComprobantes()
   const { data: historial, loading: loadingHistorial, error: errorHistorial, refetch: refetchHistorial } = useHistorial()
   const [vista, setVista] = useState<Vista>('dashboard')
+  const [tableKey, setTableKey] = useState(0)
   const [busqueda, setBusqueda] = useState('')
   const [ejecutivoSeleccionado, setEjecutivoSeleccionado] = useState<string | null>(null)
   const [sidebarAbierto, setSidebarAbierto] = useState(true)
@@ -519,8 +520,11 @@ function AppInterna() {
         </div>
 
         <SubirReporte onActualizado={() => {
-          refetch()
-          refetchHistorial()
+          setTimeout(() => {
+            setTableKey(prev => prev + 1)
+            refetch()
+            refetchHistorial()
+          }, 1500)
         }} />
 
         {/* ── DASHBOARD ─────────────────────────────────────────────────── */}
@@ -849,7 +853,7 @@ function AppInterna() {
               ) : filtrados.length === 0 ? (
                 <div style={{ padding: '48px', textAlign: 'center', color: '#7a8fbb' }}>No hay comprobantes para mostrar</div>
               ) : (
-                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <table key={tableKey} style={{ width: '100%', borderCollapse: 'collapse' }}>
                   <thead>
                     <tr style={{ background: '#f8faff', borderBottom: '1px solid #dde3f0' }}>
                       {['Comprobante', 'Cliente', 'Ejecutivo', 'Condición', 'Vencimiento', 'Monto', 'Mora', 'PDF'].map(h => (
