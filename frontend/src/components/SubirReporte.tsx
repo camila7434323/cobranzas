@@ -10,14 +10,14 @@ function mostrarOverlay(mensaje: string, submensaje: string) {
   overlay.innerHTML = `
     <div style="
       position:fixed;top:0;left:0;width:100%;height:100%;
-      background:rgba(0,0,0,0.82);z-index:99999;
+      background:#000;z-index:99999;
       display:flex;align-items:center;justify-content:center;
       font-family:Inter,sans-serif;
     ">
       <div style="
         background:#fff;border-radius:16px;padding:50px 40px;
         text-align:center;max-width:440px;width:90%;
-        box-shadow:0 25px 80px rgba(0,0,0,0.45);
+        box-shadow:0 25px 80px rgba(0,0,0,0.6);
       ">
         <div id="__overlay_spinner__" style="
           width:56px;height:56px;
@@ -41,14 +41,14 @@ function mostrarOverlayExito(nuevos: number, actualizados: number, cobradas: num
   overlay.innerHTML = `
     <div style="
       position:fixed;top:0;left:0;width:100%;height:100%;
-      background:rgba(0,0,0,0.82);z-index:99999;
+      background:#000;z-index:99999;
       display:flex;align-items:center;justify-content:center;
       font-family:Inter,sans-serif;
     ">
       <div style="
         background:#fff;border-radius:16px;padding:50px 40px;
         text-align:center;max-width:440px;width:90%;
-        box-shadow:0 25px 80px rgba(0,0,0,0.45);
+        box-shadow:0 25px 80px rgba(0,0,0,0.6);
       ">
         <div style="font-size:54px;margin-bottom:18px;">✅</div>
         <h2 style="color:#059669;margin:0 0 20px;font-size:22px;font-weight:700;">¡Carga completada!</h2>
@@ -76,14 +76,14 @@ function mostrarOverlayError(mensaje: string) {
   overlay.innerHTML = `
     <div style="
       position:fixed;top:0;left:0;width:100%;height:100%;
-      background:rgba(0,0,0,0.82);z-index:99999;
+      background:#000;z-index:99999;
       display:flex;align-items:center;justify-content:center;
       font-family:Inter,sans-serif;
     ">
       <div style="
         background:#fff;border-radius:16px;padding:50px 40px;
         text-align:center;max-width:440px;width:90%;
-        box-shadow:0 25px 80px rgba(0,0,0,0.45);
+        box-shadow:0 25px 80px rgba(0,0,0,0.6);
       ">
         <div style="font-size:54px;margin-bottom:18px;">❌</div>
         <h2 style="color:#dc2626;margin:0 0 14px;font-size:20px;font-weight:700;">Error al procesar</h2>
