@@ -40,7 +40,7 @@ export function SubirReporte({ onActualizado }: { onActualizado: () => void }) {
         timeout: 600000
       })
       setResultado(data)
-      setTimeout(() => onActualizado(), 500)
+      console.log('✅ Archivo procesado. Recarga la página para ver los cambios.')
     } catch (err: any) {
       const errorMsg = err?.response?.data?.error || err?.message || 'Error al procesar el archivo.'
       setError(errorMsg)
