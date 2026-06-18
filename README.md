@@ -61,18 +61,4 @@ npm run dev
 
 Abrir la URL que muestre Vite, normalmente `http://localhost:5173`.
 
-## 4. Subir para que lo usen otras personas
 
-Opcion simple:
-
-- Backend en Render, Railway o Fly.io.
-- Frontend en Vercel o Netlify.
-- Supabase como base de datos.
-
-En produccion, configurar:
-
-- `SUPABASE_SERVICE_KEY` solo en el backend.
-- `VITE_SUPABASE_ANON_KEY` en el frontend.
-- `VITE_API_URL` apuntando a la URL publica del backend.
-
-Nunca publiques la `service_role key` en el frontend.
