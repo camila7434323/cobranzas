@@ -174,6 +174,54 @@ function AppInterna() {
     { label: '+60 días',   total: data.filter(r => r.dias_mora > 60).reduce((s, r) => s + r.monto, 0), color: '#dc2626' },
   ]
 
+  // ── métricas adicionales para nuevo dashboard ─────────────────────────────
+  const hoyDate = new Date(); hoyDate.setHours(0,0,0,0)
+  const en7dias  = new Date(hoyDate.getTime() + 7 * 86400000)
+  const proxAVencer = dataSel.filter(r => {
+    if (r.dias_mora > 0 || !r.fecha_vencimiento) return false
+    const v = new Date(r.fecha_vencimiento + 'T00:00:00')
+    return v >= hoyDate && v <= en7dias
+  })
+  const totalProxAVencer = proxAVencer.reduce((s, r) => s + r.monto, 0)
+  const totalSinVencer   = dataSel.filter(r => r.dias_mora <= 0).reduce((s, r) => s + r.monto, 0)
+  const clientesConMora  = new Set(dataSel.filter(r => r.dias_mora > 0).map(r => r.nombre_cliente)).size
+  const porcentajeMora   = carteraTotal > 0 ? Math.round((totalVencido / carteraTotal) * 100) : 0
+  const vencidasArr      = dataSel.filter(r => r.dias_mora > 0)
+  const moraPromedio     = vencidasArr.length > 0
+    ? Math.round(vencidasArr.reduce((s, r) => s + r.dias_mora, 0) / vencidasArr.length) : 0
+
+  const PIE_COLORS = ['#7c3aed','#f59e0b','#10b981','#06b6d4','#ec4899','#3b82f6','#f97316','#14b8a6']
+  const pieData = dashboardPorEjecutivo
+    .filter(e => e.total > 0)
+    .map((e, i) => ({ name: e.exec, value: e.total, color: PIE_COLORS[i % PIE_COLORS.length] }))
+
+  function svgPie(items: { value: number; color: string }[], size = 160) {
+    const total = items.reduce((s, d) => s + d.value, 0)
+    if (total === 0) return null
+    const r = size / 2; const cx = r; const cy = r
+    const toXY = (angle: number) => ({
+      x: cx + r * Math.cos((angle - 90) * Math.PI / 180),
+      y: cy + r * Math.sin((angle - 90) * Math.PI / 180),
+    })
+    let cum = 0
+    return (
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+        {items.map((d, i) => {
+          const start = (cum / total) * 360
+          cum += d.value
+          const end = (cum / total) * 360
+          const s = toXY(start); const e = toXY(end < 360 ? end : 359.99)
+          const large = end - start > 180 ? 1 : 0
+          return <path key={i} d={`M${cx} ${cy} L${s.x} ${s.y} A${r} ${r} 0 ${large} 1 ${e.x} ${e.y}Z`} fill={d.color} />
+        })}
+      </svg>
+    )
+  }
+
+  const topClientesDash = Array.from(clientesMap.values())
+    .sort((a, b) => b.monto - a.monto)
+    .slice(0, 12)
+
   // ── historial filtrado ────────────────────────────────────────────────────
   const historialFiltrado = historial.filter(r => {
     if (filtroEjecutivoHistorial && r.ejecutivo !== filtroEjecutivoHistorial) return false
@@ -531,102 +579,129 @@ function AppInterna() {
               </div>
             ) : (
               <>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(220px, 1fr))', gap: '18px', marginBottom: '24px' }}>
-              <div onClick={() => setVista('todos')} style={{ background: '#fff', border: '1px solid #d9e2f1', borderTop: '4px solid #2554a0', borderRadius: '8px', padding: '22px', minHeight: '150px', boxShadow: '0 12px 30px rgba(38,63,101,0.07)', cursor: 'pointer', transition: 'box-shadow 0.15s' }} onMouseEnter={e => (e.currentTarget.style.boxShadow = '0 16px 40px rgba(37,84,160,0.18)')} onMouseLeave={e => (e.currentTarget.style.boxShadow = '0 12px 30px rgba(38,63,101,0.07)')}>
-                <div style={{ fontSize: '10px', fontWeight: 600, color: '#7a8fbb', textTransform: 'uppercase', marginBottom: '6px' }}>Cartera total</div>
-                <div style={{ fontSize: '30px', fontWeight: 800, color: '#163358', lineHeight: 1.1 }}>{fmt(carteraTotal)}</div>
-                <div style={{ fontSize: '11px', color: '#7a8fbb' }}>{data.length} comprobantes activos</div>
+            {/* ── KPI CARDS ── */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '16px' }}>
+              {/* Total vencido */}
+              <div onClick={() => setVista('mora')} style={{ background: '#fff', borderRadius: '12px', padding: '20px 24px', boxShadow: '0 2px 12px rgba(0,0,0,0.07)', cursor: 'pointer', border: '1px solid #f0f0f0', position: 'relative', overflow: 'hidden' }}>
+                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '3px', background: 'linear-gradient(90deg,#dc2626,#f87171)' }} />
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
+                  <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#dc2626', display: 'inline-block' }} />
+                  <span style={{ fontSize: '11px', fontWeight: 700, color: '#dc2626', textTransform: 'uppercase', letterSpacing: '0.8px' }}>Total vencido</span>
+                </div>
+                <div style={{ fontSize: '28px', fontWeight: 800, color: '#dc2626', lineHeight: 1.1, marginBottom: '6px' }}>{fmt(totalVencido)}</div>
+                <div style={{ fontSize: '12px', color: '#7a8fbb' }}>{vencidasArr.length} facturas · {clientesConMora} clientes</div>
               </div>
-              <div onClick={() => setVista('mora')} style={{ background: '#fff', border: '1px solid #d9e2f1', borderTop: '4px solid #dc2626', borderRadius: '8px', padding: '22px', minHeight: '150px', boxShadow: '0 12px 30px rgba(38,63,101,0.07)', cursor: 'pointer', transition: 'box-shadow 0.15s' }} onMouseEnter={e => (e.currentTarget.style.boxShadow = '0 16px 40px rgba(220,38,38,0.18)')} onMouseLeave={e => (e.currentTarget.style.boxShadow = '0 12px 30px rgba(38,63,101,0.07)')}>
-                <div style={{ fontSize: '10px', fontWeight: 600, color: '#7a8fbb', textTransform: 'uppercase', marginBottom: '6px' }}>Total vencido</div>
-                <div style={{ fontSize: '30px', fontWeight: 800, color: '#dc2626', lineHeight: 1.1 }}>{fmt(totalVencido)}</div>
-                <div style={{ fontSize: '11px', color: '#7a8fbb' }}>{data.filter(r => r.dias_mora > 0).length} facturas en mora</div>
+
+              {/* Vence en 7 días */}
+              <div onClick={() => setVista('mora')} style={{ background: '#fff', borderRadius: '12px', padding: '20px 24px', boxShadow: '0 2px 12px rgba(0,0,0,0.07)', cursor: 'pointer', border: '1px solid #f0f0f0', position: 'relative', overflow: 'hidden' }}>
+                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '3px', background: 'linear-gradient(90deg,#f59e0b,#fcd34d)' }} />
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
+                  <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#f59e0b', display: 'inline-block' }} />
+                  <span style={{ fontSize: '11px', fontWeight: 700, color: '#f59e0b', textTransform: 'uppercase', letterSpacing: '0.8px' }}>Vence en 7 días</span>
+                </div>
+                <div style={{ fontSize: '28px', fontWeight: 800, color: '#d97706', lineHeight: 1.1, marginBottom: '6px' }}>{fmt(totalProxAVencer)}</div>
+                <div style={{ fontSize: '12px', color: '#7a8fbb' }}>{proxAVencer.length} facturas próximas a vencer</div>
               </div>
-              <div onClick={() => setVista('mora')} style={{ background: '#fff', border: '1px solid #d9e2f1', borderTop: '4px solid #d97706', borderRadius: '8px', padding: '22px', minHeight: '150px', boxShadow: '0 12px 30px rgba(38,63,101,0.07)', cursor: 'pointer', transition: 'box-shadow 0.15s' }} onMouseEnter={e => (e.currentTarget.style.boxShadow = '0 16px 40px rgba(217,119,6,0.18)')} onMouseLeave={e => (e.currentTarget.style.boxShadow = '0 12px 30px rgba(38,63,101,0.07)')}>
-                <div style={{ fontSize: '10px', fontWeight: 600, color: '#7a8fbb', textTransform: 'uppercase', marginBottom: '6px' }}>Mora máxima</div>
-                <div style={{ fontSize: '30px', fontWeight: 800, color: '#d97706', lineHeight: 1.1 }}>{maxMora.dias}d</div>
-                <div style={{ fontSize: '11px', color: '#7a8fbb', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{maxMora.cliente || '-'}</div>
-              </div>
-              <div onClick={() => setVista('criticas')} style={{ background: '#fff', border: '1px solid #d9e2f1', borderTop: '4px solid #7c3aed', borderRadius: '8px', padding: '22px', minHeight: '150px', boxShadow: '0 12px 30px rgba(38,63,101,0.07)', cursor: 'pointer', transition: 'box-shadow 0.15s' }} onMouseEnter={e => (e.currentTarget.style.boxShadow = '0 16px 40px rgba(124,58,237,0.18)')} onMouseLeave={e => (e.currentTarget.style.boxShadow = '0 12px 30px rgba(38,63,101,0.07)')}>
-                <div style={{ fontSize: '10px', fontWeight: 600, color: '#7a8fbb', textTransform: 'uppercase', marginBottom: '6px' }}>Críticas +60d</div>
-                <div style={{ fontSize: '30px', fontWeight: 800, color: '#7c3aed', lineHeight: 1.1 }}>{criticas}</div>
-                <div style={{ fontSize: '11px', color: '#7a8fbb' }}>Requieren gestión prioritaria</div>
+
+              {/* Sin vencer */}
+              <div onClick={() => setVista('todos')} style={{ background: '#fff', borderRadius: '12px', padding: '20px 24px', boxShadow: '0 2px 12px rgba(0,0,0,0.07)', cursor: 'pointer', border: '1px solid #f0f0f0', position: 'relative', overflow: 'hidden' }}>
+                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '3px', background: 'linear-gradient(90deg,#10b981,#6ee7b7)' }} />
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
+                  <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10b981', display: 'inline-block' }} />
+                  <span style={{ fontSize: '11px', fontWeight: 700, color: '#10b981', textTransform: 'uppercase', letterSpacing: '0.8px' }}>Sin vencer</span>
+                </div>
+                <div style={{ fontSize: '28px', fontWeight: 800, color: '#059669', lineHeight: 1.1, marginBottom: '6px' }}>{fmt(totalSinVencer)}</div>
+                <div style={{ fontSize: '12px', color: '#7a8fbb' }}>{dataSel.filter(r => r.dias_mora <= 0).length} facturas al día</div>
               </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(520px, 1.45fr) minmax(360px, 0.85fr)', gap: '20px', marginBottom: '20px' }}>
-              <div style={{ background: '#fff', border: '1px solid #d9e2f1', borderRadius: '8px', overflow: 'hidden', minHeight: '380px', boxShadow: '0 12px 30px rgba(38,63,101,0.06)' }}>
-                <div style={{ padding: '16px 20px', borderBottom: '1px solid #d9e2f1', background: '#f8faff', fontSize: '14px', fontWeight: 700, color: '#0d1b38' }}>Deuda por ejecutivo</div>
-                <div style={{ padding: '22px 20px' }}>
-                  {dashboardPorEjecutivo.length === 0 ? (
-                    <div style={{ padding: '34px', color: '#7a8fbb', textAlign: 'center' }}>Todavía no hay datos para mostrar</div>
-                  ) : dashboardPorEjecutivo.map(item => {
-                    const ec  = getExecColor(item.exec)
-                    const pct = carteraTotal > 0 ? Math.round((item.total / carteraTotal) * 100) : 0
+            {/* ── STATS BAR ── */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '20px' }}>
+              <div style={{ background: '#fff', borderRadius: '12px', padding: '16px 20px', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', border: '1px solid #f0f0f0' }}>
+                <div style={{ fontSize: '10px', fontWeight: 700, color: '#7a8fbb', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '10px' }}>Cartera en mora</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <div style={{ flex: 1, height: '8px', background: '#f1f5f9', borderRadius: '999px', overflow: 'hidden' }}>
+                    <div style={{ width: `${porcentajeMora}%`, height: '100%', background: porcentajeMora > 30 ? '#dc2626' : '#f59e0b', borderRadius: '999px', transition: 'width 0.5s' }} />
+                  </div>
+                  <span style={{ fontSize: '18px', fontWeight: 800, color: porcentajeMora > 30 ? '#dc2626' : '#d97706', minWidth: '44px', textAlign: 'right' }}>{porcentajeMora}%</span>
+                </div>
+              </div>
+              <div style={{ background: '#fff', borderRadius: '12px', padding: '16px 20px', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', border: '1px solid #f0f0f0' }}>
+                <div style={{ fontSize: '10px', fontWeight: 700, color: '#7a8fbb', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '6px' }}>Mora promedio</div>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
+                  <span style={{ fontSize: '26px', fontWeight: 800, color: '#d97706' }}>{moraPromedio}</span>
+                  <span style={{ fontSize: '13px', color: '#7a8fbb' }}>días</span>
+                </div>
+                <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '2px' }}>sobre {vencidasArr.length} facturas vencidas</div>
+              </div>
+              <div style={{ background: '#fff', borderRadius: '12px', padding: '16px 20px', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', border: '1px solid #f0f0f0' }}>
+                <div style={{ fontSize: '10px', fontWeight: 700, color: '#7a8fbb', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '6px' }}>Promedio de cobro</div>
+                <div style={{ fontSize: '26px', fontWeight: 800, color: '#94a3b8' }}>—</div>
+                <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '2px' }}>sin cobros aún</div>
+              </div>
+            </div>
+
+            {/* ── MAIN GRID ── */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: '20px' }}>
+
+              {/* CLIENTES */}
+              <div style={{ background: '#fff', borderRadius: '12px', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', border: '1px solid #f0f0f0', overflow: 'hidden' }}>
+                <div style={{ padding: '16px 20px', borderBottom: '1px solid #f0f5ff', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span style={{ fontSize: '13px', fontWeight: 700, color: '#0d1b38' }}>Deuda por cliente</span>
+                  <span style={{ fontSize: '11px', color: '#7a8fbb' }}>clic para ver sus facturas</span>
+                </div>
+                <div style={{ padding: '8px 0' }}>
+                  {topClientesDash.map((c, i) => {
+                    const pct  = carteraTotal > 0 ? Math.round((c.monto / carteraTotal) * 100) : 0
+                    const mora = c.moraMax
+                    const barColor = mora <= 0 ? '#2554a0' : mora <= 30 ? '#10b981' : mora <= 60 ? '#f59e0b' : '#dc2626'
+                    const badgeColor = mora <= 0 ? { bg: '#e0e7ff', text: '#4338ca' } : mora <= 30 ? { bg: '#d1fae5', text: '#065f46' } : mora <= 60 ? { bg: '#fef3c7', text: '#92400e' } : { bg: '#fee2e2', text: '#991b1b' }
                     return (
-                      <div key={item.exec} style={{ marginBottom: '24px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', marginBottom: '6px' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
-                            <span style={{ width: '24px', height: '24px', borderRadius: '50%', background: ec.bg, color: '#fff', fontSize: '9px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{ec.initials}</span>
-                            <span style={{ fontSize: '13px', fontWeight: 600, color: '#0d1b38', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.exec}</span>
-                          </div>
-                          <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                            <div style={{ fontSize: '12px', fontWeight: 700, color: item.vencido > 0 ? '#dc2626' : '#059669' }}>{fmt(item.vencido)}</div>
-                            <div style={{ fontSize: '10px', color: '#7a8fbb' }}>{item.registros.length} facturas</div>
-                          </div>
+                      <div
+                        key={c.cliente}
+                        onClick={() => { setBusqueda(c.cliente); setVista('todos') }}
+                        style={{ display: 'flex', alignItems: 'center', padding: '10px 20px', borderBottom: i < topClientesDash.length - 1 ? '1px solid #f8faff' : 'none', cursor: 'pointer', gap: '12px' }}
+                        onMouseEnter={e => (e.currentTarget.style.background = '#f8faff')}
+                        onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                      >
+                        <div style={{ width: '3px', height: '32px', borderRadius: '2px', background: barColor, flexShrink: 0 }} />
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: '13px', fontWeight: 600, color: '#0d1b38', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{c.cliente}</div>
                         </div>
-                        <div style={{ height: '10px', background: '#edf2fb', borderRadius: '999px', overflow: 'hidden' }}>
-                          <div style={{ width: `${pct}%`, height: '100%', background: ec.bg }} />
-                        </div>
+                        <div style={{ fontSize: '13px', fontWeight: 700, color: '#0d1b38', whiteSpace: 'nowrap' }}>{fmt(c.monto)}</div>
+                        <span style={{ fontSize: '11px', fontWeight: 700, padding: '2px 7px', borderRadius: '20px', background: '#e0e7ff', color: '#4338ca', whiteSpace: 'nowrap' }}>{pct}%</span>
+                        <span style={{ fontSize: '11px', fontWeight: 700, padding: '2px 7px', borderRadius: '20px', background: badgeColor.bg, color: badgeColor.text, whiteSpace: 'nowrap' }}>{mora > 0 ? `${mora}d` : '—'}</span>
                       </div>
                     )
                   })}
                 </div>
               </div>
 
-              <div style={{ background: '#fff', border: '1px solid #d9e2f1', borderRadius: '8px', overflow: 'hidden', minHeight: '380px', boxShadow: '0 12px 30px rgba(38,63,101,0.06)' }}>
-                <div style={{ padding: '16px 20px', borderBottom: '1px solid #d9e2f1', background: '#f8faff', fontSize: '14px', fontWeight: 700, color: '#0d1b38' }}>Distribución de mora</div>
-                <div style={{ padding: '24px 20px' }}>
-                  {rangosMora.map(rango => {
-                    const pct = carteraTotal > 0 ? Math.round((rango.total / carteraTotal) * 100) : 0
-                    return (
-                      <div key={rango.label} style={{ marginBottom: '24px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-                          <span style={{ fontSize: '12px', color: '#3d5278', fontWeight: 600 }}>{rango.label}</span>
-                          <span style={{ fontSize: '12px', color: '#0d1b38', fontWeight: 700 }}>{fmt(rango.total)}</span>
+              {/* PIE CHART EJECUTIVOS */}
+              <div style={{ background: '#fff', borderRadius: '12px', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', border: '1px solid #f0f0f0', overflow: 'hidden' }}>
+                <div style={{ padding: '16px 20px', borderBottom: '1px solid #f0f5ff' }}>
+                  <span style={{ fontSize: '13px', fontWeight: 700, color: '#0d1b38' }}>Distribución deuda por ejecutivo</span>
+                </div>
+                <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px' }}>
+                  {pieData.length > 0
+                    ? svgPie(pieData, 180)
+                    : <div style={{ color: '#7a8fbb', fontSize: '13px', padding: '40px' }}>Sin datos</div>
+                  }
+                  <div style={{ width: '100%' }}>
+                    {pieData.map(d => {
+                      const pct = carteraTotal > 0 ? Math.round((d.value / carteraTotal) * 100) : 0
+                      return (
+                        <div key={d.name} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 0', borderBottom: '1px solid #f8faff' }}>
+                          <span style={{ width: '10px', height: '10px', borderRadius: '2px', background: d.color, flexShrink: 0 }} />
+                          <span style={{ fontSize: '12px', color: '#3d5278', flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{d.name}</span>
+                          <span style={{ fontSize: '12px', fontWeight: 700, color: '#0d1b38' }}>{fmt(d.value)}</span>
+                          <span style={{ fontSize: '11px', color: '#7a8fbb', minWidth: '30px', textAlign: 'right' }}>{pct}%</span>
                         </div>
-                        <div style={{ height: '10px', background: '#edf2fb', borderRadius: '999px', overflow: 'hidden' }}>
-                          <div style={{ width: `${pct}%`, height: '100%', background: rango.color }} />
-                        </div>
-                      </div>
-                    )
-                  })}
+                      )
+                    })}
+                  </div>
                 </div>
               </div>
-            </div>
-
-            <div style={{ background: '#fff', border: '1px solid #d9e2f1', borderRadius: '8px', overflow: 'hidden', boxShadow: '0 12px 30px rgba(38,63,101,0.06)' }}>
-              <div style={{ padding: '16px 20px', borderBottom: '1px solid #d9e2f1', background: '#f8faff', fontSize: '14px', fontWeight: 700, color: '#0d1b38' }}>Principales clientes con deuda</div>
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead>
-                  <tr style={{ background: '#f8faff', borderBottom: '1px solid #dde3f0' }}>
-                    {['Cliente', 'Total', 'Vencido', 'Facturas', 'Mora max.'].map(h => (
-                      <th key={h} style={{ padding: '14px 20px', textAlign: 'left', fontSize: '10px', fontWeight: 700, color: '#7a8fbb', textTransform: 'uppercase' }}>{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {dashboardPorCliente.map(c => (
-                    <tr key={c.cliente} style={{ borderBottom: '1px solid #dde3f0' }}>
-                      <td style={{ padding: '16px 20px', fontSize: '14px', fontWeight: 700, color: '#0d1b38' }}>{c.cliente}</td>
-                      <td style={{ padding: '16px 20px', fontSize: '13px', fontWeight: 700, fontFamily: 'monospace' }}>{fmt(c.monto)}</td>
-                      <td style={{ padding: '16px 20px', fontSize: '13px', fontWeight: 700, fontFamily: 'monospace', color: c.vencido > 0 ? '#dc2626' : '#059669' }}>{fmt(c.vencido)}</td>
-                      <td style={{ padding: '16px 20px', fontSize: '13px', color: '#3d5278' }}>{c.facturas}</td>
-                      <td style={{ padding: '16px 20px', fontSize: '13px', color: '#3d5278' }}>{c.moraMax}d</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
             </div>
               </>
             )}
