@@ -10,12 +10,12 @@ interface Resultado {
 
 const API_URL = import.meta.env.VITE_API_URL || ''
 
-export function SubirReporte({ onActualizado }: { onActualizado: () => void }) {
+export function SubirReporte() {
   const inputRef = useRef<HTMLInputElement | null>(null)
   const [cargando, setCargando] = useState(false)
-  const [resultado, setResultado] = useState<Resultado | null>(null)
   const [error, setError] = useState('')
   const [mostrarModal, setMostrarModal] = useState(false)
+  const [resultado, setResultado] = useState<Resultado | null>(null)
 
   const handleArchivo = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const archivo = e.target.files?.[0]
@@ -31,7 +31,6 @@ export function SubirReporte({ onActualizado }: { onActualizado: () => void }) {
     setCargando(true)
     setMostrarModal(true)
     setError('')
-    setResultado(null)
 
     const formData = new FormData()
     formData.append('archivo', archivo)
@@ -41,21 +40,16 @@ export function SubirReporte({ onActualizado }: { onActualizado: () => void }) {
       const { data } = await axios.post(`${API_URL}/api/reportes/subir`, formData, {
         timeout: 600000
       })
+
       setResultado(data)
 
-      // Esperar un poco para mostrar resultado, luego recargar limpiamente
-      setTimeout(() => {
-        setCargando(false)
-        onActualizado()
-        setTimeout(() => {
-          setMostrarModal(false)
-          setResultado(null)
-        }, 1500)
-      }, 1000)
+      // Esperar 2 segundos mostrando resultado, luego recargar
+      await new Promise(resolve => setTimeout(resolve, 2000))
+      window.location.reload()
     } catch (err: any) {
       const errorMsg = err?.response?.data?.error || err?.message || 'Error al procesar el archivo.'
       setError(errorMsg)
-      console.error('Error subiendo archivo:', err)
+      console.error('Error:', err)
       setCargando(false)
       setMostrarModal(false)
     } finally {
@@ -69,66 +63,65 @@ export function SubirReporte({ onActualizado }: { onActualizado: () => void }) {
         <div style={{
           position: 'fixed',
           inset: 0,
-          background: 'rgba(0,0,0,0.7)',
-          zIndex: 9999,
+          background: 'rgba(0,0,0,0.8)',
+          zIndex: 99999,
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'center',
-          padding: '20px'
+          justifyContent: 'center'
         }}>
           <div style={{
             background: '#fff',
             borderRadius: '16px',
-            padding: '40px',
+            padding: '50px 40px',
             textAlign: 'center',
-            maxWidth: '400px',
-            boxShadow: '0 20px 60px rgba(0,0,0,0.3)'
+            maxWidth: '450px',
+            boxShadow: '0 25px 80px rgba(0,0,0,0.4)'
           }}>
             {cargando ? (
               <>
                 <div style={{
-                  width: '50px',
-                  height: '50px',
-                  border: '4px solid #dde3f0',
+                  width: '60px',
+                  height: '60px',
+                  border: '5px solid #dde3f0',
                   borderTopColor: '#2554a0',
                   borderRadius: '50%',
                   animation: 'spin 0.8s linear infinite',
-                  margin: '0 auto 20px'
+                  margin: '0 auto 24px'
                 }} />
-                <h2 style={{ color: '#0d1b38', margin: '0 0 8px' }}>Procesando Excel...</h2>
+                <h2 style={{ color: '#0d1b38', margin: '0 0 8px', fontSize: '20px', fontWeight: 700 }}>
+                  Procesando Excel...
+                </h2>
                 <p style={{ color: '#7a8fbb', margin: '0', fontSize: '14px' }}>
                   Actualizando comprobantes en la base de datos
                 </p>
               </>
             ) : resultado ? (
               <>
-                <div style={{ fontSize: '48px', marginBottom: '16px' }}>✅</div>
-                <h2 style={{ color: '#059669', margin: '0 0 16px' }}>¡Carga completada!</h2>
+                <div style={{ fontSize: '56px', marginBottom: '20px' }}>✅</div>
+                <h2 style={{ color: '#059669', margin: '0 0 20px', fontSize: '22px', fontWeight: 700 }}>
+                  ¡Carga completada!
+                </h2>
                 <div style={{
                   background: '#f0fdf4',
                   border: '1px solid #bbf7d0',
-                  borderRadius: '8px',
-                  padding: '16px',
+                  borderRadius: '10px',
+                  padding: '18px',
                   marginBottom: '16px',
                   textAlign: 'left',
                   color: '#14532d',
-                  fontSize: '13px'
+                  fontSize: '14px',
+                  lineHeight: '1.8'
                 }}>
-                  <div style={{ marginBottom: '8px' }}><strong>{resultado.nuevos}</strong> facturas nuevas</div>
-                  <div style={{ marginBottom: '8px' }}><strong>{resultado.actualizados}</strong> ya existían → cobradas</div>
-                  <div style={{ marginBottom: '8px' }}><strong>{resultado.cobradas}</strong> detectadas como cobradas</div>
-                  <div><strong>{resultado.total}</strong> comprobantes procesados</div>
+                  <div>✓ <strong>{resultado.nuevos}</strong> facturas nuevas</div>
+                  <div>✓ <strong>{resultado.actualizados}</strong> ya existían → cobradas</div>
+                  <div>✓ <strong>{resultado.cobradas}</strong> detectadas como cobradas</div>
+                  <div>✓ <strong>{resultado.total}</strong> comprobantes procesados</div>
                 </div>
-                <p style={{ color: '#7a8fbb', margin: '0', fontSize: '12px' }}>
-                  Recargando datos...
+                <p style={{ color: '#7a8fbb', margin: '0', fontSize: '12px', fontStyle: 'italic' }}>
+                  Recargando página...
                 </p>
               </>
             ) : null}
-            <style>{`
-              @keyframes spin {
-                to { transform: rotate(360deg); }
-              }
-            `}</style>
           </div>
         </div>
       )}
@@ -150,7 +143,7 @@ export function SubirReporte({ onActualizado }: { onActualizado: () => void }) {
             color: '#fff',
             padding: '11px 20px',
             borderRadius: '8px',
-            cursor: cargando ? 'wait' : 'pointer',
+            cursor: cargando ? 'not-allowed' : 'pointer',
             fontSize: '14px',
             fontWeight: 700,
             boxShadow: cargando ? 'none' : '0 10px 22px rgba(37,84,160,0.22)',
@@ -166,10 +159,10 @@ export function SubirReporte({ onActualizado }: { onActualizado: () => void }) {
                 borderTopColor: '#fff',
                 borderRadius: '50%',
                 display: 'inline-block',
-                animation: 'subirSpin 0.7s linear infinite'
+                animation: 'spin 0.8s linear infinite'
               }} />
             )}
-            {cargando ? 'Procesando archivo...' : 'Cargar Excel'}
+            {cargando ? 'Procesando...' : 'Cargar Excel'}
             <input
               ref={inputRef}
               type="file"
@@ -179,14 +172,19 @@ export function SubirReporte({ onActualizado }: { onActualizado: () => void }) {
               style={{ display: 'none' }}
             />
           </label>
-          <style>{`@keyframes subirSpin { to { transform: rotate(360deg) } }`}</style>
         </div>
 
         {error && (
-          <div style={{ color: '#dc2626', marginTop: '10px', fontSize: '13px' }}>
-            {error}
+          <div style={{ color: '#dc2626', marginTop: '10px', fontSize: '13px', fontWeight: 500 }}>
+            ⚠️ {error}
           </div>
         )}
+
+        <style>{`
+          @keyframes spin {
+            to { transform: rotate(360deg); }
+          }
+        `}</style>
       </div>
     </>
   )

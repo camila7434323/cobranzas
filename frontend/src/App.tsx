@@ -519,13 +519,7 @@ function AppInterna() {
           </div>
         </div>
 
-        <SubirReporte onActualizado={() => {
-          setTimeout(() => {
-            setTableKey(prev => prev + 1)
-            refetch()
-            refetchHistorial()
-          }, 1500)
-        }} />
+        <SubirReporte />
 
         {/* ── DASHBOARD ─────────────────────────────────────────────────── */}
         {esDashboard ? (
