@@ -130,21 +130,44 @@ export async function registrarCobros(buffer: Buffer, usuario: string) {
 
   console.log(`📌 Se encontraron ${pendientes?.length || 0} comprobantes pendientes`)
 
-  for (const p of (pendientes || [])) {
-    await supabase
-      .from('comprobantes')
-      .update({ estado: 'cobrado', updated_at: new Date().toISOString() })
-      .eq('id', p.id)
-
-    await supabase.from('historial_cobros').insert({
+  if (pendientes && pendientes.length > 0) {
+    const ahora = new Date().toISOString()
+    const idsACobrar = pendientes.map(p => p.id)
+    const historialNuevo = pendientes.map(p => ({
       comprobante_id:     p.id,
       comprobante_numero: p.comprobante,
       cliente:            p.nombre_cliente || 'Sin cliente',
       monto:              p.monto || 0,
-      fecha_cobro:        new Date().toISOString(),
+      fecha_cobro:        ahora,
       cobrado_por:        usuario,
       ejecutivo:          p.ejecutivo || 'Sin asignar',
-    })
+    }))
+
+    // 🚀 Actualizaciones masivas por lotes (UI friendly)
+    const ops: PromiseLike<any>[] = []
+
+    // Update todos los comprobantes de una vez
+    ops.push(
+      supabase
+        .from('comprobantes')
+        .update({ estado: 'cobrado', updated_at: ahora })
+        .in('id', idsACobrar)
+    )
+
+    // Insert historial en lotes de 500
+    for (let i = 0; i < historialNuevo.length; i += 500) {
+      ops.push(supabase.from('historial_cobros').insert(historialNuevo.slice(i, i + 500)))
+    }
+
+    const resultados = await Promise.all(ops)
+    for (const r of resultados) {
+      if (r?.error) {
+        console.error('Error en Supabase:', r.error)
+        throw r.error
+      }
+    }
+
+    console.log(`✅ ${idsACobrar.length} comprobantes marcados como cobrados`)
   }
 
   return {
