@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import axios from 'axios'
 
 interface Resultado {
@@ -42,10 +43,12 @@ export function SubirReporte() {
       })
 
       setResultado(data)
+      setCargando(false)
 
       // Esperar 2 segundos mostrando resultado, luego recargar
-      await new Promise(resolve => setTimeout(resolve, 2000))
-      window.location.reload()
+      setTimeout(() => {
+        window.location.reload()
+      }, 2000)
     } catch (err: any) {
       const errorMsg = err?.response?.data?.error || err?.message || 'Error al procesar el archivo.'
       setError(errorMsg)
@@ -59,10 +62,13 @@ export function SubirReporte() {
 
   return (
     <>
-      {mostrarModal && (
+      {mostrarModal && createPortal(
         <div style={{
           position: 'fixed',
-          inset: 0,
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
           background: 'rgba(0,0,0,0.8)',
           zIndex: 99999,
           display: 'flex',
@@ -123,7 +129,13 @@ export function SubirReporte() {
               </>
             ) : null}
           </div>
-        </div>
+          <style>{`
+            @keyframes spin {
+              to { transform: rotate(360deg); }
+            }
+          `}</style>
+        </div>,
+        document.body
       )}
 
       <div style={{
