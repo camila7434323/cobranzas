@@ -332,8 +332,8 @@ function AppInterna() {
                   { label: 'VENCIMIENTO', value: fmtFecha(modalComprobante.fecha_vencimiento) },
                   { label: 'MONTO',       value: fmt(modalComprobante.monto) },
                   { label: 'MORA',        value: modalComprobante.dias_mora > 0 ? `${modalComprobante.dias_mora} días` : 'Sin vencer' },
-                ].map(item => (
-                  <div key={item.label} style={{ background: '#f8faff', borderRadius: '10px', padding: '12px 16px' }}>
+                ].map((item, idx) => (
+                  <div key={`modal-${item.label}-${idx}`} style={{ background: '#f8faff', borderRadius: '10px', padding: '12px 16px' }}>
                     <div style={{ fontSize: '10px', fontWeight: 600, color: '#7a8fbb', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '4px' }}>{item.label}</div>
                     <div style={{ fontSize: '14px', fontWeight: 600, color: '#0d1b38' }}>{item.value}</div>
                   </div>
@@ -863,7 +863,7 @@ function AppInterna() {
                       const execEfectivo = localEjecutivos[r.nombre_cliente] || r.ejecutivo
                       const ec    = getExecColor(execEfectivo)
                       return (
-                        <tr key={r.comprobante} style={{ borderBottom: '1px solid #dde3f0' }}>
+                        <tr key={r.id || r.comprobante} style={{ borderBottom: '1px solid #dde3f0' }}>
                           <td style={{ padding: '12px 16px', fontSize: '12px', fontFamily: 'monospace', color: '#3d5278' }}>{r.comprobante}</td>
                           <td style={{ padding: '12px 16px', fontSize: '13px', fontWeight: 600, color: '#0d1b38' }}>{r.nombre_cliente}</td>
                           <td style={{ padding: '12px 16px' }}>
