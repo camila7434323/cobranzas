@@ -1,1 +1,1 @@
-web: cd backend && npm install && npm run build && npm start
+web: npm --prefix backend install && npm --prefix backend run build && npm --prefix backend start
