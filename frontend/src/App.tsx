@@ -153,7 +153,7 @@ function AppInterna() {
   const sinAsignarClientesCount = Array.from(clientesMap.values())
     .filter(c => c.ejecutivo === 'Sin asignar').length
 
-  const dashboardPorCliente = Array.from(clientesMap.values())
+  const _dashboardPorCliente = Array.from(clientesMap.values())
     .sort((a, b) => b.vencido - a.vencido)
     .slice(0, 8)
 
@@ -167,7 +167,7 @@ function AppInterna() {
     })
     .sort((a, b) => b.vencido - a.vencido)
 
-  const rangosMora = [
+  const _rangosMora = [
     { label: 'Sin vencer', total: data.filter(r => r.dias_mora <= 0).reduce((s, r) => s + r.monto, 0), color: '#059669' },
     { label: '1-30 días',  total: data.filter(r => r.dias_mora >= 1 && r.dias_mora <= 30).reduce((s, r) => s + r.monto, 0), color: '#2563eb' },
     { label: '31-60 días', total: data.filter(r => r.dias_mora > 30 && r.dias_mora <= 60).reduce((s, r) => s + r.monto, 0), color: '#d97706' },
@@ -190,10 +190,7 @@ function AppInterna() {
   const moraPromedio     = vencidasArr.length > 0
     ? Math.round(vencidasArr.reduce((s, r) => s + r.dias_mora, 0) / vencidasArr.length) : 0
 
-  const PIE_COLORS = ['#7c3aed','#f59e0b','#10b981','#06b6d4','#ec4899','#3b82f6','#f97316','#14b8a6']
-  const pieData = dashboardPorEjecutivo
-    .filter(e => e.total > 0)
-    .map((e, i) => ({ name: e.exec, value: e.total, color: PIE_COLORS[i % PIE_COLORS.length] }))
+  const DASH_BAR_COLORS = ['#2554a0','#dc2626','#059669','#d97706','#7c3aed','#0891b2','#9d174d','#65a30d','#ea580c','#0f766e']
 
   function svgPie(items: { value: number; color: string }[], size = 160) {
     const total = items.reduce((s, d) => s + d.value, 0)
@@ -218,9 +215,39 @@ function AppInterna() {
     )
   }
 
-  const topClientesDash = Array.from(clientesMap.values())
-    .sort((a, b) => b.monto - a.monto)
-    .slice(0, 12)
+  const clientDashMap = vencidasArr.reduce<Map<string, {monto: number; facturas: number; moraSum: number}>>((acc, r) => {
+    const cur = acc.get(r.nombre_cliente) || {monto: 0, facturas: 0, moraSum: 0}
+    cur.monto += r.monto; cur.facturas++; cur.moraSum += r.dias_mora
+    acc.set(r.nombre_cliente, cur); return acc
+  }, new Map())
+  const clientDashList = Array.from(clientDashMap.entries())
+    .map(([name, d]) => ({
+      name, monto: d.monto, facturas: d.facturas,
+      moraProm: Math.round(d.moraSum / d.facturas),
+      pct: totalVencido > 0 ? Math.round((d.monto / totalVencido) * 100) : 0
+    })).sort((a, b) => b.monto - a.monto)
+
+  const clientesConMoraSet = new Set(vencidasArr.map(r => r.nombre_cliente))
+  const clientesAlDia = [...new Set(dataSel.filter(r => r.dias_mora <= 0).map(r => r.nombre_cliente))]
+    .filter(n => !clientesConMoraSet.has(n)).sort()
+
+  const moraDist = [
+    {label: '1–7d',   color: '#d97706', bg: '#fef3c7', items: vencidasArr.filter(r => r.dias_mora >= 1 && r.dias_mora <= 7)},
+    {label: '8–15d',  color: '#ea580c', bg: '#ffedd5', items: vencidasArr.filter(r => r.dias_mora > 7 && r.dias_mora <= 15)},
+    {label: '16–30d', color: '#dc2626', bg: '#fee2e2', items: vencidasArr.filter(r => r.dias_mora > 15 && r.dias_mora <= 30)},
+    {label: '+30d',   color: '#7c3aed', bg: '#ede9fe', items: vencidasArr.filter(r => r.dias_mora > 30)},
+  ]
+
+  const EXEC_PIE_COLORS = ['#1d4170','#0f766e','#7c3aed','#b45309','#0369a1','#15803d','#9f1239','#1e3a5f','#6d28d9','#065f46']
+  const execPieMap = vencidasArr.reduce<Map<string, number>>((acc, r) => {
+    const k = r.ejecutivo || 'Sin asignar'
+    acc.set(k, (acc.get(k) || 0) + r.monto); return acc
+  }, new Map())
+  const execPieList = Array.from(execPieMap.entries())
+    .map(([name, monto], i) => ({
+      name, monto, color: EXEC_PIE_COLORS[i % EXEC_PIE_COLORS.length],
+      pct: totalVencido > 0 ? Math.round((monto / totalVencido) * 100) : 0
+    })).sort((a, b) => b.monto - a.monto)
 
   // ── historial filtrado ────────────────────────────────────────────────────
   const historialFiltrado = historial.filter(r => {
@@ -579,129 +606,145 @@ function AppInterna() {
               </div>
             ) : (
               <>
-            {/* ── KPI CARDS ── */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '16px' }}>
-              {/* Total vencido */}
-              <div onClick={() => setVista('mora')} style={{ background: '#fff', borderRadius: '12px', padding: '20px 24px', boxShadow: '0 2px 12px rgba(0,0,0,0.07)', cursor: 'pointer', border: '1px solid #f0f0f0', position: 'relative', overflow: 'hidden' }}>
-                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '3px', background: 'linear-gradient(90deg,#dc2626,#f87171)' }} />
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
-                  <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#dc2626', display: 'inline-block' }} />
-                  <span style={{ fontSize: '11px', fontWeight: 700, color: '#dc2626', textTransform: 'uppercase', letterSpacing: '0.8px' }}>Total vencido</span>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', paddingBottom: '24px' }}>
+
+              {/* KPI CARDS */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '14px' }}>
+                <div onClick={() => setVista('mora')} style={{ background: '#fff', border: '1px solid #dde3f0', borderRadius: '12px', padding: '22px 24px', boxShadow: '0 2px 8px rgba(10,22,40,0.08)', borderLeft: '5px solid #dc2626', position: 'relative', overflow: 'hidden', cursor: 'pointer' }}>
+                  <div style={{ position: 'absolute', right: '-10px', top: '-10px', width: '70px', height: '70px', background: '#fee2e2', borderRadius: '50%', opacity: 0.4 }} />
+                  <div style={{ fontSize: '10px', fontWeight: 700, color: '#7a8fbb', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '10px' }}>💸 Total vencido</div>
+                  <div style={{ fontSize: '28px', fontWeight: 800, color: '#dc2626', fontFamily: 'monospace', lineHeight: 1, marginBottom: '6px' }}>{fmt(totalVencido)}</div>
+                  <div style={{ fontSize: '12px', color: '#7a8fbb' }}>{vencidasArr.length} facturas · {clientDashList.length} clientes</div>
                 </div>
-                <div style={{ fontSize: '28px', fontWeight: 800, color: '#dc2626', lineHeight: 1.1, marginBottom: '6px' }}>{fmt(totalVencido)}</div>
-                <div style={{ fontSize: '12px', color: '#7a8fbb' }}>{vencidasArr.length} facturas · {clientesConMora} clientes</div>
+                <div onClick={() => setVista('mora')} style={{ background: '#fff', border: '1px solid #dde3f0', borderRadius: '12px', padding: '22px 24px', boxShadow: '0 2px 8px rgba(10,22,40,0.08)', borderLeft: '5px solid #d97706', position: 'relative', overflow: 'hidden', cursor: 'pointer' }}>
+                  <div style={{ position: 'absolute', right: '-10px', top: '-10px', width: '70px', height: '70px', background: '#fef3c7', borderRadius: '50%', opacity: 0.4 }} />
+                  <div style={{ fontSize: '10px', fontWeight: 700, color: '#7a8fbb', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '10px' }}>⏳ Vence en 7 días</div>
+                  <div style={{ fontSize: '28px', fontWeight: 800, color: '#d97706', fontFamily: 'monospace', lineHeight: 1, marginBottom: '6px' }}>{fmt(totalProxAVencer)}</div>
+                  <div style={{ fontSize: '12px', color: '#7a8fbb' }}>{proxAVencer.length} facturas próximas a vencer</div>
+                </div>
+                <div onClick={() => setVista('todos')} style={{ background: '#fff', border: '1px solid #dde3f0', borderRadius: '12px', padding: '22px 24px', boxShadow: '0 2px 8px rgba(10,22,40,0.08)', borderLeft: '5px solid #059669', position: 'relative', overflow: 'hidden', cursor: 'pointer' }}>
+                  <div style={{ position: 'absolute', right: '-10px', top: '-10px', width: '70px', height: '70px', background: '#d1fae5', borderRadius: '50%', opacity: 0.4 }} />
+                  <div style={{ fontSize: '10px', fontWeight: 700, color: '#7a8fbb', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '10px' }}>✅ Sin vencer</div>
+                  <div style={{ fontSize: '28px', fontWeight: 800, color: '#059669', fontFamily: 'monospace', lineHeight: 1, marginBottom: '6px' }}>{fmt(totalSinVencer)}</div>
+                  <div style={{ fontSize: '12px', color: '#7a8fbb' }}>{dataSel.filter(r => r.dias_mora <= 0).length} facturas al día</div>
+                </div>
               </div>
 
-              {/* Vence en 7 días */}
-              <div onClick={() => setVista('mora')} style={{ background: '#fff', borderRadius: '12px', padding: '20px 24px', boxShadow: '0 2px 12px rgba(0,0,0,0.07)', cursor: 'pointer', border: '1px solid #f0f0f0', position: 'relative', overflow: 'hidden' }}>
-                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '3px', background: 'linear-gradient(90deg,#f59e0b,#fcd34d)' }} />
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
-                  <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#f59e0b', display: 'inline-block' }} />
-                  <span style={{ fontSize: '11px', fontWeight: 700, color: '#f59e0b', textTransform: 'uppercase', letterSpacing: '0.8px' }}>Vence en 7 días</span>
-                </div>
-                <div style={{ fontSize: '28px', fontWeight: 800, color: '#d97706', lineHeight: 1.1, marginBottom: '6px' }}>{fmt(totalProxAVencer)}</div>
-                <div style={{ fontSize: '12px', color: '#7a8fbb' }}>{proxAVencer.length} facturas próximas a vencer</div>
-              </div>
-
-              {/* Sin vencer */}
-              <div onClick={() => setVista('todos')} style={{ background: '#fff', borderRadius: '12px', padding: '20px 24px', boxShadow: '0 2px 12px rgba(0,0,0,0.07)', cursor: 'pointer', border: '1px solid #f0f0f0', position: 'relative', overflow: 'hidden' }}>
-                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '3px', background: 'linear-gradient(90deg,#10b981,#6ee7b7)' }} />
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
-                  <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10b981', display: 'inline-block' }} />
-                  <span style={{ fontSize: '11px', fontWeight: 700, color: '#10b981', textTransform: 'uppercase', letterSpacing: '0.8px' }}>Sin vencer</span>
-                </div>
-                <div style={{ fontSize: '28px', fontWeight: 800, color: '#059669', lineHeight: 1.1, marginBottom: '6px' }}>{fmt(totalSinVencer)}</div>
-                <div style={{ fontSize: '12px', color: '#7a8fbb' }}>{dataSel.filter(r => r.dias_mora <= 0).length} facturas al día</div>
-              </div>
-            </div>
-
-            {/* ── STATS BAR ── */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '20px' }}>
-              <div style={{ background: '#fff', borderRadius: '12px', padding: '16px 20px', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', border: '1px solid #f0f0f0' }}>
-                <div style={{ fontSize: '10px', fontWeight: 700, color: '#7a8fbb', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '10px' }}>Cartera en mora</div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <div style={{ flex: 1, height: '8px', background: '#f1f5f9', borderRadius: '999px', overflow: 'hidden' }}>
-                    <div style={{ width: `${porcentajeMora}%`, height: '100%', background: porcentajeMora > 30 ? '#dc2626' : '#f59e0b', borderRadius: '999px', transition: 'width 0.5s' }} />
+              {/* SLIM METRICS */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '10px' }}>
+                <div style={{ background: '#fff', border: '1px solid #dde3f0', borderRadius: '10px', padding: '14px 18px', boxShadow: '0 1px 4px rgba(10,22,40,0.06)', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: '#ede9fe', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', flexShrink: 0 }}>💹</div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: '10px', fontWeight: 700, color: '#7a8fbb', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '6px' }}>Cartera en mora</div>
+                    <div style={{ height: '4px', background: '#eef2fa', borderRadius: '3px', overflow: 'hidden' }}>
+                      <div style={{ width: `${porcentajeMora}%`, height: '100%', background: '#7c3aed', borderRadius: '3px', transition: 'width 0.5s' }} />
+                    </div>
                   </div>
-                  <span style={{ fontSize: '18px', fontWeight: 800, color: porcentajeMora > 30 ? '#dc2626' : '#d97706', minWidth: '44px', textAlign: 'right' }}>{porcentajeMora}%</span>
+                  <div style={{ fontSize: '20px', fontWeight: 800, color: '#7c3aed', flexShrink: 0 }}>{porcentajeMora}%</div>
                 </div>
-              </div>
-              <div style={{ background: '#fff', borderRadius: '12px', padding: '16px 20px', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', border: '1px solid #f0f0f0' }}>
-                <div style={{ fontSize: '10px', fontWeight: 700, color: '#7a8fbb', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '6px' }}>Mora promedio</div>
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
-                  <span style={{ fontSize: '26px', fontWeight: 800, color: '#d97706' }}>{moraPromedio}</span>
-                  <span style={{ fontSize: '13px', color: '#7a8fbb' }}>días</span>
+                <div style={{ background: '#fff', border: '1px solid #dde3f0', borderRadius: '10px', padding: '14px 18px', boxShadow: '0 1px 4px rgba(10,22,40,0.06)', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: '#fef3c7', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', flexShrink: 0 }}>⏱</div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: '10px', fontWeight: 700, color: '#7a8fbb', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '2px' }}>Mora promedio</div>
+                    <div style={{ fontSize: '11px', color: '#94a3b8' }}>{vencidasArr.length} facturas vencidas</div>
+                  </div>
+                  <div style={{ fontSize: '20px', fontWeight: 800, color: '#d97706', flexShrink: 0 }}>{moraPromedio}d</div>
                 </div>
-                <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '2px' }}>sobre {vencidasArr.length} facturas vencidas</div>
-              </div>
-              <div style={{ background: '#fff', borderRadius: '12px', padding: '16px 20px', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', border: '1px solid #f0f0f0' }}>
-                <div style={{ fontSize: '10px', fontWeight: 700, color: '#7a8fbb', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '6px' }}>Promedio de cobro</div>
-                <div style={{ fontSize: '26px', fontWeight: 800, color: '#94a3b8' }}>—</div>
-                <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '2px' }}>sin cobros aún</div>
-              </div>
-            </div>
-
-            {/* ── MAIN GRID ── */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: '20px' }}>
-
-              {/* CLIENTES */}
-              <div style={{ background: '#fff', borderRadius: '12px', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', border: '1px solid #f0f0f0', overflow: 'hidden' }}>
-                <div style={{ padding: '16px 20px', borderBottom: '1px solid #f0f5ff', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <span style={{ fontSize: '13px', fontWeight: 700, color: '#0d1b38' }}>Deuda por cliente</span>
-                  <span style={{ fontSize: '11px', color: '#7a8fbb' }}>clic para ver sus facturas</span>
-                </div>
-                <div style={{ padding: '8px 0' }}>
-                  {topClientesDash.map((c, i) => {
-                    const pct  = carteraTotal > 0 ? Math.round((c.monto / carteraTotal) * 100) : 0
-                    const mora = c.moraMax
-                    const barColor = mora <= 0 ? '#2554a0' : mora <= 30 ? '#10b981' : mora <= 60 ? '#f59e0b' : '#dc2626'
-                    const badgeColor = mora <= 0 ? { bg: '#e0e7ff', text: '#4338ca' } : mora <= 30 ? { bg: '#d1fae5', text: '#065f46' } : mora <= 60 ? { bg: '#fef3c7', text: '#92400e' } : { bg: '#fee2e2', text: '#991b1b' }
-                    return (
-                      <div
-                        key={c.cliente}
-                        onClick={() => { setBusqueda(c.cliente); setVista('todos') }}
-                        style={{ display: 'flex', alignItems: 'center', padding: '10px 20px', borderBottom: i < topClientesDash.length - 1 ? '1px solid #f8faff' : 'none', cursor: 'pointer', gap: '12px' }}
-                        onMouseEnter={e => (e.currentTarget.style.background = '#f8faff')}
-                        onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
-                      >
-                        <div style={{ width: '3px', height: '32px', borderRadius: '2px', background: barColor, flexShrink: 0 }} />
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontSize: '13px', fontWeight: 600, color: '#0d1b38', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{c.cliente}</div>
-                        </div>
-                        <div style={{ fontSize: '13px', fontWeight: 700, color: '#0d1b38', whiteSpace: 'nowrap' }}>{fmt(c.monto)}</div>
-                        <span style={{ fontSize: '11px', fontWeight: 700, padding: '2px 7px', borderRadius: '20px', background: '#e0e7ff', color: '#4338ca', whiteSpace: 'nowrap' }}>{pct}%</span>
-                        <span style={{ fontSize: '11px', fontWeight: 700, padding: '2px 7px', borderRadius: '20px', background: badgeColor.bg, color: badgeColor.text, whiteSpace: 'nowrap' }}>{mora > 0 ? `${mora}d` : '—'}</span>
-                      </div>
-                    )
-                  })}
+                <div style={{ background: '#fff', border: '1px solid #dde3f0', borderRadius: '10px', padding: '14px 18px', boxShadow: '0 1px 4px rgba(10,22,40,0.06)', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', flexShrink: 0 }}>📊</div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: '10px', fontWeight: 700, color: '#7a8fbb', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '2px' }}>Promedio de cobro</div>
+                    <div style={{ fontSize: '11px', color: '#94a3b8' }}>sin cobros aún</div>
+                  </div>
+                  <div style={{ fontSize: '20px', fontWeight: 800, color: '#94a3b8', flexShrink: 0 }}>—</div>
                 </div>
               </div>
 
-              {/* PIE CHART EJECUTIVOS */}
-              <div style={{ background: '#fff', borderRadius: '12px', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', border: '1px solid #f0f0f0', overflow: 'hidden' }}>
-                <div style={{ padding: '16px 20px', borderBottom: '1px solid #f0f5ff' }}>
-                  <span style={{ fontSize: '13px', fontWeight: 700, color: '#0d1b38' }}>Distribución deuda por ejecutivo</span>
-                </div>
-                <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px' }}>
-                  {pieData.length > 0
-                    ? svgPie(pieData, 180)
-                    : <div style={{ color: '#7a8fbb', fontSize: '13px', padding: '40px' }}>Sin datos</div>
-                  }
-                  <div style={{ width: '100%' }}>
-                    {pieData.map(d => {
-                      const pct = carteraTotal > 0 ? Math.round((d.value / carteraTotal) * 100) : 0
+              {/* CLIENTS + PIE */}
+              <div style={{ display: 'grid', gridTemplateColumns: '3fr 2fr', gap: '14px' }}>
+                <div style={{ background: '#fff', border: '1px solid #dde3f0', borderRadius: '12px', boxShadow: '0 2px 8px rgba(10,22,40,0.07)', overflow: 'hidden' }}>
+                  <div style={{ padding: '14px 20px', borderBottom: '1px solid #eef2fa', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <span style={{ fontSize: '13px', fontWeight: 700, color: '#0d1b38' }}>Deuda por cliente</span>
+                    <span style={{ fontSize: '11px', color: '#7a8fbb' }}>clic para ver facturas</span>
+                  </div>
+                  <div style={{ padding: '12px 20px' }}>
+                    {clientDashList.slice(0, 10).map((c, i) => {
+                      const bc = DASH_BAR_COLORS[i % DASH_BAR_COLORS.length]
                       return (
-                        <div key={d.name} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 0', borderBottom: '1px solid #f8faff' }}>
-                          <span style={{ width: '10px', height: '10px', borderRadius: '2px', background: d.color, flexShrink: 0 }} />
-                          <span style={{ fontSize: '12px', color: '#3d5278', flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{d.name}</span>
-                          <span style={{ fontSize: '12px', fontWeight: 700, color: '#0d1b38' }}>{fmt(d.value)}</span>
-                          <span style={{ fontSize: '11px', color: '#7a8fbb', minWidth: '30px', textAlign: 'right' }}>{pct}%</span>
+                        <div key={c.name} style={{ marginBottom: '10px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px', gap: '8px' }}>
+                            <span onClick={() => { setBusqueda(c.name); setVista('mora') }} style={{ fontSize: '13px', fontWeight: 600, color: '#1d4170', textDecoration: 'underline', textDecorationColor: '#a8c4f5', cursor: 'pointer', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '45%' }}>{c.name}</span>
+                            <span style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+                              <span style={{ fontFamily: 'monospace', fontSize: '13px', fontWeight: 700, color: '#0d1b38', minWidth: '110px', textAlign: 'right' }}>{fmt(c.monto)}</span>
+                              <span style={{ fontSize: '11px', fontWeight: 700, padding: '2px 6px', borderRadius: '20px', background: bc + '18', border: '1px solid ' + bc + '35', color: bc }}>{c.pct}%</span>
+                              <span style={{ fontSize: '11px', fontWeight: 700, padding: '2px 6px', borderRadius: '20px', background: '#fef3c7', color: '#92400e' }}>{c.moraProm}d</span>
+                            </span>
+                          </div>
+                          <div style={{ height: '4px', background: '#eef2fa', borderRadius: '3px', overflow: 'hidden' }}>
+                            <div style={{ width: c.pct + '%', height: '100%', background: bc, borderRadius: '3px', transition: 'width 0.5s' }} />
+                          </div>
                         </div>
                       )
                     })}
+                    {clientDashList.length === 0 && <div style={{ color: '#7a8fbb', fontSize: '13px', padding: '20px 0', textAlign: 'center' }}>Sin clientes con mora</div>}
+                  </div>
+                </div>
+                <div style={{ background: '#fff', border: '1px solid #dde3f0', borderRadius: '12px', boxShadow: '0 2px 8px rgba(10,22,40,0.07)', overflow: 'hidden' }}>
+                  <div style={{ padding: '14px 20px', borderBottom: '1px solid #eef2fa' }}>
+                    <span style={{ fontSize: '13px', fontWeight: 700, color: '#0d1b38' }}>Deuda por ejecutivo</span>
+                  </div>
+                  <div style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
+                    {execPieList.length > 0
+                      ? svgPie(execPieList.map(e => ({ value: e.monto, color: e.color })), 150)
+                      : <div style={{ color: '#7a8fbb', fontSize: '13px', padding: '30px' }}>Sin datos</div>
+                    }
+                    <div style={{ width: '100%' }}>
+                      {execPieList.map(e => (
+                        <div key={e.name} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '5px 0', borderBottom: '1px solid #f8faff' }}>
+                          <span style={{ width: '10px', height: '10px', borderRadius: '2px', background: e.color, flexShrink: 0 }} />
+                          <span style={{ fontSize: '12px', color: '#3d5278', flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{e.name}</span>
+                          <span style={{ fontSize: '12px', fontWeight: 700, color: '#0d1b38' }}>{fmt(e.monto)}</span>
+                          <span style={{ fontSize: '11px', padding: '1px 6px', borderRadius: '20px', background: '#e0e7ff', color: '#4338ca' }}>{e.pct}%</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </div>
+
+              {/* MORA DIST + CLIENTES AL DIA */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+                <div style={{ background: '#fff', border: '1px solid #dde3f0', borderRadius: '12px', boxShadow: '0 2px 8px rgba(10,22,40,0.07)', overflow: 'hidden' }}>
+                  <div style={{ padding: '14px 20px', borderBottom: '1px solid #eef2fa' }}>
+                    <span style={{ fontSize: '13px', fontWeight: 700, color: '#0d1b38' }}>Distribución por mora</span>
+                  </div>
+                  <div style={{ padding: '16px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                    {moraDist.map(b => (
+                      <div key={b.label} style={{ background: b.bg, border: '1px solid ' + b.color + '30', borderRadius: '10px', padding: '14px', borderLeft: '4px solid ' + b.color }}>
+                        <div style={{ fontSize: '10px', fontWeight: 700, color: b.color, textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '6px' }}>{b.label}</div>
+                        <div style={{ fontSize: '24px', fontWeight: 800, color: b.color, fontFamily: 'monospace', lineHeight: 1, marginBottom: '4px' }}>{b.items.length}</div>
+                        <div style={{ fontSize: '11px', color: '#6b7280' }}>facturas</div>
+                        <div style={{ fontSize: '12px', fontWeight: 600, color: '#374151', marginTop: '4px' }}>{fmt(b.items.reduce((s, r) => s + r.monto, 0))}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div style={{ background: '#fff', border: '1px solid #dde3f0', borderRadius: '12px', boxShadow: '0 2px 8px rgba(10,22,40,0.07)', overflow: 'hidden' }}>
+                  <div style={{ padding: '14px 20px', borderBottom: '1px solid #eef2fa', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <span style={{ fontSize: '13px', fontWeight: 700, color: '#0d1b38' }}>Clientes al día</span>
+                    <span style={{ fontSize: '11px', fontWeight: 700, padding: '2px 8px', borderRadius: '20px', background: '#d1fae5', color: '#065f46' }}>{clientesAlDia.length}</span>
+                  </div>
+                  <div style={{ padding: '16px', display: 'flex', flexWrap: 'wrap', gap: '8px', maxHeight: '220px', overflowY: 'auto' }}>
+                    {clientesAlDia.length === 0
+                      ? <div style={{ color: '#7a8fbb', fontSize: '13px' }}>Sin clientes al día</div>
+                      : clientesAlDia.map(n => (
+                          <span key={n} onClick={() => { setBusqueda(n); setVista('todos') }} style={{ fontSize: '12px', fontWeight: 500, padding: '4px 10px', borderRadius: '20px', background: '#f0fdf4', border: '1px solid #bbf7d0', color: '#065f46', cursor: 'pointer', whiteSpace: 'nowrap' }}>{n}</span>
+                        ))
+                    }
+                  </div>
+                </div>
+              </div>
+
             </div>
               </>
             )}
