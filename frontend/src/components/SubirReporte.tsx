@@ -31,23 +31,9 @@ function mostrarOverlay(mensaje: string, submensaje: string) {
   const overlay = document.createElement('div')
   overlay.id = '__overlay_carga__'
   overlay.innerHTML = `
-    <div style="
-      position:fixed;top:0;left:0;width:100%;height:100%;
-      background:#000;z-index:99999;
-      display:flex;align-items:center;justify-content:center;
-      font-family:Inter,sans-serif;
-    ">
-      <div style="
-        background:#fff;border-radius:16px;padding:50px 40px;
-        text-align:center;max-width:440px;width:90%;
-        box-shadow:0 25px 80px rgba(0,0,0,0.6);
-      ">
-        <div id="__overlay_spinner__" style="
-          width:56px;height:56px;
-          border:5px solid #dde3f0;border-top-color:#2554a0;
-          border-radius:50%;margin:0 auto 24px;
-          animation:__spin__ 0.8s linear infinite;
-        "></div>
+    <div style="position:fixed;top:0;left:0;width:100%;height:100%;background:#000;z-index:99999;display:flex;align-items:center;justify-content:center;font-family:Inter,sans-serif;">
+      <div style="background:#fff;border-radius:16px;padding:50px 40px;text-align:center;max-width:440px;width:90%;box-shadow:0 25px 80px rgba(0,0,0,0.6);">
+        <div id="__overlay_spinner__" style="width:56px;height:56px;border:5px solid #dde3f0;border-top-color:#2554a0;border-radius:50%;margin:0 auto 24px;animation:__spin__ 0.8s linear infinite;"></div>
         <h2 style="color:#0d1b38;margin:0 0 10px;font-size:20px;font-weight:700;">${mensaje}</h2>
         <p style="color:#7a8fbb;margin:0;font-size:14px;">${submensaje}</p>
         <style>@keyframes __spin__{ to{ transform:rotate(360deg) } }</style>
@@ -62,24 +48,11 @@ function mostrarOverlayExito(nuevos: number, actualizados: number, cobradas: num
   const overlay = document.createElement('div')
   overlay.id = '__overlay_carga__'
   overlay.innerHTML = `
-    <div style="
-      position:fixed;top:0;left:0;width:100%;height:100%;
-      background:#000;z-index:99999;
-      display:flex;align-items:center;justify-content:center;
-      font-family:Inter,sans-serif;
-    ">
-      <div style="
-        background:#fff;border-radius:16px;padding:50px 40px;
-        text-align:center;max-width:440px;width:90%;
-        box-shadow:0 25px 80px rgba(0,0,0,0.6);
-      ">
+    <div style="position:fixed;top:0;left:0;width:100%;height:100%;background:#000;z-index:99999;display:flex;align-items:center;justify-content:center;font-family:Inter,sans-serif;">
+      <div style="background:#fff;border-radius:16px;padding:50px 40px;text-align:center;max-width:440px;width:90%;box-shadow:0 25px 80px rgba(0,0,0,0.6);">
         <div style="font-size:54px;margin-bottom:18px;">✅</div>
         <h2 style="color:#059669;margin:0 0 20px;font-size:22px;font-weight:700;">¡Carga completada!</h2>
-        <div style="
-          background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;
-          padding:18px;margin-bottom:16px;text-align:left;
-          color:#14532d;font-size:14px;line-height:2;
-        ">
+        <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:18px;margin-bottom:16px;text-align:left;color:#14532d;font-size:14px;line-height:2;">
           <div>✓ <strong>${nuevos}</strong> facturas nuevas</div>
           <div>✓ <strong>${actualizados}</strong> ya existían → cobradas</div>
           <div>✓ <strong>${cobradas}</strong> detectadas como cobradas</div>
@@ -97,25 +70,12 @@ function mostrarOverlayExitoXml(cantidad: number) {
   const overlay = document.createElement('div')
   overlay.id = '__overlay_carga__'
   overlay.innerHTML = `
-    <div style="
-      position:fixed;top:0;left:0;width:100%;height:100%;
-      background:#000;z-index:99999;
-      display:flex;align-items:center;justify-content:center;
-      font-family:Inter,sans-serif;
-    ">
-      <div style="
-        background:#fff;border-radius:16px;padding:50px 40px;
-        text-align:center;max-width:440px;width:90%;
-        box-shadow:0 25px 80px rgba(0,0,0,0.6);
-      ">
+    <div style="position:fixed;top:0;left:0;width:100%;height:100%;background:#000;z-index:99999;display:flex;align-items:center;justify-content:center;font-family:Inter,sans-serif;">
+      <div style="background:#fff;border-radius:16px;padding:50px 40px;text-align:center;max-width:440px;width:90%;box-shadow:0 25px 80px rgba(0,0,0,0.6);">
         <div style="font-size:54px;margin-bottom:18px;">✅</div>
         <h2 style="color:#059669;margin:0 0 14px;font-size:22px;font-weight:700;">XML cargado</h2>
         <p style="color:#7a8fbb;margin:0;font-size:14px;"><strong>${cantidad}</strong> descripciones guardadas correctamente.</p>
-        <button onclick="document.getElementById('__overlay_carga__').remove()" style="
-          margin-top:24px;background:#2554a0;color:#fff;border:none;
-          padding:10px 28px;border-radius:8px;font-size:14px;
-          font-weight:700;cursor:pointer;
-        ">Cerrar</button>
+        <button onclick="document.getElementById('__overlay_carga__').remove()" style="margin-top:24px;background:#2554a0;color:#fff;border:none;padding:10px 28px;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;">Cerrar</button>
       </div>
     </div>
   `
@@ -127,25 +87,12 @@ function mostrarOverlayError(mensaje: string) {
   const overlay = document.createElement('div')
   overlay.id = '__overlay_carga__'
   overlay.innerHTML = `
-    <div style="
-      position:fixed;top:0;left:0;width:100%;height:100%;
-      background:#000;z-index:99999;
-      display:flex;align-items:center;justify-content:center;
-      font-family:Inter,sans-serif;
-    ">
-      <div style="
-        background:#fff;border-radius:16px;padding:50px 40px;
-        text-align:center;max-width:440px;width:90%;
-        box-shadow:0 25px 80px rgba(0,0,0,0.6);
-      ">
+    <div style="position:fixed;top:0;left:0;width:100%;height:100%;background:#000;z-index:99999;display:flex;align-items:center;justify-content:center;font-family:Inter,sans-serif;">
+      <div style="background:#fff;border-radius:16px;padding:50px 40px;text-align:center;max-width:440px;width:90%;box-shadow:0 25px 80px rgba(0,0,0,0.6);">
         <div style="font-size:54px;margin-bottom:18px;">❌</div>
         <h2 style="color:#dc2626;margin:0 0 14px;font-size:20px;font-weight:700;">Error al procesar</h2>
         <p style="color:#7a8fbb;margin:0 0 20px;font-size:14px;">${mensaje}</p>
-        <button onclick="document.getElementById('__overlay_carga__').remove()" style="
-          background:#2554a0;color:#fff;border:none;
-          padding:10px 28px;border-radius:8px;font-size:14px;
-          font-weight:700;cursor:pointer;
-        ">Cerrar</button>
+        <button onclick="document.getElementById('__overlay_carga__').remove()" style="background:#2554a0;color:#fff;border:none;padding:10px 28px;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;">Cerrar</button>
       </div>
     </div>
   `
@@ -153,40 +100,31 @@ function mostrarOverlayError(mensaje: string) {
 }
 
 function eliminarOverlay() {
-  const existing = document.getElementById('__overlay_carga__')
-  if (existing) existing.remove()
+  document.getElementById('__overlay_carga__')?.remove()
 }
 
 interface Props {
   batchUpsert?: (rows: Extra[]) => Promise<void>
+  onExport?: () => void
 }
 
-export function SubirReporte({ batchUpsert }: Props) {
-  const inputRef  = useRef<HTMLInputElement | null>(null)
-  const xmlRef    = useRef<HTMLInputElement | null>(null)
+export function SubirReporte({ batchUpsert, onExport }: Props) {
+  const inputRef      = useRef<HTMLInputElement | null>(null)
+  const xmlRef        = useRef<HTMLInputElement | null>(null)
   const [cargando,    setCargando]    = useState(false)
   const [cargandoXml, setCargandoXml] = useState(false)
+  const [dragOver,    setDragOver]    = useState(false)
   const [error, setError] = useState('')
 
-  const handleArchivo = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const archivo = e.target.files?.[0]
-    if (!archivo) return
-
+  const processExcelFile = async (archivo: File) => {
     const extensionValida = /\.(xls|xlsx|csv|xml)$/i.test(archivo.name)
-    if (!extensionValida) {
-      setError('El archivo debe ser .xls, .xlsx, .csv o .xml.')
-      e.target.value = ''
-      return
-    }
-
+    if (!extensionValida) { setError('El archivo debe ser .xls, .xlsx, .csv o .xml.'); return }
     setCargando(true)
     setError('')
-    mostrarOverlay('Procesando Excel...', 'Actualizando comprobantes en la base de datos')
-
+    mostrarOverlay('Procesando XML...', 'Actualizando comprobantes en la base de datos')
     const formData = new FormData()
     formData.append('archivo', archivo)
     formData.append('usuario', 'usuario@asap.com')
-
     try {
       const { data } = await axios.post('/api/reportes/subir', formData, { timeout: 600000 })
       mostrarOverlayExito(data.nuevos, data.actualizados, data.cobradas, data.total)
@@ -194,7 +132,6 @@ export function SubirReporte({ batchUpsert }: Props) {
     } catch (err: any) {
       const raw = err?.response?.data?.error
       const errorMsg = (typeof raw === 'string' ? raw : raw?.message) || err?.message || 'Error al procesar el archivo.'
-      console.error('Error:', err)
       mostrarOverlayError(errorMsg)
       setError(errorMsg)
       setCargando(false)
@@ -203,22 +140,28 @@ export function SubirReporte({ batchUpsert }: Props) {
     }
   }
 
+  const handleArchivo = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const archivo = e.target.files?.[0]
+    if (archivo) processExcelFile(archivo)
+  }
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault()
+    setDragOver(false)
+    const archivo = e.dataTransfer.files[0]
+    if (archivo) processExcelFile(archivo)
+  }
+
   const handleXml = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const archivo = e.target.files?.[0]
     if (!archivo || !batchUpsert) return
-
     setCargandoXml(true)
     setError('')
     mostrarOverlay('Procesando XML...', 'Leyendo descripciones de comprobantes')
-
     try {
       const text = await archivo.text()
       const rows = parseDescXML(text)
-      if (rows.length === 0) {
-        mostrarOverlayError('No se encontraron registros DATO en el XML.')
-        setError('No se encontraron registros en el XML.')
-        return
-      }
+      if (rows.length === 0) { mostrarOverlayError('No se encontraron registros DATO en el XML.'); setError('No se encontraron registros en el XML.'); return }
       await batchUpsert(rows)
       mostrarOverlayExitoXml(rows.length)
     } catch (err: any) {
@@ -231,40 +174,63 @@ export function SubirReporte({ batchUpsert }: Props) {
     }
   }
 
-  const btnBase: React.CSSProperties = {
-    color: '#fff', padding: '11px 20px', borderRadius: '8px',
-    fontSize: '14px', fontWeight: 700, display: 'inline-flex',
-    alignItems: 'center', gap: '10px', userSelect: 'none',
-    boxShadow: '0 10px 22px rgba(0,0,0,0.12)',
-  }
+  const spinnerEl = (
+    <span style={{ width: '13px', height: '13px', border: '2px solid rgba(255,255,255,0.35)', borderTopColor: '#fff', borderRadius: '50%', display: 'inline-block', animation: '__spin__ 0.8s linear infinite', flexShrink: 0 }} />
+  )
 
   return (
-    <div style={{
-      background: '#fff', border: '1px solid #d9e2f1', borderRadius: '8px',
-      padding: '18px 20px', marginBottom: '24px',
-      boxShadow: '0 10px 28px rgba(38,63,101,0.06)',
-    }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap' }}>
-        <span style={{ color: '#6478a8', fontSize: '14px', fontWeight: 500 }}>
-          Carga el reporte de cuentas corrientes para actualizar la base.
-        </span>
-        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-          <label style={{ ...btnBase, background: cargando ? '#7a8fbb' : '#2554a0', cursor: cargando ? 'not-allowed' : 'pointer' }}>
-            {cargando && (
-              <span style={{ width: '14px', height: '14px', border: '2px solid rgba(255,255,255,0.35)', borderTopColor: '#fff', borderRadius: '50%', display: 'inline-block', animation: '__spin__ 0.8s linear infinite' }} />
-            )}
-            {cargando ? 'Procesando...' : 'Cargar Excel'}
+    <div
+      onDragOver={e => { e.preventDefault(); setDragOver(true) }}
+      onDragLeave={() => setDragOver(false)}
+      onDrop={handleDrop}
+      style={{
+        background: '#fff',
+        border: dragOver ? '2px dashed #2554a0' : '1px solid #d9e2f1',
+        borderRadius: '10px',
+        padding: '16px 20px',
+        marginBottom: '20px',
+        boxShadow: '0 2px 12px rgba(38,63,101,0.06)',
+        transition: 'border-color 0.15s, background 0.15s',
+        ...(dragOver ? { background: '#f0f4ff' } : {}),
+      }}
+    >
+      <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+        {/* icon */}
+        <div style={{ width: '42px', height: '42px', border: '1px solid #dde3f0', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, background: '#f8faff' }}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2554a0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="17 8 12 3 7 8"/>
+            <line x1="12" y1="3" x2="12" y2="15"/>
+          </svg>
+        </div>
+
+        {/* text */}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: '14px', fontWeight: 700, color: '#0d1b38', marginBottom: '2px' }}>Actualizar datos</div>
+          <div style={{ fontSize: '12px', color: '#7a8fbb' }}>Arrastrá el XML acá o hacé clic — detecta cobros automáticamente</div>
+        </div>
+
+        {/* buttons */}
+        <div style={{ display: 'flex', gap: '8px', flexShrink: 0, flexWrap: 'wrap' }}>
+          <label style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', background: cargando ? '#7a8fbb' : '#2554a0', color: '#fff', padding: '9px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, cursor: cargando ? 'not-allowed' : 'pointer', userSelect: 'none', whiteSpace: 'nowrap' }}>
+            {cargando ? spinnerEl : <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>}
+            {cargando ? 'Procesando...' : 'Cargar XML cobranzas'}
             <input ref={inputRef} type="file" accept=".xls,.xlsx,.csv,.xml" onChange={handleArchivo} disabled={cargando} style={{ display: 'none' }} />
           </label>
 
           {batchUpsert && (
-            <label style={{ ...btnBase, background: cargandoXml ? '#7a8fbb' : '#0f766e', cursor: cargandoXml ? 'not-allowed' : 'pointer' }}>
-              {cargandoXml && (
-                <span style={{ width: '14px', height: '14px', border: '2px solid rgba(255,255,255,0.35)', borderTopColor: '#fff', borderRadius: '50%', display: 'inline-block', animation: '__spin__ 0.8s linear infinite' }} />
-              )}
-              {cargandoXml ? 'Procesando...' : '📄 Cargar XML descripciones'}
+            <label style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', background: cargandoXml ? '#7a8fbb' : '#0f766e', color: '#fff', padding: '9px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, cursor: cargandoXml ? 'not-allowed' : 'pointer', userSelect: 'none', whiteSpace: 'nowrap' }}>
+              {cargandoXml ? spinnerEl : <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>}
+              {cargandoXml ? 'Procesando...' : 'Cargar XML descripciones'}
               <input ref={xmlRef} type="file" accept=".xml" onChange={handleXml} disabled={cargandoXml} style={{ display: 'none' }} />
             </label>
+          )}
+
+          {onExport && (
+            <button onClick={onExport} style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', background: '#065f46', color: '#fff', padding: '9px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', border: 'none', whiteSpace: 'nowrap' }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Exportar Excel
+            </button>
           )}
         </div>
       </div>

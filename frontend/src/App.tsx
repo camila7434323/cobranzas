@@ -748,11 +748,12 @@ function AppInterna({ session }: { session: Session }) {
           </div>
         </div>
 
-        {adminMode && <SubirReporte batchUpsert={batchUpsert} />}
+        {adminMode && !esDashboard && <SubirReporte batchUpsert={batchUpsert} />}
 
         {/* ── DASHBOARD ─────────────────────────────────────────────────── */}
         {esDashboard ? (
           <>
+            <SubirReporte batchUpsert={batchUpsert} onExport={exportar} />
             {loading && data.length === 0 ? (
               <div style={{ padding: '80px 20px', textAlign: 'center', color: '#7a8fbb', fontSize: '16px' }}>
                 <div style={{ display: 'inline-block', width: '32px', height: '32px', border: '3px solid #dde3f0', borderTopColor: '#2554a0', borderRadius: '50%', animation: 'spin 0.8s linear infinite', marginBottom: '16px' }} />
