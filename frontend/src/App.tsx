@@ -851,16 +851,6 @@ function AppInterna({ session }: { session: Session }) {
         /* ── LISTADO DE CLIENTES ──────────────────────────────────────── */
         ) : esClientes ? (
           <>
-            {sinAsignarClientesCount > 0 && (
-              <div style={{ background: '#fffbeb', border: '1px solid #fcd34d', borderRadius: '8px', padding: '10px 16px', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <span style={{ fontSize: '16px' }}>⚠</span>
-                <span style={{ fontSize: '13px', color: '#92400e', fontWeight: 500 }}>
-                  {sinAsignarClientesCount === 1
-                    ? '1 cliente sin ejecutivo asignado'
-                    : `${sinAsignarClientesCount} clientes sin ejecutivo asignado`} — asigná desde la tabla de abajo.
-                </span>
-              </div>
-            )}
             {errorAsignacion && (
               <div style={{ background: '#fee2e2', border: '1px solid #fca5a5', borderRadius: '8px', padding: '10px 16px', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <span style={{ fontSize: '13px', color: '#dc2626', fontWeight: 500 }}>⚠ {errorAsignacion}</span>
