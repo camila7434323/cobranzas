@@ -4,7 +4,7 @@ import { useComprobantes } from './hooks/useComprobantes'
 import { useHistorial } from './hooks/useHistorial'
 import { SubirReporte } from './components/SubirReporte'
 import { Login } from './components/Login'
-import { EJECUTIVOS } from './data/ejecutivos'
+import { EJECUTIVOS, CONDICIONES_CLIENTE } from './data/ejecutivos'
 import { supabase } from './lib/supabase'
 import type { Session } from '@supabase/supabase-js'
 
@@ -145,13 +145,13 @@ function AppInterna({ session }: { session: Session }) {
   const clientesMap = data.reduce<Map<string, ClienteRow>>((acc, r) => {
     const actual = acc.get(r.nombre_cliente) || {
       cliente: r.nombre_cliente, ejecutivo: r.ejecutivo || 'Sin asignar',
-      monto: 0, vencido: 0, facturas: 0, moraMax: 0, condiciones: [] as string[],
+      monto: 0, vencido: 0, facturas: 0, moraMax: 0,
+      condiciones: CONDICIONES_CLIENTE[r.nombre_cliente] ?? [],
     }
     actual.monto   += r.monto
     actual.vencido += r.dias_mora > 0 ? r.monto : 0
     actual.facturas += 1
     actual.moraMax  = Math.max(actual.moraMax, r.dias_mora)
-    if (r.condicion && !actual.condiciones.includes(r.condicion)) actual.condiciones.push(r.condicion)
     acc.set(r.nombre_cliente, actual)
     return acc
   }, new Map<string, ClienteRow>())
@@ -913,7 +913,7 @@ function AppInterna({ session }: { session: Session }) {
                                   ? c.condiciones.map(cond => (
                                       <span key={cond} style={{ background: '#f1f5f9', color: '#475569', border: '1px solid #e2e8f0', padding: '2px 8px', borderRadius: '20px', fontSize: '11px', fontWeight: 500, whiteSpace: 'nowrap' }}>{cond}</span>
                                     ))
-                                  : <span style={{ color: '#94a3b8', fontSize: '12px' }}>—</span>}
+                                  : <span style={{ color: '#94a3b8', fontSize: '12px' }}>---</span>}
                               </div>
                             </td>
                             <td style={{ padding: '14px 16px' }}>
