@@ -141,22 +141,23 @@ function AppInterna({ session }: { session: Session }) {
   const carteraTotal = dataSel.reduce((s, r) => s + r.monto, 0)
 
   // ── mapa de clientes (usado en dashboard y vista clientes) ────────────────
-  type ClienteRow = { cliente: string; ejecutivo: string; monto: number; vencido: number; facturas: number; moraMax: number }
+  type ClienteRow = { cliente: string; ejecutivo: string; monto: number; vencido: number; facturas: number; moraMax: number; condiciones: string[] }
   const clientesMap = data.reduce<Map<string, ClienteRow>>((acc, r) => {
     const actual = acc.get(r.nombre_cliente) || {
       cliente: r.nombre_cliente, ejecutivo: r.ejecutivo || 'Sin asignar',
-      monto: 0, vencido: 0, facturas: 0, moraMax: 0,
+      monto: 0, vencido: 0, facturas: 0, moraMax: 0, condiciones: [] as string[],
     }
     actual.monto   += r.monto
     actual.vencido += r.dias_mora > 0 ? r.monto : 0
     actual.facturas += 1
     actual.moraMax  = Math.max(actual.moraMax, r.dias_mora)
+    if (r.condicion && !actual.condiciones.includes(r.condicion)) actual.condiciones.push(r.condicion)
     acc.set(r.nombre_cliente, actual)
     return acc
   }, new Map<string, ClienteRow>())
 
   const sinAsignarClientesCount = Array.from(clientesMap.values())
-    .filter(c => c.ejecutivo === 'Sin asignar').length
+    .filter(c => (localEjecutivos[c.cliente] || c.ejecutivo) === 'Sin asignar').length
 
   const clientesFiltrados = Array.from(clientesMap.values())
     .filter(c => {
@@ -325,12 +326,12 @@ function AppInterna({ session }: { session: Session }) {
       sheet = 'Historial'; file = `historial_${hoy}.xlsx`
     } else if (vista === 'clientes') {
       rows  = clientesFiltrados.map(c => ({
-        'Cliente':            c.cliente,
-        'Ejecutivo':          c.ejecutivo,
-        'Cartera total':      c.monto,
-        'Total vencido':      c.vencido,
-        'Facturas':           c.facturas,
-        'Mora máxima (días)': c.moraMax,
+        'Cliente':        c.cliente,
+        'Ejecutivo':      localEjecutivos[c.cliente] || c.ejecutivo,
+        'Condición':      c.condiciones.join(', '),
+        'Cartera total':  c.monto,
+        'Total vencido':  c.vencido,
+        'Facturas':       c.facturas,
       }))
       sheet = 'Clientes'; file = `clientes_${hoy}.xlsx`
     } else {
@@ -881,58 +882,73 @@ function AppInterna({ session }: { session: Session }) {
 
             <div style={{ background: '#fff', border: '1px solid #dde3f0', borderRadius: '10px', overflow: 'hidden' }}>
               <div style={{ padding: '12px 16px', borderBottom: '1px solid #dde3f0', display: 'flex', alignItems: 'center', gap: '8px', background: '#f8faff' }}>
-                <span style={{ fontSize: '13px', fontWeight: 600, color: '#0d1b38' }}>Listado de clientes</span>
-                <span style={{ fontSize: '12px', color: '#7a8fbb' }}>{clientesFiltrados.length} clientes</span>
+                <span style={{ fontSize: '13px', fontWeight: 600, color: '#0d1b38' }}>Listado de clientes y ejecutivos</span>
+                <span style={{ fontSize: '12px', color: '#7a8fbb' }}>Clientes con deuda activa: {clientesFiltrados.filter(c => c.vencido > 0).length}</span>
+                <button onClick={exportar} style={{ marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: '6px', background: '#2554a0', color: '#fff', border: 'none', borderRadius: '8px', padding: '6px 12px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>↓ .xlsx</button>
               </div>
               {clientesFiltrados.length === 0 ? (
                 <div style={{ padding: '48px', textAlign: 'center', color: '#7a8fbb' }}>No hay clientes para los filtros aplicados.</div>
               ) : (
-                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                  <thead>
-                    <tr style={{ background: '#f8faff', borderBottom: '1px solid #dde3f0' }}>
-                      {['Cliente', 'Ejecutivo', 'Cartera total', 'Total vencido', 'Facturas', 'Mora máx.'].map(h => (
-                        <th key={h} style={{ padding: '10px 16px', textAlign: 'left', fontSize: '10px', fontWeight: 700, color: '#7a8fbb', textTransform: 'uppercase' }}>{h}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {clientesFiltrados.map(c => {
-                      const execEfectivo = localEjecutivos[c.cliente] || c.ejecutivo
-                      const ec = getExecColor(execEfectivo)
-                      const mb = c.moraMax <= 0
-                        ? { label: 'Sin mora',       bg: '#d1fae5', color: '#059669' }
-                        : c.moraMax <= 60
-                        ? { label: `${c.moraMax}d`,  bg: '#fef3c7', color: '#d97706' }
-                        : { label: `⚠ ${c.moraMax}d`, bg: '#ede9fe', color: '#7c3aed' }
-                      return (
-                        <tr key={c.cliente} style={{ borderBottom: '1px solid #dde3f0' }}>
-                          <td style={{ padding: '14px 16px', fontSize: '13px', fontWeight: 700, color: '#0d1b38' }}>{c.cliente}</td>
-                          <td style={{ padding: '14px 16px' }}>
-                            <select
-                              value={execEfectivo}
-                              onChange={e => {
-                                const nuevo = e.target.value
-                                const viejo = execEfectivo
-                                setLocalEjecutivos(prev => ({ ...prev, [c.cliente]: nuevo }))
-                                updateEjecutivoLocal(c.cliente, nuevo)
-                                handleAsignarEjecutivo(c.cliente, nuevo, viejo)
-                              }}
-                              style={{ padding: '4px 8px', borderRadius: '20px', border: `1px solid ${ec.bg}`, fontSize: '11px', fontWeight: 600, color: ec.bg, background: ec.bg + '20', cursor: 'pointer', outline: 'none' }}
-                            >
-                              {EJECUTIVOS.map(e => <option key={e} value={e}>{e}</option>)}
-                            </select>
-                          </td>
-                          <td style={{ padding: '14px 16px', fontSize: '12px', fontWeight: 600, fontFamily: 'monospace', color: '#0d1b38' }}>{fmt(c.monto)}</td>
-                          <td style={{ padding: '14px 16px', fontSize: '12px', fontWeight: 700, fontFamily: 'monospace', color: c.vencido > 0 ? '#dc2626' : '#059669' }}>{fmt(c.vencido)}</td>
-                          <td style={{ padding: '14px 16px', fontSize: '12px', color: '#3d5278' }}>{c.facturas}</td>
-                          <td style={{ padding: '14px 16px' }}>
-                            <span style={{ background: mb.bg, color: mb.color, padding: '3px 9px', borderRadius: '20px', fontSize: '11px', fontWeight: 600 }}>{mb.label}</span>
-                          </td>
-                        </tr>
-                      )
-                    })}
-                  </tbody>
-                </table>
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                    <thead>
+                      <tr style={{ background: '#f8faff', borderBottom: '1px solid #dde3f0' }}>
+                        {['Cliente', 'Ejecutivo asignado', 'Condición habitual', 'Cambiar ejecutivo'].map(h => (
+                          <th key={h} style={{ padding: '10px 16px', textAlign: 'left', fontSize: '10px', fontWeight: 700, color: '#7a8fbb', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {clientesFiltrados.map(c => {
+                        const execEfectivo = localEjecutivos[c.cliente] || c.ejecutivo
+                        const ec = getExecColor(execEfectivo)
+                        return (
+                          <tr key={c.cliente} style={{ borderBottom: '1px solid #dde3f0' }}
+                            onMouseEnter={e => (e.currentTarget.style.background = '#f8faff')}
+                            onMouseLeave={e => (e.currentTarget.style.background = '')}>
+                            <td style={{ padding: '14px 16px', fontSize: '13px', fontWeight: 700, color: '#0d1b38', maxWidth: '220px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.cliente}</td>
+                            <td style={{ padding: '14px 16px' }}>
+                              {execEfectivo === 'Sin asignar' ? (
+                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: '#fef3c7', color: '#92400e', padding: '4px 10px', borderRadius: '20px', fontSize: '12px', fontWeight: 600, whiteSpace: 'nowrap', border: '1px solid #fcd34d' }}>⚠ Sin asignar</span>
+                              ) : (
+                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: ec.bg, color: ec.color, padding: '4px 10px', borderRadius: '20px', fontSize: '12px', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                                  <span style={{ width: '18px', height: '18px', borderRadius: '50%', background: 'rgba(255,255,255,0.2)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '9px', fontWeight: 700, flexShrink: 0 }}>{ec.initials}</span>
+                                  {execEfectivo}
+                                </span>
+                              )}
+                            </td>
+                            <td style={{ padding: '14px 16px' }}>
+                              <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+                                {c.condiciones.length > 0
+                                  ? c.condiciones.map(cond => (
+                                      <span key={cond} style={{ background: '#f1f5f9', color: '#475569', border: '1px solid #e2e8f0', padding: '2px 8px', borderRadius: '20px', fontSize: '11px', fontWeight: 500, whiteSpace: 'nowrap' }}>{cond}</span>
+                                    ))
+                                  : <span style={{ color: '#94a3b8', fontSize: '12px' }}>—</span>}
+                              </div>
+                            </td>
+                            <td style={{ padding: '14px 16px' }}>
+                              <select
+                                value=""
+                                onChange={e => {
+                                  const nuevo = e.target.value
+                                  if (!nuevo) return
+                                  const viejo = execEfectivo
+                                  setLocalEjecutivos(prev => ({ ...prev, [c.cliente]: nuevo }))
+                                  updateEjecutivoLocal(c.cliente, nuevo)
+                                  handleAsignarEjecutivo(c.cliente, nuevo, viejo)
+                                }}
+                                style={{ padding: '5px 10px', borderRadius: '8px', border: '1px solid #dde3f0', fontSize: '12px', color: '#374151', background: '#fff', cursor: 'pointer', outline: 'none' }}
+                              >
+                                <option value="">— cambiar —</option>
+                                {EJECUTIVOS.map(e => <option key={e} value={e}>{e}</option>)}
+                              </select>
+                            </td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                </div>
               )}
             </div>
           </>
