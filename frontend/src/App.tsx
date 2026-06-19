@@ -48,10 +48,10 @@ function App() {
   if (session === undefined) return null
   if (!session) return <Login />
 
-  return <AppInterna />
+  return <AppInterna session={session} />
 }
 
-function AppInterna() {
+function AppInterna({ session }: { session: Session }) {
   const { data, loading, error: errorComprobantes, refetch, asignarEjecutivo, updateEjecutivoLocal } = useComprobantes()
   const { data: historial, loading: loadingHistorial, error: errorHistorial, refetch: refetchHistorial } = useHistorial()
   const [vista, setVista] = useState<Vista>('dashboard')
@@ -62,6 +62,7 @@ function AppInterna() {
   const [modalComprobante, setModalComprobante] = useState<any | null>(null)
   const [linkCopiado, setLinkCopiado] = useState(false)
   const [pdfNoEncontrado, setPdfNoEncontrado] = useState('')
+  const [adminMode, setAdminMode] = useState(false)
 
   const mainRef = useRef<HTMLDivElement>(null)
   useEffect(() => { mainRef.current?.scrollTo({ top: 0 }) }, [vista])
@@ -123,8 +124,6 @@ function AppInterna() {
 
   const dataSel     = ejecutivoSeleccionado ? data.filter(r => r.ejecutivo === ejecutivoSeleccionado) : data
   const totalVencido = dataSel.filter(r => r.dias_mora > 0).reduce((s, r) => s + r.monto, 0)
-  const maxMora      = dataSel.reduce((mx, r) => r.dias_mora > mx.dias ? { dias: r.dias_mora, cliente: r.nombre_cliente } : mx, { dias: 0, cliente: '' })
-  const criticas     = dataSel.filter(r => r.dias_mora > 60).length
   const carteraTotal = dataSel.reduce((s, r) => s + r.monto, 0)
 
   // ── mapa de clientes (usado en dashboard y vista clientes) ────────────────
@@ -248,11 +247,10 @@ function AppInterna() {
   }
 
   const moraBadge = (dias: number) => {
-    if (dias <= 0)  return { label: 'Sin vencer',   color: '#059669', bg: '#d1fae5' }
-    if (dias <= 30) return { label: `${dias}d`,     color: '#059669', bg: '#d1fae5' }
-    if (dias <= 60) return { label: `${dias}d`,     color: '#d97706', bg: '#fef3c7' }
-    if (dias <= 90) return { label: `${dias}d`,     color: '#dc2626', bg: '#fee2e2' }
-    return           { label: `⚠ ${dias}d`,        color: '#7c3aed', bg: '#ede9fe' }
+    if (dias <= 0)  return { label: 'Sin vencer', color: '#059669', bg: '#d1fae5' }
+    if (dias <= 30) return { label: `${dias}d`,   color: '#d97706', bg: '#fef3c7' }
+    if (dias <= 60) return { label: `${dias}d`,   color: '#ea580c', bg: '#ffedd5' }
+    return           { label: `🔴 ${dias}d`,      color: '#dc2626', bg: '#fee2e2' }
   }
 
   const pdfUrl = (comprobante: string) =>
@@ -432,6 +430,22 @@ function AppInterna() {
           <div style={{ fontSize: '11px', fontWeight: 600, color: 'rgba(255,255,255,0.25)', textTransform: 'uppercase', letterSpacing: '1.4px' }}>Cobranzas</div>
         </div>
 
+        {/* usuario logueado */}
+        <div style={{ padding: '0 16px 14px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#2554a0', border: '2px solid rgba(255,255,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 700, color: '#fff', flexShrink: 0 }}>
+            {(session.user.user_metadata?.full_name || session.user.email || 'U').slice(0, 2).toUpperCase()}
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ color: '#fff', fontSize: '12px', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'Usuario'}
+            </div>
+            <div style={{ color: 'rgba(255,255,255,0.3)', fontSize: '10px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#34d399', display: 'inline-block' }} />
+              Activo
+            </div>
+          </div>
+        </div>
+
         <div style={{ height: '1px', background: 'rgba(255,255,255,0.06)', margin: '0 20px 14px' }} />
 
         {/* vistas */}
@@ -570,15 +584,21 @@ function AppInterna() {
                 <input type="text" placeholder="Buscar cliente o factura..." value={busqueda} onChange={e => setBusqueda(e.target.value)} style={{ padding: '8px 12px 8px 32px', borderRadius: '8px', border: '1px solid #dde3f0', fontSize: '13px', width: '220px', outline: 'none', color: '#0d1b38', background: '#fff' }} />
               </div>
             )}
-            {!esDashboard && (
+            {(esClientes || esHistorial) && (
               <button onClick={exportar} style={{ background: '#2554a0', color: '#fff', border: 'none', padding: '8px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}>
                 ↗ Exportar .xlsx
               </button>
             )}
+            <button
+              onClick={() => setAdminMode(v => !v)}
+              style={{ background: adminMode ? '#0a1628' : '#fff', color: adminMode ? '#fff' : '#0d1b38', border: '1px solid #dde3f0', padding: '8px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}
+            >
+              ⚙ Admin
+            </button>
           </div>
         </div>
 
-        <SubirReporte />
+        {adminMode && <SubirReporte />}
 
         {/* ── DASHBOARD ─────────────────────────────────────────────────── */}
         {esDashboard ? (
@@ -930,91 +950,105 @@ function AppInterna() {
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '14px', marginBottom: '20px' }}>
-              <div style={{ background: '#fff', border: '1px solid #dde3f0', borderTop: '3px solid #dc2626', borderRadius: '10px', padding: '16px' }}>
-                <div style={{ fontSize: '10px', fontWeight: 600, color: '#7a8fbb', textTransform: 'uppercase', marginBottom: '6px' }}>Total vencido</div>
-                <div style={{ fontSize: '20px', fontWeight: 700, color: '#dc2626' }}>{fmt(totalVencido)}</div>
-                <div style={{ fontSize: '11px', color: '#7a8fbb' }}>{dataSel.filter(r => r.dias_mora > 0).length} facturas en mora</div>
+              {/* Tu cartera total */}
+              <div style={{ background: '#fff', border: '1px solid #dde3f0', borderTop: '3px solid #dc2626', borderRadius: '10px', padding: '18px 16px' }}>
+                <div style={{ fontSize: '10px', fontWeight: 700, color: '#7a8fbb', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '8px' }}>Tu cartera total</div>
+                <div style={{ fontSize: '22px', fontWeight: 800, color: '#0d1b38', fontFamily: 'monospace', lineHeight: 1.1 }}>{fmt(carteraTotal)}</div>
+                <div style={{ fontSize: '11px', color: '#7a8fbb', marginTop: '6px' }}>{dataSel.length} comprobantes</div>
               </div>
-              <div style={{ background: '#fff', border: '1px solid #dde3f0', borderTop: '3px solid #d97706', borderRadius: '10px', padding: '16px' }}>
-                <div style={{ fontSize: '10px', fontWeight: 600, color: '#7a8fbb', textTransform: 'uppercase', marginBottom: '6px' }}>Mora máxima</div>
-                <div style={{ fontSize: '20px', fontWeight: 700, color: '#d97706' }}>{maxMora.dias}d</div>
-                <div style={{ fontSize: '11px', color: '#7a8fbb', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{maxMora.cliente || '-'}</div>
+              {/* Revisión urgente */}
+              <div style={{ background: '#fff', border: '1px solid #dde3f0', borderTop: '3px solid #dc2626', borderRadius: '10px', padding: '18px 16px' }}>
+                <div style={{ fontSize: '10px', fontWeight: 700, color: '#7a8fbb', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '8px' }}>Revisión urgente</div>
+                <div style={{ fontSize: '22px', fontWeight: 800, color: '#dc2626', fontFamily: 'monospace', lineHeight: 1.1 }}>{fmt(totalVencido)}</div>
+                <div style={{ fontSize: '11px', color: '#7a8fbb', marginTop: '4px' }}>{dataSel.filter(r => r.dias_mora > 0).length} facturas en mora</div>
+                <button onClick={() => setFiltroEstadoTabla('mora')} style={{ marginTop: '8px', background: 'none', border: 'none', color: '#dc2626', fontSize: '12px', fontWeight: 700, cursor: 'pointer', padding: 0 }}>Ver →</button>
               </div>
-              <div style={{ background: '#fff', border: '1px solid #dde3f0', borderTop: '3px solid #7c3aed', borderRadius: '10px', padding: '16px' }}>
-                <div style={{ fontSize: '10px', fontWeight: 600, color: '#7a8fbb', textTransform: 'uppercase', marginBottom: '6px' }}>Críticas +60d</div>
-                <div style={{ fontSize: '20px', fontWeight: 700, color: '#7c3aed' }}>{criticas}</div>
-                <div style={{ fontSize: '11px', color: '#7a8fbb' }}>Requieren gestión urgente</div>
+              {/* Próximas a vencer */}
+              <div style={{ background: '#fff', border: '1px solid #dde3f0', borderTop: '3px solid #d97706', borderRadius: '10px', padding: '18px 16px' }}>
+                <div style={{ fontSize: '10px', fontWeight: 700, color: '#7a8fbb', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '8px' }}>Próximas a vencer</div>
+                <div style={{ fontSize: '32px', fontWeight: 800, color: '#d97706', lineHeight: 1.1 }}>{proxAVencer.length}</div>
+                <div style={{ fontSize: '11px', color: '#7a8fbb', marginTop: '4px' }}>vencen en 7 días</div>
+                <button onClick={() => setFiltroEstadoTabla('sinvencer')} style={{ marginTop: '8px', background: 'none', border: 'none', color: '#d97706', fontSize: '12px', fontWeight: 700, cursor: 'pointer', padding: 0 }}>Ver →</button>
               </div>
-              <div style={{ background: '#fff', border: '1px solid #dde3f0', borderTop: '3px solid #2554a0', borderRadius: '10px', padding: '16px' }}>
-                <div style={{ fontSize: '10px', fontWeight: 600, color: '#7a8fbb', textTransform: 'uppercase', marginBottom: '6px' }}>Cartera total</div>
-                <div style={{ fontSize: '20px', fontWeight: 700, color: '#163358' }}>{fmt(carteraTotal)}</div>
-                <div style={{ fontSize: '11px', color: '#7a8fbb' }}>{dataSel.length} comprobantes</div>
+              {/* Al día */}
+              <div style={{ background: '#fff', border: '1px solid #dde3f0', borderTop: '3px solid #059669', borderRadius: '10px', padding: '18px 16px' }}>
+                <div style={{ fontSize: '10px', fontWeight: 700, color: '#7a8fbb', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '8px' }}>Al día</div>
+                <div style={{ fontSize: '32px', fontWeight: 800, color: '#059669', lineHeight: 1.1 }}>{dataSel.filter(r => r.dias_mora <= 0).length}</div>
+                <div style={{ fontSize: '11px', color: '#7a8fbb', marginTop: '4px' }}>comprobantes sin vencer</div>
+                <button onClick={() => setFiltroEstadoTabla('sinvencer')} style={{ marginTop: '8px', background: 'none', border: 'none', color: '#059669', fontSize: '12px', fontWeight: 700, cursor: 'pointer', padding: 0 }}>Ver →</button>
               </div>
             </div>
 
-            <div style={{ background: '#fff', border: '1px solid #dde3f0', borderRadius: '10px', overflow: 'hidden' }}>
-              <div style={{ padding: '12px 16px', borderBottom: '1px solid #dde3f0', display: 'flex', alignItems: 'center', gap: '8px', background: '#f8faff' }}>
-                <span style={{ fontSize: '13px', fontWeight: 600, color: '#0d1b38' }}>Comprobantes</span>
-                <span style={{ fontSize: '12px', color: '#7a8fbb' }}>{filtrados.length} registros</span>
-                {loading && <span style={{ fontSize: '11px', color: '#d97706' }}>Actualizando...</span>}
-              </div>
-              {loading && data.length === 0 ? (
-                <div style={{ padding: '48px', textAlign: 'center', color: '#7a8fbb' }}>Cargando...</div>
-              ) : filtrados.length === 0 ? (
-                <div style={{ padding: '48px', textAlign: 'center', color: '#7a8fbb' }}>No hay comprobantes para mostrar</div>
-              ) : (
-                <table key={tableKey} style={{ width: '100%', borderCollapse: 'collapse' }}>
-                  <thead>
-                    <tr style={{ background: '#f8faff', borderBottom: '1px solid #dde3f0' }}>
-                      {['Comprobante', 'Cliente', 'Ejecutivo', 'Condición', 'Vencimiento', 'Monto', 'Mora', 'PDF'].map(h => (
-                        <th key={h} style={{ padding: '10px 16px', textAlign: 'left', fontSize: '10px', fontWeight: 600, color: '#7a8fbb', textTransform: 'uppercase' }}>{h}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filtrados.map((r) => {
-                      const badge = moraBadge(r.dias_mora)
-                      const execEfectivo = localEjecutivos[r.nombre_cliente] || r.ejecutivo
-                      const ec    = getExecColor(execEfectivo)
-                      return (
-                        <tr key={r.id || r.comprobante} style={{ borderBottom: '1px solid #dde3f0' }}>
-                          <td style={{ padding: '12px 16px', fontSize: '12px', fontFamily: 'monospace', color: '#3d5278' }}>{r.comprobante}</td>
-                          <td style={{ padding: '12px 16px', fontSize: '13px', fontWeight: 600, color: '#0d1b38' }}>{r.nombre_cliente}</td>
-                          <td style={{ padding: '12px 16px' }}>
-                            <select
-                              value={execEfectivo || ''}
-                              onChange={e => {
-                                const nuevo = e.target.value
-                                if (!nuevo) return
-                                const viejo = execEfectivo
-                                setLocalEjecutivos(prev => ({ ...prev, [r.nombre_cliente]: nuevo }))
-                                updateEjecutivoLocal(r.nombre_cliente, nuevo)
-                                handleAsignarEjecutivo(r.nombre_cliente, nuevo, viejo)
-                              }}
-                              style={{ padding: '3px 8px', borderRadius: '20px', border: `1px solid ${ec.bg}`, fontSize: '11px', fontWeight: 500, color: ec.bg, background: ec.bg + '20', cursor: 'pointer', outline: 'none' }}
-                            >
-                              {!execEfectivo && <option value="">Sin asignar</option>}
-                              {EJECUTIVOS.map(e => <option key={e} value={e}>{e}</option>)}
-                            </select>
-                          </td>
-                          <td style={{ padding: '12px 16px', fontSize: '12px', color: '#7a8fbb' }}>{r.condicion || '-'}</td>
-                          <td style={{ padding: '12px 16px', fontSize: '12px', color: '#3d5278' }}>{r.fecha_vencimiento}</td>
-                          <td style={{ padding: '12px 16px', fontSize: '12px', fontWeight: 600, fontFamily: 'monospace' }}>{fmt(r.monto)}</td>
-                          <td style={{ padding: '12px 16px' }}>
-                            <span style={{ background: badge.bg, color: badge.color, padding: '3px 9px', borderRadius: '20px', fontSize: '11px', fontWeight: 600 }}>{badge.label}</span>
-                          </td>
-                          <td style={{ padding: '12px 16px' }}>
-                            <button onClick={() => abrirPdf(r)} style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', background: '#f0f4ff', color: '#2554a0', padding: '5px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, border: 'none', cursor: 'pointer' }}>
-                              📄 Ver PDF
-                            </button>
-                          </td>
-                        </tr>
-                      )
-                    })}
-                  </tbody>
-                </table>
-              )}
-            </div>
+            {(() => {
+              const sinVencer  = filtrados.filter(r => r.dias_mora <= 0)
+              const vencidas   = filtrados.filter(r => r.dias_mora > 0)
+              const ordenados  = [...sinVencer, ...vencidas]
+              return (
+                <div style={{ background: '#fff', border: '1px solid #dde3f0', borderRadius: '10px', overflow: 'hidden' }}>
+                  <div style={{ padding: '12px 16px', borderBottom: '1px solid #dde3f0', display: 'flex', alignItems: 'center', gap: '8px', background: '#f8faff' }}>
+                    <span style={{ fontSize: '13px', fontWeight: 600, color: '#0d1b38' }}>Comprobantes</span>
+                    <span style={{ fontSize: '12px', color: '#7a8fbb' }}>{filtrados.length} comprobantes</span>
+                    {loading && <span style={{ fontSize: '11px', color: '#d97706' }}>Actualizando...</span>}
+                    <button onClick={exportar} style={{ marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: '6px', background: '#2554a0', color: '#fff', border: 'none', borderRadius: '8px', padding: '6px 12px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>
+                      ↓ .xlsx
+                    </button>
+                  </div>
+                  {loading && data.length === 0 ? (
+                    <div style={{ padding: '48px', textAlign: 'center', color: '#7a8fbb' }}>Cargando...</div>
+                  ) : filtrados.length === 0 ? (
+                    <div style={{ padding: '48px', textAlign: 'center', color: '#7a8fbb' }}>No hay comprobantes para mostrar</div>
+                  ) : (
+                    <div style={{ overflowX: 'auto' }}>
+                      <table key={tableKey} style={{ width: '100%', borderCollapse: 'collapse' }}>
+                        <thead>
+                          <tr style={{ background: '#f8faff', borderBottom: '1px solid #dde3f0' }}>
+                            {['Comprobante', 'Cliente', 'Emisión', 'Condición', 'Vencimiento', 'Monto', 'Mora', 'Factura'].map(h => (
+                              <th key={h} style={{ padding: '10px 16px', textAlign: h === 'Monto' ? 'right' : 'left', fontSize: '10px', fontWeight: 600, color: '#7a8fbb', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>{h}</th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {ordenados.map((r, idx) => {
+                            const badge = moraBadge(r.dias_mora)
+                            const showSeparator = vencidas.length > 0 && sinVencer.length > 0 && idx === sinVencer.length
+                            return (
+                              <>
+                                {showSeparator && (
+                                  <tr key="sep-vencidas" style={{ background: '#fee2e2' }}>
+                                    <td colSpan={8} style={{ padding: '8px 16px', fontSize: '12px', fontWeight: 700, color: '#dc2626' }}>
+                                      ⚠ Vencidas — {vencidas.length} {vencidas.length === 1 ? 'factura' : 'facturas'}
+                                    </td>
+                                  </tr>
+                                )}
+                                <tr key={r.id || r.comprobante}
+                                  style={{ borderBottom: '1px solid #dde3f0', background: r.dias_mora > 0 ? 'rgba(254,226,226,0.25)' : '' }}
+                                  onMouseEnter={e => (e.currentTarget.style.background = '#f8faff')}
+                                  onMouseLeave={e => (e.currentTarget.style.background = r.dias_mora > 0 ? 'rgba(254,226,226,0.25)' : '')}>
+                                  <td style={{ padding: '11px 16px', fontSize: '12px', fontFamily: 'monospace', color: '#3d5278', whiteSpace: 'nowrap' }}>{r.comprobante}</td>
+                                  <td style={{ padding: '11px 16px', fontSize: '13px', fontWeight: 600, color: '#0d1b38', maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.nombre_cliente}</td>
+                                  <td style={{ padding: '11px 16px', fontSize: '12px', color: '#7a8fbb', whiteSpace: 'nowrap' }}>{fmtFecha(r.fecha_emision)}</td>
+                                  <td style={{ padding: '11px 16px', fontSize: '12px', color: '#7a8fbb', whiteSpace: 'nowrap' }}>{r.condicion || '-'}</td>
+                                  <td style={{ padding: '11px 16px', fontSize: '12px', color: '#3d5278', whiteSpace: 'nowrap' }}>{fmtFecha(r.fecha_vencimiento)}</td>
+                                  <td style={{ padding: '11px 16px', fontSize: '12px', fontWeight: 700, fontFamily: 'monospace', textAlign: 'right', whiteSpace: 'nowrap' }}>{fmt(r.monto)}</td>
+                                  <td style={{ padding: '11px 16px' }}>
+                                    <span style={{ background: badge.bg, color: badge.color, padding: '3px 9px', borderRadius: '20px', fontSize: '11px', fontWeight: 600, whiteSpace: 'nowrap' }}>{badge.label}</span>
+                                  </td>
+                                  <td style={{ padding: '11px 16px' }}>
+                                    <button onClick={() => abrirPdf(r)} style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', background: '#f0f4ff', color: '#2554a0', padding: '5px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, border: 'none', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                                      📄 Abrir PDF
+                                    </button>
+                                  </td>
+                                </tr>
+                              </>
+                            )
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              )
+            })()}
           </>
         )}
       </main>
