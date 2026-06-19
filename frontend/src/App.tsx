@@ -99,6 +99,9 @@ function AppInterna({ session }: { session: Session }) {
   // ── datos filtrados para vistas de tabla ──────────────────────────────────
   const esSinAsignar = (ej: string | null | undefined) => !ej || ej === 'Sin asignar'
 
+  const hoyDate = new Date(); hoyDate.setHours(0, 0, 0, 0)
+  const en7dias = new Date(hoyDate.getTime() + 7 * 86400000)
+
   const filtrados = data.filter(r => {
     if (ejecutivoSeleccionado === 'Sin asignar') {
       if (!esSinAsignar(r.ejecutivo)) return false
@@ -160,8 +163,6 @@ function AppInterna({ session }: { session: Session }) {
     .sort((a, b) => b.vencido - a.vencido)
 
   // ── métricas adicionales para nuevo dashboard ─────────────────────────────
-  const hoyDate = new Date(); hoyDate.setHours(0,0,0,0)
-  const en7dias  = new Date(hoyDate.getTime() + 7 * 86400000)
   const proxAVencer = dataSel.filter(r => {
     if (r.dias_mora > 0 || !r.fecha_vencimiento) return false
     const v = new Date(r.fecha_vencimiento + 'T00:00:00')
