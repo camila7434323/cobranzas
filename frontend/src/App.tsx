@@ -107,16 +107,6 @@ function AppInterna({ session }: { session: Session }) {
       if (!esSinAsignar(r.ejecutivo)) return false
     } else if (ejecutivoSeleccionado && r.ejecutivo !== ejecutivoSeleccionado) return false
     if (filtroClienteTabla && r.nombre_cliente !== filtroClienteTabla) return false
-    if (filtroEstadoTabla === 'sinvencer' && r.dias_mora > 0) return false
-    if (filtroEstadoTabla === 'mora'     && r.dias_mora <= 0) return false
-    if (filtroEstadoTabla === '1-30'    && !(r.dias_mora >= 1 && r.dias_mora <= 30)) return false
-    if (filtroEstadoTabla === '31-60'   && !(r.dias_mora > 30 && r.dias_mora <= 60)) return false
-    if (filtroEstadoTabla === '60+'     && r.dias_mora <= 60) return false
-    if (filtroEstadoTabla === 'proximas') {
-      if (r.dias_mora > 0 || !r.fecha_vencimiento) return false
-      const v = new Date(r.fecha_vencimiento + 'T00:00:00')
-      if (!(v >= hoyDate && v <= en7dias)) return false
-    }
     if (vista === 'mora'     && r.dias_mora <= 0) return false
     if (vista === 'criticas' && r.dias_mora <= 60) return false
     if (busqueda) {
@@ -129,6 +119,22 @@ function AppInterna({ session }: { session: Session }) {
     }
     return true
   })
+
+  const aplicarFiltroEstado = (lista: typeof data) => {
+    switch (filtroEstadoTabla) {
+      case 'mora':     return lista.filter(r => r.dias_mora > 0)
+      case 'sinvencer':return lista.filter(r => r.dias_mora <= 0)
+      case '1-30':     return lista.filter(r => r.dias_mora >= 1 && r.dias_mora <= 30)
+      case '31-60':    return lista.filter(r => r.dias_mora > 30 && r.dias_mora <= 60)
+      case '60+':      return lista.filter(r => r.dias_mora > 60)
+      case 'proximas': return lista.filter(r => {
+        if (r.dias_mora > 0 || !r.fecha_vencimiento) return false
+        const v = new Date(r.fecha_vencimiento + 'T00:00:00')
+        return v >= hoyDate && v <= en7dias
+      })
+      default: return lista
+    }
+  }
 
   const dataSel     = ejecutivoSeleccionado ? data.filter(r => r.ejecutivo === ejecutivoSeleccionado) : data
   const totalVencido = dataSel.filter(r => r.dias_mora > 0).reduce((s, r) => s + r.monto, 0)
@@ -987,9 +993,10 @@ function AppInterna({ session }: { session: Session }) {
             </div>
 
             {(() => {
-              const sinVencer  = filtrados.filter(r => r.dias_mora <= 0)
-              const vencidas   = filtrados.filter(r => r.dias_mora > 0)
-              const ordenados  = [...sinVencer, ...vencidas]
+              const base      = aplicarFiltroEstado(filtrados)
+              const sinVencer = base.filter(r => r.dias_mora <= 0)
+              const vencidas  = base.filter(r => r.dias_mora > 0)
+              const ordenados = [...sinVencer, ...vencidas]
               return (
                 <div style={{ background: '#fff', border: '1px solid #dde3f0', borderRadius: '10px', overflow: 'hidden' }}>
                   <div style={{ padding: '12px 16px', borderBottom: '1px solid #dde3f0', display: 'flex', alignItems: 'center', gap: '8px', background: '#f8faff' }}>
