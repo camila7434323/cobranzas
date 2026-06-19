@@ -598,12 +598,10 @@ function AppInterna({ session }: { session: Session }) {
         <div style={{ padding: '0 12px 8px' }}>
           <div style={{ fontSize: '9px', fontWeight: 700, letterSpacing: '1.6px', textTransform: 'uppercase', color: 'rgba(255,255,255,0.22)', padding: '0 8px', marginBottom: '6px' }}>Vistas</div>
           {([
-            { key: 'dashboard', label: 'Dashboard',              count: data.length,                                  badgeStyle: 'blue' },
-            { key: 'todos',     label: 'Todos los comprobantes', count: data.length,                                  badgeStyle: 'blue' },
-            { key: 'mora',      label: 'En mora',                count: data.filter(r => r.dias_mora > 0).length,    badgeStyle: 'red'  },
-            { key: 'criticas',  label: 'Críticas +60d',          count: data.filter(r => r.dias_mora > 60).length,   badgeStyle: 'red'  },
-            { key: 'historial', label: 'Historial cobrado',      count: historial.length,                             badgeStyle: 'green'},
-            { key: 'clientes',  label: 'Listado de clientes',    count: clientesMap.size,                             badgeStyle: 'gray' },
+            { key: 'dashboard', label: 'Dashboard',              count: data.length,       badgeStyle: 'blue'  },
+            { key: 'todos',     label: 'Todos los comprobantes', count: data.length,       badgeStyle: 'blue'  },
+            { key: 'historial', label: 'Historial cobrado',      count: historial.length,  badgeStyle: 'green' },
+            { key: 'clientes',  label: 'Listado de clientes',    count: clientesMap.size,  badgeStyle: 'gray'  },
           ] as { key: string; label: string; count: number; badgeStyle: 'blue' | 'red' | 'green' | 'gray' }[]).map(item => {
             const isActive = vista === item.key
             const badgeColors = {
@@ -828,7 +826,7 @@ function AppInterna({ session }: { session: Session }) {
                       return (
                         <div key={c.name} style={{ marginBottom: '10px' }}>
                           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px', gap: '8px' }}>
-                            <span onClick={() => { setBusqueda(c.name); setVista('mora') }} style={{ fontSize: '13px', fontWeight: 600, color: '#1d4170', textDecoration: 'underline', textDecorationColor: '#a8c4f5', cursor: 'pointer', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '45%' }}>{c.name}</span>
+                            <span onClick={() => { setFiltroClienteTabla(c.name); setBusqueda(''); setFiltroEstadoTabla(''); setFiltroMoraRange(''); setEjecutivoSeleccionado(null); setVista('todos') }} style={{ fontSize: '13px', fontWeight: 600, color: '#1d4170', textDecoration: 'underline', textDecorationColor: '#a8c4f5', cursor: 'pointer', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '45%' }}>{c.name}</span>
                             <span style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
                               <span style={{ fontFamily: 'monospace', fontSize: '13px', fontWeight: 700, color: '#0d1b38', minWidth: '110px', textAlign: 'right' }}>{fmt(c.monto)}</span>
                               <span style={{ fontSize: '11px', fontWeight: 700, padding: '2px 6px', borderRadius: '20px', background: bc + '18', border: '1px solid ' + bc + '35', color: bc }}>{c.pct}%</span>
