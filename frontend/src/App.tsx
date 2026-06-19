@@ -968,21 +968,21 @@ function AppInterna({ session }: { session: Session }) {
                 <div style={{ fontSize: '10px', fontWeight: 700, color: '#7a8fbb', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '8px' }}>Revisión urgente</div>
                 <div style={{ fontSize: '22px', fontWeight: 800, color: '#dc2626', fontFamily: 'monospace', lineHeight: 1.1 }}>{fmt(totalVencido)}</div>
                 <div style={{ fontSize: '11px', color: '#7a8fbb', marginTop: '4px' }}>{dataSel.filter(r => r.dias_mora > 0).length} facturas en mora</div>
-                <button onClick={() => setFiltroEstadoTabla('mora')} style={{ marginTop: '8px', background: 'none', border: 'none', color: '#dc2626', fontSize: '12px', fontWeight: 700, cursor: 'pointer', padding: 0 }}>Ver →</button>
+                <button onClick={() => { setVista('mora'); setFiltroEstadoTabla(''); setFiltroClienteTabla(''); setEjecutivoSeleccionado(null) }} style={{ marginTop: '8px', background: 'none', border: 'none', color: '#dc2626', fontSize: '12px', fontWeight: 700, cursor: 'pointer', padding: 0 }}>Ver →</button>
               </div>
               {/* Próximas a vencer */}
               <div style={{ background: '#fff', border: '1px solid #dde3f0', borderTop: '3px solid #d97706', borderRadius: '10px', padding: '18px 16px' }}>
                 <div style={{ fontSize: '10px', fontWeight: 700, color: '#7a8fbb', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '8px' }}>Próximas a vencer</div>
                 <div style={{ fontSize: '32px', fontWeight: 800, color: '#d97706', lineHeight: 1.1 }}>{proxAVencer.length}</div>
                 <div style={{ fontSize: '11px', color: '#7a8fbb', marginTop: '4px' }}>vencen en 7 días</div>
-                <button onClick={() => setFiltroEstadoTabla('proximas')} style={{ marginTop: '8px', background: 'none', border: 'none', color: '#d97706', fontSize: '12px', fontWeight: 700, cursor: 'pointer', padding: 0 }}>Ver →</button>
+                <button onClick={() => { setVista('todos'); setFiltroEstadoTabla('proximas'); setFiltroClienteTabla(''); setEjecutivoSeleccionado(null) }} style={{ marginTop: '8px', background: 'none', border: 'none', color: '#d97706', fontSize: '12px', fontWeight: 700, cursor: 'pointer', padding: 0 }}>Ver →</button>
               </div>
               {/* Al día */}
               <div style={{ background: '#fff', border: '1px solid #dde3f0', borderTop: '3px solid #059669', borderRadius: '10px', padding: '18px 16px' }}>
                 <div style={{ fontSize: '10px', fontWeight: 700, color: '#7a8fbb', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '8px' }}>Al día</div>
                 <div style={{ fontSize: '32px', fontWeight: 800, color: '#059669', lineHeight: 1.1 }}>{dataSel.filter(r => r.dias_mora <= 0).length}</div>
                 <div style={{ fontSize: '11px', color: '#7a8fbb', marginTop: '4px' }}>comprobantes sin vencer</div>
-                <button onClick={() => setFiltroEstadoTabla('sinvencer')} style={{ marginTop: '8px', background: 'none', border: 'none', color: '#059669', fontSize: '12px', fontWeight: 700, cursor: 'pointer', padding: 0 }}>Ver →</button>
+                <button onClick={() => { setVista('todos'); setFiltroEstadoTabla('sinvencer'); setFiltroClienteTabla(''); setEjecutivoSeleccionado(null) }} style={{ marginTop: '8px', background: 'none', border: 'none', color: '#059669', fontSize: '12px', fontWeight: 700, cursor: 'pointer', padding: 0 }}>Ver →</button>
               </div>
             </div>
 
@@ -994,7 +994,7 @@ function AppInterna({ session }: { session: Session }) {
                 <div style={{ background: '#fff', border: '1px solid #dde3f0', borderRadius: '10px', overflow: 'hidden' }}>
                   <div style={{ padding: '12px 16px', borderBottom: '1px solid #dde3f0', display: 'flex', alignItems: 'center', gap: '8px', background: '#f8faff' }}>
                     <span style={{ fontSize: '13px', fontWeight: 600, color: '#0d1b38' }}>Comprobantes</span>
-                    <span style={{ fontSize: '12px', color: '#7a8fbb' }}>{filtrados.length} comprobantes</span>
+                    <span style={{ fontSize: '12px', color: '#7a8fbb' }}>{ordenados.length} comprobantes</span>
                     {loading && <span style={{ fontSize: '11px', color: '#d97706' }}>Actualizando...</span>}
                     <button onClick={exportar} style={{ marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: '6px', background: '#2554a0', color: '#fff', border: 'none', borderRadius: '8px', padding: '6px 12px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>
                       ↓ .xlsx
