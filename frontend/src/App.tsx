@@ -736,111 +736,84 @@ function AppInterna() {
 
         /* ── HISTORIAL ──────────────────────────────────────────────────── */
         ) : esHistorial ? (
-          (() => {
-            const totalCobrado    = historialFiltrado.reduce((s, r) => s + (r.monto || 0), 0)
-            const totalPendiente  = data.filter(r => r.dias_mora > 0).reduce((s, r) => s + r.monto, 0)
-            const clientesUnicos  = new Set(historialFiltrado.map(r => r.cliente)).size
-            return (
-              <>
-                {/* ── Resumen de totales ── */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px', marginBottom: '18px' }}>
-                  {[
-                    { label: 'Total cobrado', valor: fmt(totalCobrado), color: '#059669', bg: '#f0fdf4', border: '#bbf7d0' },
-                    { label: 'Total pendiente', valor: fmt(totalPendiente), color: '#dc2626', bg: '#fef2f2', border: '#fca5a5' },
-                    { label: 'Cobros registrados', valor: historialFiltrado.length.toString(), color: '#2554a0', bg: '#eff6ff', border: '#bfdbfe' },
-                    { label: 'Clientes únicos', valor: clientesUnicos.toString(), color: '#7c3aed', bg: '#faf5ff', border: '#ddd6fe' },
-                  ].map(({ label, valor, color, bg, border }) => (
-                    <div key={label} style={{ background: bg, border: `1px solid ${border}`, borderRadius: '10px', padding: '14px 16px' }}>
-                      <div style={{ fontSize: '11px', color, fontWeight: 600, textTransform: 'uppercase', marginBottom: '4px' }}>{label}</div>
-                      <div style={{ fontSize: '20px', fontWeight: 700, color, fontFamily: 'monospace' }}>{valor}</div>
-                    </div>
-                  ))}
-                </div>
+          <>
+            {/* ── Filtros ── */}
+            <div style={{ display: 'flex', gap: '8px', marginBottom: '14px', alignItems: 'center', flexWrap: 'wrap' }}>
+              <select value={filtroEjecutivoHistorial} onChange={e => setFiltroEjecutivoHistorial(e.target.value)} style={SEL}>
+                <option value="">Todos los ejecutivos</option>
+                {EJECUTIVOS.map(e => <option key={e} value={e}>{e}</option>)}
+              </select>
+              <select value={filtroClienteHistorial} onChange={e => setFiltroClienteHistorial(e.target.value)} style={SEL}>
+                <option value="">Todos los clientes</option>
+                {clientesHistorialOpts.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+              <input type="date" value={filtroFechaDesde} onChange={e => setFiltroFechaDesde(e.target.value)}
+                style={{ ...SEL, padding: '6px 10px' }} title="Desde" />
+              <input type="date" value={filtroFechaHasta} onChange={e => setFiltroFechaHasta(e.target.value)}
+                style={{ ...SEL, padding: '6px 10px' }} title="Hasta" />
+              {hayFiltrosHistorial && <button onClick={limpiarFiltrosHistorial} style={BTN_LIMPIAR}>✕ Limpiar</button>}
+            </div>
 
-                {/* ── Filtros ── */}
-                <div style={{ display: 'flex', gap: '8px', marginBottom: '14px', alignItems: 'center', flexWrap: 'wrap' }}>
-                  <select value={filtroEjecutivoHistorial} onChange={e => setFiltroEjecutivoHistorial(e.target.value)} style={SEL}>
-                    <option value="">Todos los ejecutivos</option>
-                    {EJECUTIVOS.map(e => <option key={e} value={e}>{e}</option>)}
-                  </select>
-                  <select value={filtroClienteHistorial} onChange={e => setFiltroClienteHistorial(e.target.value)} style={SEL}>
-                    <option value="">Todos los clientes</option>
-                    {clientesHistorialOpts.map(c => <option key={c} value={c}>{c}</option>)}
-                  </select>
-                  <input type="date" value={filtroFechaDesde} onChange={e => setFiltroFechaDesde(e.target.value)}
-                    style={{ ...SEL, padding: '6px 10px' }} title="Desde" />
-                  <input type="date" value={filtroFechaHasta} onChange={e => setFiltroFechaHasta(e.target.value)}
-                    style={{ ...SEL, padding: '6px 10px' }} title="Hasta" />
-                  {hayFiltrosHistorial && <button onClick={limpiarFiltrosHistorial} style={BTN_LIMPIAR}>✕ Limpiar</button>}
-                  <button onClick={exportar} style={{ marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: '6px', background: '#2554a0', color: '#fff', border: 'none', borderRadius: '8px', padding: '7px 14px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>
-                    ↓ Exportar .xlsx
-                  </button>
-                </div>
-
-                {/* ── Tabla ── */}
-                <div style={{ background: '#fff', border: '1px solid #dde3f0', borderRadius: '10px', overflow: 'hidden' }}>
-                  <div style={{ padding: '12px 16px', borderBottom: '1px solid #dde3f0', display: 'flex', alignItems: 'center', gap: '8px', background: '#f8faff' }}>
-                    <span style={{ fontSize: '13px', fontWeight: 600, color: '#0d1b38' }}>Historial de cobros</span>
-                    <span style={{ fontSize: '12px', color: '#7a8fbb' }}>{historialFiltrado.length} registros</span>
-                    {loadingHistorial && <span style={{ fontSize: '11px', color: '#d97706' }}>Actualizando...</span>}
-                  </div>
-                  {loadingHistorial && historial.length === 0 ? (
-                    <div style={{ padding: '48px', textAlign: 'center', color: '#7a8fbb' }}>Cargando...</div>
-                  ) : historialFiltrado.length === 0 ? (
-                    <div style={{ padding: '48px', textAlign: 'center', color: '#7a8fbb' }}>
-                      <div style={{ fontSize: '32px', marginBottom: '12px' }}>📋</div>
-                      <div style={{ fontWeight: 600, marginBottom: '6px' }}>Sin resultados</div>
-                      <div style={{ fontSize: '12px' }}>No hay registros para los filtros aplicados.</div>
-                    </div>
-                  ) : (
-                    <div style={{ overflowX: 'auto' }}>
-                      <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                        <thead>
-                          <tr style={{ background: '#f8faff', borderBottom: '1px solid #dde3f0' }}>
-                            {['Comprobante', 'Cliente', 'Ejecutivo', 'Monto cobrado', 'Fecha cobro', 'Cobrado por', 'Estado', 'PDF'].map(h => (
-                              <th key={h} style={{ padding: '10px 16px', textAlign: 'left', fontSize: '10px', fontWeight: 600, color: '#7a8fbb', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>{h}</th>
-                            ))}
+            {/* ── Tabla ── */}
+            <div style={{ background: '#fff', border: '1px solid #dde3f0', borderRadius: '10px', overflow: 'hidden' }}>
+              <div style={{ padding: '12px 16px', borderBottom: '1px solid #dde3f0', display: 'flex', alignItems: 'center', gap: '8px', background: '#f8faff' }}>
+                <span style={{ fontSize: '13px', fontWeight: 600, color: '#0d1b38' }}>Historial de cobros</span>
+                <span style={{ fontSize: '12px', color: '#7a8fbb' }}>{historialFiltrado.length} registros</span>
+                {loadingHistorial && <span style={{ fontSize: '11px', color: '#d97706' }}>Actualizando...</span>}
+                <button onClick={exportar} style={{ marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: '6px', background: '#2554a0', color: '#fff', border: 'none', borderRadius: '8px', padding: '6px 12px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>
+                  ↓ .xlsx
+                </button>
+              </div>
+              {loadingHistorial && historial.length === 0 ? (
+                <div style={{ padding: '48px', textAlign: 'center', color: '#7a8fbb' }}>Cargando...</div>
+              ) : historialFiltrado.length === 0 ? (
+                <div style={{ padding: '48px', textAlign: 'center', color: '#7a8fbb' }}>No hay registros para los filtros aplicados.</div>
+              ) : (
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                    <thead>
+                      <tr style={{ background: '#f8faff', borderBottom: '1px solid #dde3f0' }}>
+                        {['Comprobante', 'Cliente', 'Ejecutivo', 'Fecha cobro', 'Monto', 'Estado', 'PDF'].map(h => (
+                          <th key={h} style={{ padding: '10px 16px', textAlign: 'left', fontSize: '10px', fontWeight: 600, color: '#7a8fbb', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {historialFiltrado.map((r) => {
+                        const ec = getExecColor(r.ejecutivo)
+                        const fecha = r.fecha_cobro ? r.fecha_cobro.slice(0, 10) : '-'
+                        return (
+                          <tr key={r.comprobante_id ? `hist-${r.comprobante_id}` : `${r.comprobante_numero}-${r.cliente}`}
+                            style={{ borderBottom: '1px solid #dde3f0' }}
+                            onMouseEnter={e => (e.currentTarget.style.background = '#f8faff')}
+                            onMouseLeave={e => (e.currentTarget.style.background = '')}>
+                            <td style={{ padding: '12px 16px', fontSize: '12px', fontFamily: 'monospace', color: '#3d5278', whiteSpace: 'nowrap' }}>{r.comprobante_numero}</td>
+                            <td style={{ padding: '12px 16px', fontSize: '13px', fontWeight: 600, color: '#0d1b38', maxWidth: '180px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.cliente}</td>
+                            <td style={{ padding: '12px 16px' }}>
+                              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '11px', fontWeight: 500, padding: '3px 8px', borderRadius: '20px', background: ec.bg + '20', color: ec.bg, whiteSpace: 'nowrap' }}>
+                                <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: ec.bg, flexShrink: 0 }} />
+                                {r.ejecutivo || 'Sin asignar'}
+                              </span>
+                            </td>
+                            <td style={{ padding: '12px 16px', fontSize: '12px', color: '#3d5278', whiteSpace: 'nowrap' }}>{fecha}</td>
+                            <td style={{ padding: '12px 16px', fontSize: '13px', fontWeight: 600, fontFamily: 'monospace', color: '#059669', whiteSpace: 'nowrap' }}>{fmt(r.monto)}</td>
+                            <td style={{ padding: '12px 16px' }}>
+                              <span style={{ display: 'inline-block', background: '#f0fdf4', color: '#059669', border: '1px solid #bbf7d0', borderRadius: '20px', padding: '2px 10px', fontSize: '11px', fontWeight: 600 }}>Cobrado</span>
+                            </td>
+                            <td style={{ padding: '12px 16px' }}>
+                              <button onClick={() => abrirPdf({ ...r, comprobante: r.comprobante_numero, nombre_cliente: r.cliente, fecha_emision: null, fecha_vencimiento: null })} style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', background: '#f0f4ff', color: '#2554a0', padding: '5px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, border: 'none', cursor: 'pointer' }}>
+                                📄 Ver PDF
+                              </button>
+                            </td>
                           </tr>
-                        </thead>
-                        <tbody>
-                          {historialFiltrado.map((r) => {
-                            const ec = getExecColor(r.ejecutivo)
-                            const fecha = r.fecha_cobro ? r.fecha_cobro.slice(0, 10) : '-'
-                            return (
-                              <tr key={r.comprobante_id ? `hist-${r.comprobante_id}` : `${r.comprobante_numero}-${r.cliente}`}
-                                style={{ borderBottom: '1px solid #dde3f0' }}
-                                onMouseEnter={e => (e.currentTarget.style.background = '#f8faff')}
-                                onMouseLeave={e => (e.currentTarget.style.background = '')}>
-                                <td style={{ padding: '12px 16px', fontSize: '12px', fontFamily: 'monospace', color: '#3d5278', whiteSpace: 'nowrap' }}>{r.comprobante_numero}</td>
-                                <td style={{ padding: '12px 16px', fontSize: '13px', fontWeight: 600, color: '#0d1b38', maxWidth: '180px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.cliente}</td>
-                                <td style={{ padding: '12px 16px' }}>
-                                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '11px', fontWeight: 500, padding: '3px 8px', borderRadius: '20px', background: ec.bg + '20', color: ec.bg, whiteSpace: 'nowrap' }}>
-                                    <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: ec.bg, flexShrink: 0 }} />
-                                    {r.ejecutivo || 'Sin asignar'}
-                                  </span>
-                                </td>
-                                <td style={{ padding: '12px 16px', fontSize: '13px', fontWeight: 700, fontFamily: 'monospace', color: '#059669', whiteSpace: 'nowrap' }}>{fmt(r.monto)}</td>
-                                <td style={{ padding: '12px 16px', fontSize: '12px', color: '#3d5278', whiteSpace: 'nowrap' }}>{fecha}</td>
-                                <td style={{ padding: '12px 16px', fontSize: '12px', color: '#7a8fbb' }}>{r.cobrado_por || '-'}</td>
-                                <td style={{ padding: '12px 16px' }}>
-                                  <span style={{ display: 'inline-block', background: '#f0fdf4', color: '#059669', border: '1px solid #bbf7d0', borderRadius: '20px', padding: '2px 10px', fontSize: '11px', fontWeight: 600 }}>Completo</span>
-                                </td>
-                                <td style={{ padding: '12px 16px' }}>
-                                  <button onClick={() => abrirPdf({ ...r, comprobante: r.comprobante_numero, nombre_cliente: r.cliente, fecha_emision: null, fecha_vencimiento: null })} style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', background: '#f0f4ff', color: '#2554a0', padding: '5px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, border: 'none', cursor: 'pointer' }}>
-                                    📄 PDF
-                                  </button>
-                                </td>
-                              </tr>
-                            )
-                          })}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
+                        )
+                      })}
+                    </tbody>
+                  </table>
                 </div>
-              </>
-            )
-          })()
+              )}
+            </div>
+          </>
 
         /* ── LISTADO DE CLIENTES ──────────────────────────────────────── */
         ) : esClientes ? (
