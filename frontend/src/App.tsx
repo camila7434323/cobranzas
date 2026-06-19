@@ -105,10 +105,15 @@ function AppInterna({ session }: { session: Session }) {
     } else if (ejecutivoSeleccionado && r.ejecutivo !== ejecutivoSeleccionado) return false
     if (filtroClienteTabla && r.nombre_cliente !== filtroClienteTabla) return false
     if (filtroEstadoTabla === 'sinvencer' && r.dias_mora > 0) return false
-    if (filtroEstadoTabla === 'mora'    && r.dias_mora <= 0) return false
-    if (filtroEstadoTabla === '1-30'   && !(r.dias_mora >= 1 && r.dias_mora <= 30)) return false
-    if (filtroEstadoTabla === '31-60'  && !(r.dias_mora > 30 && r.dias_mora <= 60)) return false
-    if (filtroEstadoTabla === '60+'    && r.dias_mora <= 60) return false
+    if (filtroEstadoTabla === 'mora'     && r.dias_mora <= 0) return false
+    if (filtroEstadoTabla === '1-30'    && !(r.dias_mora >= 1 && r.dias_mora <= 30)) return false
+    if (filtroEstadoTabla === '31-60'   && !(r.dias_mora > 30 && r.dias_mora <= 60)) return false
+    if (filtroEstadoTabla === '60+'     && r.dias_mora <= 60) return false
+    if (filtroEstadoTabla === 'proximas') {
+      if (r.dias_mora > 0 || !r.fecha_vencimiento) return false
+      const v = new Date(r.fecha_vencimiento + 'T00:00:00')
+      if (!(v >= hoyDate && v <= en7dias)) return false
+    }
     if (vista === 'mora'     && r.dias_mora <= 0) return false
     if (vista === 'criticas' && r.dias_mora <= 60) return false
     if (busqueda) {
@@ -940,7 +945,8 @@ function AppInterna({ session }: { session: Session }) {
               </select>
               <select value={filtroEstadoTabla} onChange={e => setFiltroEstadoTabla(e.target.value)} style={SEL}>
                 <option value="">Todos los estados</option>
-                <option value="sinvencer">Sin vencer</option>
+                <option value="sinvencer">Al día (sin vencer)</option>
+                <option value="proximas">Próximas a vencer (7d)</option>
                 <option value="mora">En mora</option>
                 <option value="1-30">Mora 1–30 días</option>
                 <option value="31-60">Mora 31–60 días</option>
@@ -968,7 +974,7 @@ function AppInterna({ session }: { session: Session }) {
                 <div style={{ fontSize: '10px', fontWeight: 700, color: '#7a8fbb', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '8px' }}>Próximas a vencer</div>
                 <div style={{ fontSize: '32px', fontWeight: 800, color: '#d97706', lineHeight: 1.1 }}>{proxAVencer.length}</div>
                 <div style={{ fontSize: '11px', color: '#7a8fbb', marginTop: '4px' }}>vencen en 7 días</div>
-                <button onClick={() => setFiltroEstadoTabla('sinvencer')} style={{ marginTop: '8px', background: 'none', border: 'none', color: '#d97706', fontSize: '12px', fontWeight: 700, cursor: 'pointer', padding: 0 }}>Ver →</button>
+                <button onClick={() => setFiltroEstadoTabla('proximas')} style={{ marginTop: '8px', background: 'none', border: 'none', color: '#d97706', fontSize: '12px', fontWeight: 700, cursor: 'pointer', padding: 0 }}>Ver →</button>
               </div>
               {/* Al día */}
               <div style={{ background: '#fff', border: '1px solid #dde3f0', borderTop: '3px solid #059669', borderRadius: '10px', padding: '18px 16px' }}>
