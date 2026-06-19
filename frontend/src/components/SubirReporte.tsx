@@ -1,5 +1,30 @@
 import { useRef, useState } from 'react'
 import axios from 'axios'
+import type { Extra } from '../hooks/useExtras'
+
+const MESES = ['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SEPTIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE']
+
+function parseDescXML(xmlText: string): Extra[] {
+  const doc = new DOMParser().parseFromString(xmlText, 'text/xml')
+  const rows: Extra[] = []
+  doc.querySelectorAll('DATO').forEach(dato => {
+    const comp = dato.querySelector('Comp')?.textContent?.trim() ?? ''
+    const item = dato.querySelector('Item_Desc')?.textContent?.trim() ?? ''
+    const cc   = dato.querySelector('CCDescripcion')?.textContent?.trim() ?? ''
+    const tipo = dato.querySelector('CoditemDesc')?.textContent?.trim() ?? ''
+    if (!comp) return
+    const ocM  = item.match(/(?:OC|HES|PEDIDO)[^\w]*([\w/-]+)/i)
+    const oc   = ocM ? ocM[0].trim() : ''
+    const perM = item.match(new RegExp(`(${MESES.join('|')})\\s+\\d{4}`, 'i'))
+    const per  = perM ? perM[0].toUpperCase() : ''
+    rows.push({
+      comprobante: comp, descripcion: item, centro_costo: cc, tipo_servicio: tipo,
+      oc_hes_pedido: oc, colaborador: '', otros_conceptos: '',
+      condicion_override: '', periodo: per, nota: '',
+    })
+  })
+  return rows
+}
 
 function mostrarOverlay(mensaje: string, submensaje: string) {
   eliminarOverlay()
@@ -67,6 +92,36 @@ function mostrarOverlayExito(nuevos: number, actualizados: number, cobradas: num
   document.body.appendChild(overlay)
 }
 
+function mostrarOverlayExitoXml(cantidad: number) {
+  eliminarOverlay()
+  const overlay = document.createElement('div')
+  overlay.id = '__overlay_carga__'
+  overlay.innerHTML = `
+    <div style="
+      position:fixed;top:0;left:0;width:100%;height:100%;
+      background:#000;z-index:99999;
+      display:flex;align-items:center;justify-content:center;
+      font-family:Inter,sans-serif;
+    ">
+      <div style="
+        background:#fff;border-radius:16px;padding:50px 40px;
+        text-align:center;max-width:440px;width:90%;
+        box-shadow:0 25px 80px rgba(0,0,0,0.6);
+      ">
+        <div style="font-size:54px;margin-bottom:18px;">✅</div>
+        <h2 style="color:#059669;margin:0 0 14px;font-size:22px;font-weight:700;">XML cargado</h2>
+        <p style="color:#7a8fbb;margin:0;font-size:14px;"><strong>${cantidad}</strong> descripciones guardadas correctamente.</p>
+        <button onclick="document.getElementById('__overlay_carga__').remove()" style="
+          margin-top:24px;background:#2554a0;color:#fff;border:none;
+          padding:10px 28px;border-radius:8px;font-size:14px;
+          font-weight:700;cursor:pointer;
+        ">Cerrar</button>
+      </div>
+    </div>
+  `
+  document.body.appendChild(overlay)
+}
+
 function mostrarOverlayError(mensaje: string) {
   eliminarOverlay()
   const overlay = document.createElement('div')
@@ -102,9 +157,15 @@ function eliminarOverlay() {
   if (existing) existing.remove()
 }
 
-export function SubirReporte() {
-  const inputRef = useRef<HTMLInputElement | null>(null)
-  const [cargando, setCargando] = useState(false)
+interface Props {
+  batchUpsert?: (rows: Extra[]) => Promise<void>
+}
+
+export function SubirReporte({ batchUpsert }: Props) {
+  const inputRef  = useRef<HTMLInputElement | null>(null)
+  const xmlRef    = useRef<HTMLInputElement | null>(null)
+  const [cargando,    setCargando]    = useState(false)
+  const [cargandoXml, setCargandoXml] = useState(false)
   const [error, setError] = useState('')
 
   const handleArchivo = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -127,18 +188,12 @@ export function SubirReporte() {
     formData.append('usuario', 'usuario@asap.com')
 
     try {
-      const { data } = await axios.post('/api/reportes/subir', formData, {
-        timeout: 600000
-      })
-
+      const { data } = await axios.post('/api/reportes/subir', formData, { timeout: 600000 })
       mostrarOverlayExito(data.nuevos, data.actualizados, data.cobradas, data.total)
-
       setTimeout(() => { window.location.reload() }, 2500)
     } catch (err: any) {
       const raw = err?.response?.data?.error
-      const errorMsg = (typeof raw === 'string' ? raw : raw?.message)
-        || err?.message
-        || 'Error al procesar el archivo.'
+      const errorMsg = (typeof raw === 'string' ? raw : raw?.message) || err?.message || 'Error al procesar el archivo.'
       console.error('Error:', err)
       mostrarOverlayError(errorMsg)
       setError(errorMsg)
@@ -148,53 +203,70 @@ export function SubirReporte() {
     }
   }
 
+  const handleXml = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const archivo = e.target.files?.[0]
+    if (!archivo || !batchUpsert) return
+
+    setCargandoXml(true)
+    setError('')
+    mostrarOverlay('Procesando XML...', 'Leyendo descripciones de comprobantes')
+
+    try {
+      const text = await archivo.text()
+      const rows = parseDescXML(text)
+      if (rows.length === 0) {
+        mostrarOverlayError('No se encontraron registros DATO en el XML.')
+        setError('No se encontraron registros en el XML.')
+        return
+      }
+      await batchUpsert(rows)
+      mostrarOverlayExitoXml(rows.length)
+    } catch (err: any) {
+      const errorMsg = err?.message || 'Error al procesar el XML.'
+      mostrarOverlayError(errorMsg)
+      setError(errorMsg)
+    } finally {
+      setCargandoXml(false)
+      if (xmlRef.current) xmlRef.current.value = ''
+    }
+  }
+
+  const btnBase: React.CSSProperties = {
+    color: '#fff', padding: '11px 20px', borderRadius: '8px',
+    fontSize: '14px', fontWeight: 700, display: 'inline-flex',
+    alignItems: 'center', gap: '10px', userSelect: 'none',
+    boxShadow: '0 10px 22px rgba(0,0,0,0.12)',
+  }
+
   return (
     <div style={{
-      background: '#fff',
-      border: '1px solid #d9e2f1',
-      borderRadius: '8px',
-      padding: '18px 20px',
-      marginBottom: '24px',
-      boxShadow: '0 10px 28px rgba(38,63,101,0.06)'
+      background: '#fff', border: '1px solid #d9e2f1', borderRadius: '8px',
+      padding: '18px 20px', marginBottom: '24px',
+      boxShadow: '0 10px 28px rgba(38,63,101,0.06)',
     }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap' }}>
         <span style={{ color: '#6478a8', fontSize: '14px', fontWeight: 500 }}>
           Carga el reporte de cuentas corrientes para actualizar la base.
         </span>
-        <label style={{
-          background: cargando ? '#7a8fbb' : '#2554a0',
-          color: '#fff',
-          padding: '11px 20px',
-          borderRadius: '8px',
-          cursor: cargando ? 'not-allowed' : 'pointer',
-          fontSize: '14px',
-          fontWeight: 700,
-          boxShadow: cargando ? 'none' : '0 10px 22px rgba(37,84,160,0.22)',
-          display: 'inline-flex',
-          alignItems: 'center',
-          gap: '10px',
-          userSelect: 'none',
-        }}>
-          {cargando && (
-            <span style={{
-              width: '14px', height: '14px',
-              border: '2px solid rgba(255,255,255,0.35)',
-              borderTopColor: '#fff',
-              borderRadius: '50%',
-              display: 'inline-block',
-              animation: '__spin__ 0.8s linear infinite'
-            }} />
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+          <label style={{ ...btnBase, background: cargando ? '#7a8fbb' : '#2554a0', cursor: cargando ? 'not-allowed' : 'pointer' }}>
+            {cargando && (
+              <span style={{ width: '14px', height: '14px', border: '2px solid rgba(255,255,255,0.35)', borderTopColor: '#fff', borderRadius: '50%', display: 'inline-block', animation: '__spin__ 0.8s linear infinite' }} />
+            )}
+            {cargando ? 'Procesando...' : 'Cargar Excel'}
+            <input ref={inputRef} type="file" accept=".xls,.xlsx,.csv,.xml" onChange={handleArchivo} disabled={cargando} style={{ display: 'none' }} />
+          </label>
+
+          {batchUpsert && (
+            <label style={{ ...btnBase, background: cargandoXml ? '#7a8fbb' : '#0f766e', cursor: cargandoXml ? 'not-allowed' : 'pointer' }}>
+              {cargandoXml && (
+                <span style={{ width: '14px', height: '14px', border: '2px solid rgba(255,255,255,0.35)', borderTopColor: '#fff', borderRadius: '50%', display: 'inline-block', animation: '__spin__ 0.8s linear infinite' }} />
+              )}
+              {cargandoXml ? 'Procesando...' : '📄 Cargar XML descripciones'}
+              <input ref={xmlRef} type="file" accept=".xml" onChange={handleXml} disabled={cargandoXml} style={{ display: 'none' }} />
+            </label>
           )}
-          {cargando ? 'Procesando...' : 'Cargar Excel'}
-          <input
-            ref={inputRef}
-            type="file"
-            accept=".xls,.xlsx,.csv,.xml"
-            onChange={handleArchivo}
-            disabled={cargando}
-            style={{ display: 'none' }}
-          />
-        </label>
+        </div>
       </div>
 
       {error && (

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, Fragment } from 'react'
 import * as XLSX from 'xlsx'
 import { useComprobantes } from './hooks/useComprobantes'
 import { useHistorial } from './hooks/useHistorial'
@@ -7,6 +7,78 @@ import { Login } from './components/Login'
 import { EJECUTIVOS, CONDICIONES_CLIENTE } from './data/ejecutivos'
 import { supabase } from './lib/supabase'
 import type { Session } from '@supabase/supabase-js'
+import { useExtras } from './hooks/useExtras'
+import type { Extra } from './hooks/useExtras'
+
+const CONDICION_OPTS = [
+  'Cuenta Corriente 7 días', 'Cuenta Corriente a 15 días', 'Cuenta Corriente 30 días',
+  'Cuenta Corriente 45 días', 'Cuenta Corriente 60 días', 'Cuenta Corriente 90 días', 'Contado',
+]
+
+function DescPanel({ comprobante, extra, adminMode, onUpdate }: {
+  comprobante: string
+  extra: Extra | undefined
+  adminMode: boolean
+  onUpdate: (comp: string, fields: Record<string, string>) => void
+}) {
+  const toVals = (e: Extra | undefined): Record<string, string> => ({
+    descripcion: e?.descripcion ?? '', centro_costo: e?.centro_costo ?? '',
+    tipo_servicio: e?.tipo_servicio ?? '', oc_hes_pedido: e?.oc_hes_pedido ?? '',
+    colaborador: e?.colaborador ?? '', otros_conceptos: e?.otros_conceptos ?? '',
+    condicion_override: e?.condicion_override ?? '', periodo: e?.periodo ?? '', nota: e?.nota ?? '',
+  })
+  const [vals, setVals] = useState<Record<string, string>>(toVals(extra))
+  useEffect(() => { setVals(toVals(extra)) }, [extra])
+
+  const save = (field: string, value: string) => onUpdate(comprobante, { [field]: value })
+
+  const FIELDS = [
+    { key: 'descripcion',        label: 'Descripción',       wide: true },
+    { key: 'centro_costo',       label: 'Centro de costo' },
+    { key: 'tipo_servicio',      label: 'Tipo de servicio' },
+    { key: 'oc_hes_pedido',      label: 'OC / HES / Pedido' },
+    { key: 'colaborador',        label: 'Colaborador' },
+    { key: 'otros_conceptos',    label: 'Otros conceptos' },
+    { key: 'condicion_override', label: 'Condición override', type: 'select' },
+    { key: 'periodo',            label: 'Período' },
+    { key: 'nota',               label: 'Nota',              wide: true },
+  ]
+
+  return (
+    <div style={{ padding: '14px 20px 18px', background: '#f8faff', borderTop: '2px solid #e0e7ff' }}>
+      <div style={{ fontSize: '11px', fontWeight: 700, color: '#4338ca', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '12px' }}>
+        Información adicional{!adminMode && <span style={{ color: '#94a3b8', fontWeight: 400, textTransform: 'none', marginLeft: '6px' }}>(solo lectura)</span>}
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
+        {FIELDS.map(f => (
+          <div key={f.key} style={f.wide ? { gridColumn: '1 / -1' } : {}}>
+            <div style={{ fontSize: '10px', fontWeight: 700, color: '#7a8fbb', textTransform: 'uppercase', letterSpacing: '0.7px', marginBottom: '4px' }}>{f.label}</div>
+            {f.type === 'select' ? (
+              <select
+                value={vals[f.key] || ''}
+                onChange={e => { const v = e.target.value; setVals(p => ({ ...p, [f.key]: v })); if (adminMode) save(f.key, v) }}
+                disabled={!adminMode}
+                style={{ width: '100%', padding: '6px 10px', borderRadius: '6px', border: '1px solid #dde3f0', fontSize: '12px', background: '#fff', color: '#374151', outline: 'none' }}
+              >
+                <option value="">—</option>
+                {CONDICION_OPTS.map(o => <option key={o} value={o}>{o}</option>)}
+              </select>
+            ) : (
+              <input
+                type="text"
+                value={vals[f.key] || ''}
+                onChange={e => setVals(p => ({ ...p, [f.key]: e.target.value }))}
+                onBlur={e => { if (adminMode) save(f.key, e.target.value) }}
+                readOnly={!adminMode}
+                style={{ width: '100%', padding: '6px 10px', borderRadius: '6px', border: '1px solid #dde3f0', fontSize: '12px', background: adminMode ? '#fff' : '#f1f5f9', color: '#374151', outline: 'none', boxSizing: 'border-box' }}
+              />
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
 
 const COLORES_EXEC: Record<string, { bg: string; color: string; initials: string }> = {
   'Lucas Roca':            { bg: '#1d4170', color: '#fff', initials: 'LR' },
@@ -54,6 +126,7 @@ function App() {
 function AppInterna({ session }: { session: Session }) {
   const { data, loading, error: errorComprobantes, refetch, asignarEjecutivo, updateEjecutivoLocal } = useComprobantes()
   const { data: historial, loading: loadingHistorial, error: errorHistorial, refetch: refetchHistorial } = useHistorial()
+  const { extras, updateExtra, batchUpsert } = useExtras()
   const [vista, setVista] = useState<Vista>('dashboard')
   const [tableKey] = useState(0)
   const [busqueda, setBusqueda] = useState('')
@@ -62,7 +135,13 @@ function AppInterna({ session }: { session: Session }) {
   const [modalComprobante, setModalComprobante] = useState<any | null>(null)
   const [linkCopiado, setLinkCopiado] = useState(false)
   const [pdfNoEncontrado, setPdfNoEncontrado] = useState('')
-  const [adminMode, setAdminMode] = useState(false)
+  const [adminMode, setAdminMode]             = useState(false)
+  const [showAdminPrompt, setShowAdminPrompt] = useState(false)
+  const [adminPwInput, setAdminPwInput]       = useState('')
+  const [expandedRows, setExpandedRows]       = useState<Set<string>>(new Set())
+  const [sortCol, setSortCol]                 = useState<string | null>(null)
+  const [sortDir, setSortDir]                 = useState<'asc' | 'desc'>('asc')
+  const [filtroMoraRange, setFiltroMoraRange] = useState('')
 
   const mainRef = useRef<HTMLDivElement>(null)
   useEffect(() => { mainRef.current?.scrollTo({ top: 0 }) }, [vista])
@@ -335,15 +414,25 @@ function AppInterna({ session }: { session: Session }) {
       }))
       sheet = 'Clientes'; file = `clientes_${hoy}.xlsx`
     } else {
-      rows  = filtrados.map(r => ({
-        'Comprobante': r.comprobante,
-        'Cliente':     r.nombre_cliente,
-        'Ejecutivo':   r.ejecutivo || 'Sin asignar',
-        'Condición':   r.condicion || '',
-        'Vencimiento': r.fecha_vencimiento,
-        'Monto':       r.monto,
-        'Días mora':   r.dias_mora,
-      }))
+      rows  = filtrados.map(r => {
+        const ex = extras.get(r.comprobante)
+        return {
+          'Comprobante':   r.comprobante,
+          'Cliente':       r.nombre_cliente,
+          'Ejecutivo':     r.ejecutivo || 'Sin asignar',
+          'Condición':     ex?.condicion_override || r.condicion || '',
+          'Vencimiento':   r.fecha_vencimiento,
+          'Monto':         r.monto,
+          'Días mora':     r.dias_mora,
+          'Descripción':   ex?.descripcion || '',
+          'Centro costo':  ex?.centro_costo || '',
+          'Tipo servicio': ex?.tipo_servicio || '',
+          'OC/HES':        ex?.oc_hes_pedido || '',
+          'Colaborador':   ex?.colaborador || '',
+          'Período':       ex?.periodo || '',
+          'Nota':          ex?.nota || '',
+        }
+      })
       sheet = 'Comprobantes'; file = `comprobantes_${hoy}.xlsx`
     }
 
@@ -367,9 +456,14 @@ function AppInterna({ session }: { session: Session }) {
   const hayFiltrosHistorial = !!(filtroEjecutivoHistorial || filtroClienteHistorial || filtroFechaDesde || filtroFechaHasta)
   const hayFiltrosClientes  = !!(filtroEjecutivoClientes || filtroEstadoClientes)
 
-  const limpiarFiltrosTabla     = () => { setEjecutivoSeleccionado(null); setFiltroClienteTabla(''); setFiltroEstadoTabla('') }
+  const limpiarFiltrosTabla     = () => { setEjecutivoSeleccionado(null); setFiltroClienteTabla(''); setFiltroEstadoTabla(''); setFiltroMoraRange(''); setSortCol(null); setSortDir('asc') }
   const limpiarFiltrosHistorial = () => { setFiltroEjecutivoHistorial(''); setFiltroClienteHistorial(''); setFiltroFechaDesde(''); setFiltroFechaHasta('') }
   const limpiarFiltrosClientes  = () => { setFiltroEjecutivoClientes(''); setFiltroEstadoClientes('') }
+
+  const handleSort = (col: string) => {
+    if (sortCol === col) { setSortDir(d => d === 'asc' ? 'desc' : 'asc') }
+    else { setSortCol(col); setSortDir('asc') }
+  }
 
   return (
     <div style={{ display: 'flex', width: '100vw', height: '100vh', fontFamily: 'Inter, sans-serif', background: '#eef2f8', overflow: 'hidden' }}>
@@ -416,6 +510,45 @@ function AppInterna({ session }: { session: Session }) {
                   {linkCopiado ? '✅ Copiado!' : '🔗 Copiar link'}
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── ADMIN PASSWORD MODAL ─────────────────────────────────────────── */}
+      {showAdminPrompt && (
+        <div onClick={() => setShowAdminPrompt(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 1001, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: '16px', width: '340px', padding: '32px', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}>
+            <h2 style={{ margin: '0 0 8px', fontSize: '18px', fontWeight: 700, color: '#0d1b38' }}>Acceso Admin</h2>
+            <p style={{ margin: '0 0 20px', fontSize: '13px', color: '#7a8fbb' }}>Ingresá la contraseña para activar el modo administrador.</p>
+            <input
+              type="password"
+              value={adminPwInput}
+              onChange={e => setAdminPwInput(e.target.value)}
+              onKeyDown={e => {
+                if (e.key === 'Enter') {
+                  if (adminPwInput === 'asap2026') { setAdminMode(true); setShowAdminPrompt(false) }
+                  else setAdminPwInput('')
+                }
+                if (e.key === 'Escape') setShowAdminPrompt(false)
+              }}
+              placeholder="Contraseña"
+              autoFocus
+              style={{ width: '100%', padding: '10px 14px', borderRadius: '8px', border: '1px solid #dde3f0', fontSize: '14px', outline: 'none', boxSizing: 'border-box', marginBottom: '12px' }}
+            />
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button
+                onClick={() => { if (adminPwInput === 'asap2026') { setAdminMode(true); setShowAdminPrompt(false) } else setAdminPwInput('') }}
+                style={{ flex: 1, background: '#2554a0', color: '#fff', border: 'none', padding: '10px', borderRadius: '8px', fontSize: '14px', fontWeight: 700, cursor: 'pointer' }}
+              >
+                Ingresar
+              </button>
+              <button
+                onClick={() => setShowAdminPrompt(false)}
+                style={{ flex: 1, background: '#f1f5f9', color: '#374151', border: 'none', padding: '10px', borderRadius: '8px', fontSize: '14px', fontWeight: 600, cursor: 'pointer' }}
+              >
+                Cancelar
+              </button>
             </div>
           </div>
         </div>
@@ -486,9 +619,10 @@ function AppInterna({ session }: { session: Session }) {
                 onClick={() => {
                   setVista(item.key as Vista)
                   setEjecutivoSeleccionado(null)
-                  setFiltroClienteTabla(''); setFiltroEstadoTabla('')
+                  setFiltroClienteTabla(''); setFiltroEstadoTabla(''); setFiltroMoraRange('')
                   setFiltroEjecutivoHistorial(''); setFiltroClienteHistorial('')
                   setFiltroEjecutivoClientes(''); setFiltroEstadoClientes('')
+                  setSortCol(null); setSortDir('asc'); setExpandedRows(new Set())
                   if (item.key === 'historial') refetchHistorial()
                   else refetch()
                 }}
@@ -603,15 +737,18 @@ function AppInterna({ session }: { session: Session }) {
               </button>
             )}
             <button
-              onClick={() => setAdminMode(v => !v)}
+              onClick={() => {
+                if (adminMode) { setAdminMode(false) }
+                else { setShowAdminPrompt(true); setAdminPwInput('') }
+              }}
               style={{ background: adminMode ? '#0a1628' : '#fff', color: adminMode ? '#fff' : '#0d1b38', border: '1px solid #dde3f0', padding: '8px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}
             >
-              ⚙ Admin
+              ⚙ {adminMode ? 'Admin ✓' : 'Admin'}
             </button>
           </div>
         </div>
 
-        {adminMode && <SubirReporte />}
+        {adminMode && <SubirReporte batchUpsert={batchUpsert} />}
 
         {/* ── DASHBOARD ─────────────────────────────────────────────────── */}
         {esDashboard ? (
@@ -947,7 +1084,7 @@ function AppInterna({ session }: { session: Session }) {
         ) : (
           <>
             {/* barra de filtros */}
-            <div style={{ display: 'flex', gap: '8px', marginBottom: '14px', alignItems: 'center', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', gap: '8px', marginBottom: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
               <select value={ejecutivoSeleccionado || ''} onChange={e => setEjecutivoSeleccionado(e.target.value || null)} style={SEL}>
                 <option value="">Todos los ejecutivos</option>
                 {EJECUTIVOS.map(e => <option key={e} value={e}>{e}</option>)}
@@ -956,7 +1093,7 @@ function AppInterna({ session }: { session: Session }) {
                 <option value="">Todos los clientes</option>
                 {clientesTablaOpts.map(c => <option key={c} value={c}>{c}</option>)}
               </select>
-              <select value={filtroEstadoTabla} onChange={e => setFiltroEstadoTabla(e.target.value)} style={SEL}>
+              <select value={filtroEstadoTabla} onChange={e => { setFiltroEstadoTabla(e.target.value); setFiltroMoraRange('') }} style={SEL}>
                 <option value="">Todos los estados</option>
                 <option value="sinvencer">Al día (sin vencer)</option>
                 <option value="proximas">Próximas a vencer (7d)</option>
@@ -967,6 +1104,25 @@ function AppInterna({ session }: { session: Session }) {
               </select>
               {hayFiltrosTabla && <button onClick={limpiarFiltrosTabla} style={BTN_LIMPIAR}>✕ Limpiar</button>}
             </div>
+            {filtroEstadoTabla === 'mora' && (
+              <div style={{ display: 'flex', gap: '6px', marginBottom: '14px', flexWrap: 'wrap' }}>
+                {([
+                  { v: '',         label: 'Todos',            ac: '#374151', ia: '#f1f5f9', tc: '#374151', bc: '#9ca3af' },
+                  { v: 'recien',   label: '⚡ Recién 1–7d',   ac: '#d97706', ia: '#fef3c7', tc: '#92400e', bc: '#d97706' },
+                  { v: 'atencion', label: '⚠ Atención 8–15d', ac: '#ea580c', ia: '#ffedd5', tc: '#c2410c', bc: '#ea580c' },
+                  { v: 'critica',  label: '🔴 Crítica 16–30d', ac: '#dc2626', ia: '#fee2e2', tc: '#dc2626', bc: '#dc2626' },
+                  { v: 'urgente',  label: '🚨 Urgente +30d',  ac: '#7c3aed', ia: '#ede9fe', tc: '#7c3aed', bc: '#7c3aed' },
+                ] as { v: string; label: string; ac: string; ia: string; tc: string; bc: string }[]).map(opt => {
+                  const active = filtroMoraRange === opt.v
+                  return (
+                    <button key={opt.v} onClick={() => setFiltroMoraRange(opt.v)}
+                      style={{ padding: '5px 14px', borderRadius: '20px', border: `1px solid ${opt.bc}40`, background: active ? opt.bc : opt.ia, color: active ? '#fff' : opt.tc, fontSize: '12px', fontWeight: 600, cursor: 'pointer', transition: 'all 0.15s' }}>
+                      {opt.label}
+                    </button>
+                  )
+                })}
+              </div>
+            )}
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '14px', marginBottom: '20px' }}>
               {/* Tu cartera total */}
@@ -999,10 +1155,35 @@ function AppInterna({ session }: { session: Session }) {
             </div>
 
             {(() => {
-              const base      = aplicarFiltroEstado(filtrados)
-              const sinVencer = base.filter(r => r.dias_mora <= 0)
-              const vencidas  = base.filter(r => r.dias_mora > 0)
-              const ordenados = [...sinVencer, ...vencidas]
+              const base   = aplicarFiltroEstado(filtrados)
+              const ranged = filtroMoraRange === 'recien'   ? base.filter(r => r.dias_mora >= 1 && r.dias_mora <= 7)
+                           : filtroMoraRange === 'atencion' ? base.filter(r => r.dias_mora > 7 && r.dias_mora <= 15)
+                           : filtroMoraRange === 'critica'  ? base.filter(r => r.dias_mora > 15 && r.dias_mora <= 30)
+                           : filtroMoraRange === 'urgente'  ? base.filter(r => r.dias_mora > 30)
+                           : base
+
+              const sinVencer = !sortCol ? ranged.filter(r => r.dias_mora <= 0) : []
+              const vencidas  = !sortCol ? ranged.filter(r => r.dias_mora > 0)  : []
+              const ordenados = sortCol
+                ? [...ranged].sort((a: any, b: any) => {
+                    const av = a[sortCol]; const bv = b[sortCol]
+                    const cmp = typeof av === 'number' ? av - bv : String(av ?? '').localeCompare(String(bv ?? ''))
+                    return sortDir === 'asc' ? cmp : -cmp
+                  })
+                : [...sinVencer, ...vencidas]
+
+              const COLS = [
+                { key: '',                  label: '',            sortable: false },
+                { key: 'comprobante',       label: 'Comprobante', sortable: true  },
+                { key: 'nombre_cliente',    label: 'Cliente',     sortable: true  },
+                { key: 'fecha_emision',     label: 'Emisión',     sortable: true  },
+                { key: 'condicion',         label: 'Condición',   sortable: true  },
+                { key: 'fecha_vencimiento', label: 'Vencimiento', sortable: true  },
+                { key: 'monto',             label: 'Monto',       sortable: true  },
+                { key: 'dias_mora',         label: 'Mora',        sortable: true  },
+                { key: '',                  label: 'Factura',     sortable: false },
+              ]
+
               return (
                 <div style={{ background: '#fff', border: '1px solid #dde3f0', borderRadius: '10px', overflow: 'hidden' }}>
                   <div style={{ padding: '12px 16px', borderBottom: '1px solid #dde3f0', display: 'flex', alignItems: 'center', gap: '8px', background: '#f8faff' }}>
@@ -1022,32 +1203,50 @@ function AppInterna({ session }: { session: Session }) {
                       <table key={tableKey} style={{ width: '100%', borderCollapse: 'collapse' }}>
                         <thead>
                           <tr style={{ background: '#f8faff', borderBottom: '1px solid #dde3f0' }}>
-                            {['Comprobante', 'Cliente', 'Emisión', 'Condición', 'Vencimiento', 'Monto', 'Mora', 'Factura'].map(h => (
-                              <th key={h} style={{ padding: '10px 16px', textAlign: h === 'Monto' ? 'right' : 'left', fontSize: '10px', fontWeight: 600, color: '#7a8fbb', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>{h}</th>
+                            {COLS.map((col, ci) => (
+                              <th key={ci}
+                                onClick={col.sortable ? () => handleSort(col.key) : undefined}
+                                style={{ padding: '10px 16px', textAlign: col.key === 'monto' ? 'right' : 'left', fontSize: '10px', fontWeight: 600, color: sortCol === col.key ? '#2554a0' : '#7a8fbb', textTransform: 'uppercase', whiteSpace: 'nowrap', cursor: col.sortable ? 'pointer' : 'default', userSelect: 'none' }}
+                              >
+                                {col.label}{col.sortable && sortCol === col.key ? (sortDir === 'asc' ? ' ▲' : ' ▼') : ''}
+                              </th>
                             ))}
                           </tr>
                         </thead>
                         <tbody>
                           {ordenados.map((r, idx) => {
                             const badge = moraBadge(r.dias_mora)
-                            const showSeparator = vencidas.length > 0 && sinVencer.length > 0 && idx === sinVencer.length
+                            const showSep = !sortCol && vencidas.length > 0 && sinVencer.length > 0 && idx === sinVencer.length
+                            const rowKey = r.id ? String(r.id) : r.comprobante
+                            const isExp  = expandedRows.has(rowKey)
+                            const extra  = extras.get(r.comprobante)
+                            const condDisplay = extra?.condicion_override || r.condicion || '-'
                             return (
-                              <>
-                                {showSeparator && (
-                                  <tr key="sep-vencidas" style={{ background: '#fee2e2' }}>
-                                    <td colSpan={8} style={{ padding: '8px 16px', fontSize: '12px', fontWeight: 700, color: '#dc2626' }}>
+                              <Fragment key={rowKey}>
+                                {showSep && (
+                                  <tr style={{ background: '#fee2e2' }}>
+                                    <td colSpan={9} style={{ padding: '8px 16px', fontSize: '12px', fontWeight: 700, color: '#dc2626' }}>
                                       ⚠ Vencidas — {vencidas.length} {vencidas.length === 1 ? 'factura' : 'facturas'}
                                     </td>
                                   </tr>
                                 )}
-                                <tr key={r.id || r.comprobante}
-                                  style={{ borderBottom: '1px solid #dde3f0', background: r.dias_mora > 0 ? 'rgba(254,226,226,0.25)' : '' }}
+                                <tr
+                                  style={{ borderBottom: isExp ? 'none' : '1px solid #dde3f0', background: r.dias_mora > 0 ? 'rgba(254,226,226,0.25)' : '' }}
                                   onMouseEnter={e => (e.currentTarget.style.background = '#f8faff')}
-                                  onMouseLeave={e => (e.currentTarget.style.background = r.dias_mora > 0 ? 'rgba(254,226,226,0.25)' : '')}>
+                                  onMouseLeave={e => (e.currentTarget.style.background = r.dias_mora > 0 ? 'rgba(254,226,226,0.25)' : '')}
+                                >
+                                  <td style={{ padding: '8px 4px 8px 12px', width: '32px' }}>
+                                    <button
+                                      onClick={() => setExpandedRows(prev => { const next = new Set(prev); if (next.has(rowKey)) next.delete(rowKey); else next.add(rowKey); return next })}
+                                      style={{ width: '22px', height: '22px', border: '1px solid #dde3f0', borderRadius: '4px', background: isExp ? '#2554a0' : '#f1f5f9', color: isExp ? '#fff' : '#374151', fontSize: '14px', fontWeight: 700, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: 0, lineHeight: 1 }}
+                                    >
+                                      {isExp ? '−' : '+'}
+                                    </button>
+                                  </td>
                                   <td style={{ padding: '11px 16px', fontSize: '12px', fontFamily: 'monospace', color: '#3d5278', whiteSpace: 'nowrap' }}>{r.comprobante}</td>
                                   <td style={{ padding: '11px 16px', fontSize: '13px', fontWeight: 600, color: '#0d1b38', maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.nombre_cliente}</td>
                                   <td style={{ padding: '11px 16px', fontSize: '12px', color: '#7a8fbb', whiteSpace: 'nowrap' }}>{fmtFecha(r.fecha_emision)}</td>
-                                  <td style={{ padding: '11px 16px', fontSize: '12px', color: '#7a8fbb', whiteSpace: 'nowrap' }}>{r.condicion || '-'}</td>
+                                  <td style={{ padding: '11px 16px', fontSize: '12px', color: '#7a8fbb', whiteSpace: 'nowrap' }}>{condDisplay}</td>
                                   <td style={{ padding: '11px 16px', fontSize: '12px', color: '#3d5278', whiteSpace: 'nowrap' }}>{fmtFecha(r.fecha_vencimiento)}</td>
                                   <td style={{ padding: '11px 16px', fontSize: '12px', fontWeight: 700, fontFamily: 'monospace', textAlign: 'right', whiteSpace: 'nowrap' }}>{fmt(r.monto)}</td>
                                   <td style={{ padding: '11px 16px' }}>
@@ -1059,7 +1258,14 @@ function AppInterna({ session }: { session: Session }) {
                                     </button>
                                   </td>
                                 </tr>
-                              </>
+                                {isExp && (
+                                  <tr style={{ borderBottom: '1px solid #dde3f0' }}>
+                                    <td colSpan={9} style={{ padding: 0 }}>
+                                      <DescPanel comprobante={r.comprobante} extra={extra} adminMode={adminMode} onUpdate={updateExtra} />
+                                    </td>
+                                  </tr>
+                                )}
+                              </Fragment>
                             )
                           })}
                         </tbody>
