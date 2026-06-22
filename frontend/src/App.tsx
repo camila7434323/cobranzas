@@ -159,9 +159,11 @@ function AppInterna({ session }: { session: Session }) {
     }
   }, [errorCarga])
 
-  // filtros – tabla (todos / mora / criticas)
+  // filtros – tabla
   const [filtroClienteTabla, setFiltroClienteTabla] = useState('')
   const [filtroEstadoTabla, setFiltroEstadoTabla] = useState('')
+  const [showAlerta, setShowAlerta] = useState(true)
+  useEffect(() => { setShowAlerta(true) }, [vista, filtroClienteTabla])
 
   // filtros – historial
   const [filtroEjecutivoHistorial, setFiltroEjecutivoHistorial] = useState('')
@@ -1077,9 +1079,31 @@ function AppInterna({ session }: { session: Session }) {
             </div>
           </>
 
-        /* ── TABLA (todos / mora / criticas) ─────────────────────────── */
+        /* ── TABLA ────────────────────────────────────────────────────── */
         ) : (
           <>
+            {/* banner informativo */}
+            {showAlerta && (() => {
+              const moraCount    = filtrados.filter(r => r.dias_mora > 0).length
+              const criticaCount = filtrados.filter(r => r.dias_mora > 60).length
+              const proximasCount = filtrados.filter(r => {
+                if (r.dias_mora > 0 || !r.fecha_vencimiento) return false
+                const v = new Date(r.fecha_vencimiento + 'T00:00:00')
+                return v >= hoyDate && v <= en7dias
+              }).length
+              if (moraCount === 0 && proximasCount === 0) return null
+              return (
+                <div style={{ background: '#fffbeb', border: '1px solid #fcd34d', borderRadius: '8px', padding: '10px 16px', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <span style={{ fontSize: '15px', flexShrink: 0 }}>⚠</span>
+                  <div style={{ flex: 1, fontSize: '13px', color: '#92400e', fontWeight: 500, lineHeight: 1.5 }}>
+                    {moraCount > 0 && <span><strong>{moraCount}</strong> {moraCount === 1 ? 'factura' : 'facturas'} con mora activa</span>}
+                    {criticaCount > 0 && <span> · <strong>{criticaCount}</strong> en estado crítico (+60d)</span>}
+                    {proximasCount > 0 && <span> · <strong>{proximasCount}</strong> próximas a vencer (7d)</span>}
+                  </div>
+                  <button onClick={() => setShowAlerta(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#92400e', fontSize: '18px', lineHeight: 1, padding: '0 2px', flexShrink: 0 }}>×</button>
+                </div>
+              )
+            })()}
             {/* barra de filtros */}
             <div style={{ display: 'flex', gap: '8px', marginBottom: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
               <select value={ejecutivoSeleccionado || ''} onChange={e => setEjecutivoSeleccionado(e.target.value || null)} style={SEL}>
