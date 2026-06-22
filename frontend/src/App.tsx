@@ -1145,35 +1145,6 @@ function AppInterna({ session }: { session: Session }) {
               </div>
             )}
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '14px', marginBottom: '20px' }}>
-              {/* Tu cartera total */}
-              <div style={{ background: '#fff', border: '1px solid #dde3f0', borderTop: '3px solid #dc2626', borderRadius: '10px', padding: '18px 16px' }}>
-                <div style={{ fontSize: '10px', fontWeight: 700, color: '#7a8fbb', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '8px' }}>Tu cartera total</div>
-                <div style={{ fontSize: '22px', fontWeight: 800, color: '#0d1b38', fontFamily: 'monospace', lineHeight: 1.1 }}>{fmt(carteraTotal)}</div>
-                <div style={{ fontSize: '11px', color: '#7a8fbb', marginTop: '6px' }}>{dataSel.length} comprobantes</div>
-              </div>
-              {/* Revisión urgente */}
-              <div style={{ background: '#fff', border: '1px solid #dde3f0', borderTop: '3px solid #dc2626', borderRadius: '10px', padding: '18px 16px' }}>
-                <div style={{ fontSize: '10px', fontWeight: 700, color: '#7a8fbb', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '8px' }}>Revisión urgente</div>
-                <div style={{ fontSize: '22px', fontWeight: 800, color: '#dc2626', fontFamily: 'monospace', lineHeight: 1.1 }}>{fmt(totalVencido)}</div>
-                <div style={{ fontSize: '11px', color: '#7a8fbb', marginTop: '4px' }}>{dataSel.filter(r => r.dias_mora > 0).length} facturas en mora</div>
-                <button onClick={() => { setVista('todos'); setFiltroEstadoTabla('mora'); setFiltroClienteTabla(''); setEjecutivoSeleccionado(null) }} style={{ marginTop: '8px', background: 'none', border: 'none', color: '#dc2626', fontSize: '12px', fontWeight: 700, cursor: 'pointer', padding: 0 }}>Ver →</button>
-              </div>
-              {/* Próximas a vencer */}
-              <div style={{ background: '#fff', border: '1px solid #dde3f0', borderTop: '3px solid #d97706', borderRadius: '10px', padding: '18px 16px' }}>
-                <div style={{ fontSize: '10px', fontWeight: 700, color: '#7a8fbb', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '8px' }}>Próximas a vencer</div>
-                <div style={{ fontSize: '32px', fontWeight: 800, color: '#d97706', lineHeight: 1.1 }}>{proxAVencer.length}</div>
-                <div style={{ fontSize: '11px', color: '#7a8fbb', marginTop: '4px' }}>vencen en 7 días</div>
-                <button onClick={() => { setVista('todos'); setFiltroEstadoTabla('proximas'); setFiltroClienteTabla(''); setEjecutivoSeleccionado(null) }} style={{ marginTop: '8px', background: 'none', border: 'none', color: '#d97706', fontSize: '12px', fontWeight: 700, cursor: 'pointer', padding: 0 }}>Ver →</button>
-              </div>
-              {/* Al día */}
-              <div style={{ background: '#fff', border: '1px solid #dde3f0', borderTop: '3px solid #059669', borderRadius: '10px', padding: '18px 16px' }}>
-                <div style={{ fontSize: '10px', fontWeight: 700, color: '#7a8fbb', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '8px' }}>Al día</div>
-                <div style={{ fontSize: '32px', fontWeight: 800, color: '#059669', lineHeight: 1.1 }}>{dataSel.filter(r => r.dias_mora <= 0).length}</div>
-                <div style={{ fontSize: '11px', color: '#7a8fbb', marginTop: '4px' }}>comprobantes sin vencer</div>
-                <button onClick={() => { setVista('todos'); setFiltroEstadoTabla('sinvencer'); setFiltroClienteTabla(''); setEjecutivoSeleccionado(null) }} style={{ marginTop: '8px', background: 'none', border: 'none', color: '#059669', fontSize: '12px', fontWeight: 700, cursor: 'pointer', padding: 0 }}>Ver →</button>
-              </div>
-            </div>
 
             {(() => {
               const base   = aplicarFiltroEstado(filtrados)
