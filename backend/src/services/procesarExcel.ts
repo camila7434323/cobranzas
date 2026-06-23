@@ -224,6 +224,20 @@ export async function procesarXML(buffer: Buffer, usuario: string, nombreArchivo
 
 const MESES_EXTRAS = ['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SEPTIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE']
 
+function extraerPeriodoExtra(descripcion: string, fechaEmision: string) {
+  const textoPeriodo = descripcion.match(new RegExp(`(${MESES_EXTRAS.join('|')})\\s+(?:DE\\s+)?\\d{4}`, 'i'))
+  if (textoPeriodo) return textoPeriodo[0].replace(/\s+/g, ' ').toUpperCase()
+
+  const fecha = fechaEmision.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/)
+  if (!fecha) return ''
+
+  const mesEmision = parseInt(fecha[2], 10)
+  const anioEmision = parseInt(fecha[3], 10)
+  const mesPeriodo = mesEmision === 1 ? 12 : mesEmision - 1
+  const anioPeriodo = mesEmision === 1 ? anioEmision - 1 : anioEmision
+  return `${MESES_EXTRAS[mesPeriodo - 1]} ${anioPeriodo}`
+}
+
 function parsearExtrasXML(xmlText: string): any[] {
   const rows: any[] = []
   const vistos = new Set<string>()
@@ -241,14 +255,15 @@ function parsearExtrasXML(xmlText: string): any[] {
     const item = get('Item_Desc')
     const cc   = get('CCDescripcion')
     const tipo = get('CoditemDesc')
+    const condicion = get('CondVenta')
+    const fechaEmision = get('Comp_FEmision')
     const ocM  = item.match(/(?:OC|HES|PEDIDO)[^\w]*([\w\/-]+)/i)
     const oc   = ocM ? ocM[0].trim() : ''
-    const perM = item.match(new RegExp(`(${MESES_EXTRAS.join('|')})\\s+\\d{4}`, 'i'))
-    const per  = perM ? perM[0].toUpperCase() : ''
+    const per  = extraerPeriodoExtra(item, fechaEmision)
     rows.push({
       comprobante: comp, descripcion: item, centro_costo: cc, tipo_servicio: tipo,
       oc_hes_pedido: oc, colaborador: '', otros_conceptos: '',
-      condicion_override: '', periodo: per, nota: ''
+      condicion_override: condicion, periodo: per, nota: ''
     })
   }
   return rows

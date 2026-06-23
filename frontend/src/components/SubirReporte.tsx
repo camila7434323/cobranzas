@@ -5,6 +5,20 @@ import { supabase } from '../lib/supabase'
 
 const MESES = ['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SEPTIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE']
 
+function extraerPeriodo(descripcion: string, fechaEmision: string) {
+  const textoPeriodo = descripcion.match(new RegExp(`(${MESES.join('|')})\\s+(?:DE\\s+)?\\d{4}`, 'i'))
+  if (textoPeriodo) return textoPeriodo[0].replace(/\s+/g, ' ').toUpperCase()
+
+  const fecha = fechaEmision.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/)
+  if (!fecha) return ''
+
+  const mesEmision = parseInt(fecha[2], 10)
+  const anioEmision = parseInt(fecha[3], 10)
+  const mesPeriodo = mesEmision === 1 ? 12 : mesEmision - 1
+  const anioPeriodo = mesEmision === 1 ? anioEmision - 1 : anioEmision
+  return `${MESES[mesPeriodo - 1]} ${anioPeriodo}`
+}
+
 function mergeText(actual: string, nuevo: string) {
   const limpio = nuevo.trim()
   if (!limpio) return actual
@@ -31,11 +45,12 @@ function parseDescXML(xmlText: string): Extra[] {
     const item = dato.querySelector('Item_Desc')?.textContent?.trim() ?? ''
     const cc   = dato.querySelector('CCDescripcion')?.textContent?.trim() ?? ''
     const tipo = dato.querySelector('CoditemDesc')?.textContent?.trim() ?? ''
+    const condicion = dato.querySelector('CondVenta')?.textContent?.trim() ?? ''
+    const fechaEmision = dato.querySelector('Comp_FEmision')?.textContent?.trim() ?? ''
     if (!comp) return
     const ocM  = item.match(/(?:OC|HES|PEDIDO)[^\w]*([\w/-]+)/i)
     const oc   = ocM ? ocM[0].trim() : ''
-    const perM = item.match(new RegExp(`(${MESES.join('|')})\\s+\\d{4}`, 'i'))
-    const per  = perM ? perM[0].toUpperCase() : ''
+    const per  = extraerPeriodo(item, fechaEmision)
     const existente = rows.get(comp)
     if (existente) {
       rows.set(comp, {
@@ -45,13 +60,14 @@ function parseDescXML(xmlText: string): Extra[] {
         tipo_servicio: mergeText(existente.tipo_servicio, tipo),
         oc_hes_pedido: mergeText(existente.oc_hes_pedido, oc),
         periodo: mergeText(existente.periodo, per),
+        condicion_override: existente.condicion_override || condicion,
       })
       return
     }
     rows.set(comp, {
       comprobante: comp, descripcion: item, centro_costo: cc, tipo_servicio: tipo,
       oc_hes_pedido: oc, colaborador: '', otros_conceptos: '',
-      condicion_override: '', periodo: per, nota: '',
+      condicion_override: condicion, periodo: per, nota: '',
     })
   })
   return Array.from(rows.values())
