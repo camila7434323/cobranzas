@@ -110,8 +110,12 @@ export function SubirReporte({ batchUpsert, onExport }: Props) {
     formData.append('usuario', 'usuario@asap.com')
     try {
       const { data } = await axios.post('/api/reportes/subir', formData, { timeout: 600000 })
-      setOverlay({ kind: 'success', nuevos: data.nuevos, actualizados: data.actualizados, cobradas: data.cobradas, total: data.total })
-      setTimeout(() => { window.location.reload() }, 2500)
+      if (data.extrasGuardados > 0 && data.total === 0) {
+        setOverlay({ kind: 'success-xml', cantidad: data.extrasGuardados })
+      } else {
+        setOverlay({ kind: 'success', nuevos: data.nuevos, actualizados: data.actualizados, cobradas: data.cobradas, total: data.total })
+        setTimeout(() => { window.location.reload() }, 2500)
+      }
     } catch (err: any) {
       const raw = err?.response?.data?.error
       const msg = (typeof raw === 'string' ? raw : raw?.message) || err?.message || 'Error al procesar el archivo.'

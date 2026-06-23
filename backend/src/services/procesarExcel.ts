@@ -194,7 +194,22 @@ export async function procesarXML(buffer: Buffer, usuario: string, nombreArchivo
   console.log('📋 Procesando XML...')
 
   const xmlText = buffer.toString('utf-8')
+  const hasDatos       = xmlText.includes('<DATO>')
   const esCrystalReports = xmlText.includes('<FormattedReport') || xmlText.includes('FormattedReportObject')
+
+  // XML de descripciones (tiene <DATO> pero no estructura Crystal Reports)
+  if (hasDatos && !esCrystalReports) {
+    const extras = parsearExtrasXML(xmlText)
+    if (extras.length === 0) throw new Error('No se encontraron registros DATO en el XML.')
+    for (let i = 0; i < extras.length; i += 500) {
+      const { error } = await supabase.from('comprobante_extras')
+        .upsert(extras.slice(i, i + 500), { onConflict: 'comprobante' })
+      if (error) throw error
+    }
+    console.log(`✅ ${extras.length} extras guardados`)
+    return { nuevos: 0, actualizados: 0, cobradas: 0, total: 0, extrasGuardados: extras.length }
+  }
+
   const comprobantes = esCrystalReports
     ? parsearCrystalReportsXML(xmlText)
     : parsearClientesFlatXML(xmlText)
@@ -206,6 +221,38 @@ export async function procesarXML(buffer: Buffer, usuario: string, nombreArchivo
   console.log(`✅ Se extrajeron ${comprobantes.length} comprobantes del XML`)
 
   return sincronizarComprobantes(comprobantes, usuario, nombreArchivo)
+}
+
+const MESES_EXTRAS = ['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SEPTIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE']
+
+function parsearExtrasXML(xmlText: string): any[] {
+  const rows: any[] = []
+  const vistos = new Set<string>()
+  const datoRx = /<DATO>([\s\S]*?)<\/DATO>/g
+  let m: RegExpExecArray | null
+  while ((m = datoRx.exec(xmlText)) !== null) {
+    const block = m[1]
+    const get = (tag: string) => {
+      const tm = block.match(new RegExp(`<${tag}[^>]*>([^<]*)<\/${tag}>`, 'i'))
+      return tm ? tm[1].replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').trim() : ''
+    }
+    const comp = get('Comp')
+    if (!comp || vistos.has(comp)) continue
+    vistos.add(comp)
+    const item = get('Item_Desc')
+    const cc   = get('CCDescripcion')
+    const tipo = get('CoditemDesc')
+    const ocM  = item.match(/(?:OC|HES|PEDIDO)[^\w]*([\w\/-]+)/i)
+    const oc   = ocM ? ocM[0].trim() : ''
+    const perM = item.match(new RegExp(`(${MESES_EXTRAS.join('|')})\\s+\\d{4}`, 'i'))
+    const per  = perM ? perM[0].toUpperCase() : ''
+    rows.push({
+      comprobante: comp, descripcion: item, centro_costo: cc, tipo_servicio: tipo,
+      oc_hes_pedido: oc, colaborador: '', otros_conceptos: '',
+      condicion_override: '', periodo: per, nota: ''
+    })
+  }
+  return rows
 }
 
 export async function procesarExcel(buffer: Buffer, usuario: string, nombreArchivo?: string) {
