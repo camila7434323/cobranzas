@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 import axios from 'axios'
 import type { Extra } from '../hooks/useExtras'
+import { supabase } from '../lib/supabase'
 
 const MESES = ['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SEPTIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE']
 
@@ -30,14 +31,19 @@ type OverlayState =
   | { kind: 'loading'; title: string; sub: string }
   | { kind: 'success'; nuevos: number; actualizados: number; cobradas: number; total: number }
   | { kind: 'success-xml'; cantidad: number }
+  | { kind: 'warning-xml'; missing: number; found: number; total: number }
   | { kind: 'error'; message: string }
   | null
 
-function Overlay({ state, onClose }: { state: OverlayState; onClose: () => void }) {
+function Overlay({ state, onClose, onContinue }: {
+  state: OverlayState
+  onClose: () => void
+  onContinue?: () => void
+}) {
   if (!state) return null
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Inter,sans-serif' }}>
-      <div style={{ background: '#fff', borderRadius: '16px', padding: '50px 40px', textAlign: 'center', maxWidth: '440px', width: '90%', boxShadow: '0 25px 80px rgba(0,0,0,0.6)' }}>
+      <div style={{ background: '#fff', borderRadius: '16px', padding: '50px 40px', textAlign: 'center', maxWidth: '460px', width: '90%', boxShadow: '0 25px 80px rgba(0,0,0,0.6)' }}>
 
         {state.kind === 'loading' && (
           <>
@@ -71,6 +77,39 @@ function Overlay({ state, onClose }: { state: OverlayState; onClose: () => void 
           </>
         )}
 
+        {state.kind === 'warning-xml' && (
+          <>
+            <div style={{ fontSize: '54px', marginBottom: '18px' }}>⚠️</div>
+            <h2 style={{ color: '#d97706', margin: '0 0 14px', fontSize: '20px', fontWeight: 700 }}>Comprobantes no encontrados</h2>
+            <div style={{ background: '#fffbeb', border: '1px solid #fcd34d', borderRadius: '10px', padding: '16px 18px', marginBottom: '20px', textAlign: 'left', color: '#92400e', fontSize: '14px', lineHeight: 1.7 }}>
+              <strong>{state.missing}</strong> de los <strong>{state.total}</strong> comprobantes del XML no existen en la base de datos.
+              <br />
+              Primero cargá el <strong>XML de cobranzas</strong> correspondiente para registrar esas facturas.
+              {state.found > 0 && (
+                <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #fcd34d', color: '#78350f' }}>
+                  Los <strong>{state.found}</strong> comprobantes encontrados sí se pueden guardar.
+                </div>
+              )}
+            </div>
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', flexWrap: 'wrap' }}>
+              {state.found > 0 && onContinue && (
+                <button
+                  onClick={onContinue}
+                  style={{ background: '#d97706', color: '#fff', border: 'none', padding: '10px 20px', borderRadius: '8px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}
+                >
+                  Guardar los {state.found} encontrados
+                </button>
+              )}
+              <button
+                onClick={onClose}
+                style={{ background: state.found > 0 ? '#fff' : '#2554a0', color: state.found > 0 ? '#374151' : '#fff', border: state.found > 0 ? '1px solid #dde3f0' : 'none', padding: '10px 20px', borderRadius: '8px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}
+              >
+                {state.found > 0 ? 'Cancelar' : 'Entendido'}
+              </button>
+            </div>
+          </>
+        )}
+
         {state.kind === 'error' && (
           <>
             <div style={{ fontSize: '54px', marginBottom: '18px' }}>❌</div>
@@ -91,8 +130,9 @@ interface Props {
 }
 
 export function SubirReporte({ batchUpsert, onExport }: Props) {
-  const inputRef      = useRef<HTMLInputElement | null>(null)
-  const xmlRef        = useRef<HTMLInputElement | null>(null)
+  const inputRef        = useRef<HTMLInputElement | null>(null)
+  const xmlRef          = useRef<HTMLInputElement | null>(null)
+  const pendingRowsRef  = useRef<Extra[]>([])
   const [cargando,    setCargando]    = useState(false)
   const [cargandoXml, setCargandoXml] = useState(false)
   const [dragOver,    setDragOver]    = useState(false)
@@ -139,6 +179,23 @@ export function SubirReporte({ batchUpsert, onExport }: Props) {
     if (archivo) processExcelFile(archivo)
   }
 
+  const doSaveRows = async (rows: Extra[]) => {
+    if (!batchUpsert) return
+    setCargandoXml(true)
+    setOverlay({ kind: 'loading', title: 'Guardando descripciones...', sub: 'Actualizando base de datos' })
+    try {
+      await batchUpsert(rows)
+      setOverlay({ kind: 'success-xml', cantidad: rows.length })
+    } catch (err: any) {
+      const msg = err?.message || 'Error al guardar.'
+      setOverlay({ kind: 'error', message: msg })
+      setError(msg)
+    } finally {
+      setCargandoXml(false)
+      pendingRowsRef.current = []
+    }
+  }
+
   const handleXml = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const archivo = e.target.files?.[0]
     if (!archivo || !batchUpsert) return
@@ -153,6 +210,26 @@ export function SubirReporte({ batchUpsert, onExport }: Props) {
         setError('No se encontraron registros en el XML.')
         return
       }
+
+      // Verificar cuáles comprobantes existen en la BD
+      const nums = rows.map(r => r.comprobante)
+      const { data: existing } = await supabase
+        .from('comprobantes')
+        .select('comprobante')
+        .in('comprobante', nums)
+      const existingSet = new Set((existing ?? []).map((r: any) => r.comprobante))
+      const missingCount = nums.filter(n => !existingSet.has(n)).length
+      const foundCount   = nums.length - missingCount
+
+      if (missingCount > 0) {
+        // Guardar solo las filas que tienen comprobante en la BD
+        pendingRowsRef.current = rows.filter(r => existingSet.has(r.comprobante))
+        setCargandoXml(false)
+        if (xmlRef.current) xmlRef.current.value = ''
+        setOverlay({ kind: 'warning-xml', missing: missingCount, found: foundCount, total: rows.length })
+        return
+      }
+
       await batchUpsert(rows)
       setOverlay({ kind: 'success-xml', cantidad: rows.length })
     } catch (err: any) {
@@ -171,7 +248,11 @@ export function SubirReporte({ batchUpsert, onExport }: Props) {
 
   return (
     <>
-      <Overlay state={overlay} onClose={() => setOverlay(null)} />
+      <Overlay
+        state={overlay}
+        onClose={() => { setOverlay(null); pendingRowsRef.current = [] }}
+        onContinue={pendingRowsRef.current.length > 0 ? () => doSaveRows(pendingRowsRef.current) : undefined}
+      />
 
       <div
         onDragOver={e => { e.preventDefault(); setDragOver(true) }}
