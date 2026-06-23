@@ -1215,13 +1215,12 @@ function AppInterna({ session }: { session: Session }) {
                             const condDisplay = extra?.condicion_override || r.condicion || '-'
                             return (
                               <Fragment key={rowKey}>
-                                {showSep && (
-                                  <tr style={{ background: '#fee2e2' }}>
-                                    <td colSpan={9} style={{ padding: '8px 16px', fontSize: '12px', fontWeight: 700, color: '#dc2626' }}>
-                                      ⚠ Vencidas — {vencidas.length} {vencidas.length === 1 ? 'factura' : 'facturas'}
-                                    </td>
-                                  </tr>
-                                )}
+                                {/* separator — always in DOM, hidden via display to avoid insertBefore */}
+                                <tr style={{ display: showSep ? '' : 'none', background: '#fee2e2' }}>
+                                  <td colSpan={9} style={{ padding: '8px 16px', fontSize: '12px', fontWeight: 700, color: '#dc2626' }}>
+                                    ⚠ Vencidas — {vencidas.length} {vencidas.length === 1 ? 'factura' : 'facturas'}
+                                  </td>
+                                </tr>
                                 <tr
                                   style={{ borderBottom: isExp ? 'none' : '1px solid #dde3f0', background: r.dias_mora > 0 ? 'rgba(254,226,226,0.25)' : '' }}
                                   onMouseEnter={e => (e.currentTarget.style.background = '#f8faff')}
@@ -1250,13 +1249,12 @@ function AppInterna({ session }: { session: Session }) {
                                     </button>
                                   </td>
                                 </tr>
-                                {isExp && (
-                                  <tr style={{ borderBottom: '1px solid #dde3f0' }}>
-                                    <td colSpan={9} style={{ padding: 0 }}>
-                                      <DescPanel comprobante={r.comprobante} extra={extra} adminMode={adminMode} onUpdate={updateExtra} />
-                                    </td>
-                                  </tr>
-                                )}
+                                {/* expanded row — always in DOM, hidden via display to avoid insertBefore */}
+                                <tr style={{ display: isExp ? '' : 'none', borderBottom: '1px solid #dde3f0' }}>
+                                  <td colSpan={9} style={{ padding: 0 }}>
+                                    {isExp && <DescPanel comprobante={r.comprobante} extra={extra} adminMode={adminMode} onUpdate={updateExtra} />}
+                                  </td>
+                                </tr>
                               </Fragment>
                             )
                           })}
