@@ -43,6 +43,38 @@ create table if not exists public.reportes (
   fecha_subida timestamptz not null default now()
 );
 
+create table if not exists public.comprobante_extras (
+  comprobante text primary key references public.comprobantes(comprobante) on delete cascade,
+  descripcion text not null default '',
+  centro_costo text not null default '',
+  tipo_servicio text not null default '',
+  oc_hes_pedido text not null default '',
+  colaborador text not null default '',
+  otros_conceptos text not null default '',
+  condicion_override text not null default '',
+  periodo text not null default '',
+  nota text not null default '',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+drop trigger if exists comprobante_extras_set_updated_at on public.comprobante_extras;
+create trigger comprobante_extras_set_updated_at
+before update on public.comprobante_extras
+for each row execute function public.set_updated_at();
+
+alter table public.comprobante_extras enable row level security;
+
+drop policy if exists "Lectura publica extras" on public.comprobante_extras;
+create policy "Lectura publica extras"
+on public.comprobante_extras for select
+using (true);
+
+drop policy if exists "Escritura autenticada extras" on public.comprobante_extras;
+create policy "Escritura autenticada extras"
+on public.comprobante_extras for all
+using (auth.role() = 'authenticated');
+
 create or replace function public.set_updated_at()
 returns trigger as $$
 begin

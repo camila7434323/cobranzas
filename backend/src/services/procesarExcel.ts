@@ -1,4 +1,4 @@
-import * as XLSX from 'xlsx'
+﻿import * as XLSX from 'xlsx'
 import { supabase } from '../lib/supabase'
 import { getEjecutivo } from './ejecutivos'
 import { notificarDuplicados } from './emailService'
@@ -16,7 +16,7 @@ type ComprobanteImportado = {
   estado: 'pendiente'
 }
 
-// ✅ FUNCIÓN PARA VALIDAR Y LIMPIAR DATOS
+// âœ… FUNCIÃ“N PARA VALIDAR Y LIMPIAR DATOS
 function validarYLimpiarComprobante(comp: ComprobanteImportado, rowIndex: number): {
   valido: boolean
   error?: string
@@ -24,34 +24,34 @@ function validarYLimpiarComprobante(comp: ComprobanteImportado, rowIndex: number
 } {
   // Validar comprobante
   if (!comp.comprobante || typeof comp.comprobante !== 'string') {
-    return { valido: false, error: `Fila ${rowIndex}: Comprobante vacío o inválido` }
+    return { valido: false, error: `Fila ${rowIndex}: Comprobante vacÃ­o o invÃ¡lido` }
   }
 
   comp.comprobante = comp.comprobante.trim()
 
   // Validar cliente
   if (!comp.nombre_cliente || typeof comp.nombre_cliente !== 'string') {
-    return { valido: false, error: `Fila ${rowIndex}: Cliente vacío o inválido` }
+    return { valido: false, error: `Fila ${rowIndex}: Cliente vacÃ­o o invÃ¡lido` }
   }
 
   comp.nombre_cliente = comp.nombre_cliente.trim()
 
   // Validar monto
   if (typeof comp.monto !== 'number' || !Number.isFinite(comp.monto) || comp.monto < 0) {
-    return { valido: false, error: `Fila ${rowIndex}: Monto inválido (${comp.monto})` }
+    return { valido: false, error: `Fila ${rowIndex}: Monto invÃ¡lido (${comp.monto})` }
   }
 
-  // Validar días de mora
+  // Validar dÃ­as de mora
   if (typeof comp.dias_mora !== 'number' || !Number.isFinite(comp.dias_mora)) {
     comp.dias_mora = 0
   }
 
-  // Validar fecha de emisión (opcional pero debe ser válida si existe)
+  // Validar fecha de emisiÃ³n (opcional pero debe ser vÃ¡lida si existe)
   if (comp.fecha_emision && !/^\d{4}-\d{2}-\d{2}$/.test(comp.fecha_emision)) {
     comp.fecha_emision = null
   }
 
-  // Validar fecha de vencimiento (opcional pero debe ser válida si existe)
+  // Validar fecha de vencimiento (opcional pero debe ser vÃ¡lida si existe)
   if (comp.fecha_vencimiento && !/^\d{4}-\d{2}-\d{2}$/.test(comp.fecha_vencimiento)) {
     comp.fecha_vencimiento = null
   }
@@ -63,7 +63,7 @@ function validarYLimpiarComprobante(comp: ComprobanteImportado, rowIndex: number
 
   comp.ejecutivo = String(comp.ejecutivo).trim()
 
-  // Validar condición
+  // Validar condiciÃ³n
   if (!comp.condicion || typeof comp.condicion !== 'string') {
     comp.condicion = ''
   }
@@ -74,16 +74,16 @@ function validarYLimpiarComprobante(comp: ComprobanteImportado, rowIndex: number
 }
 
 export async function registrarCobros(buffer: Buffer, usuario: string) {
-  console.log('📥 Iniciando registrarCobros...')
+  console.log('ðŸ“¥ Iniciando registrarCobros...')
 
   const workbook = XLSX.read(buffer, { type: 'buffer', cellDates: false })
   const hoja = workbook.Sheets[workbook.SheetNames[0]]
   const filas: any[] = XLSX.utils.sheet_to_json(hoja, { header: 1, defval: '' })
 
-  console.log(`📊 Se leyeron ${filas.length} filas del Excel`)
+  console.log(`ðŸ“Š Se leyeron ${filas.length} filas del Excel`)
 
   if (filas.length === 0) {
-    throw new Error('El archivo Excel está vacío')
+    throw new Error('El archivo Excel estÃ¡ vacÃ­o')
   }
 
   const norm = (s: any) =>
@@ -91,7 +91,7 @@ export async function registrarCobros(buffer: Buffer, usuario: string) {
       .trim()
       .toLowerCase()
       .normalize('NFD')
-      .replace(/[̀-ͯ]/g, '')
+      .replace(/[\u0300-\u036f]/g, '')
       .replace(/\s+/g, ' ')
 
   let colComp = -1
@@ -104,7 +104,7 @@ export async function registrarCobros(buffer: Buffer, usuario: string) {
     if (colComp !== -1) break
   }
 
-  if (colComp === -1) throw new Error('No se encontró la columna Comprobante en el Excel.')
+  if (colComp === -1) throw new Error('No se encontrÃ³ la columna Comprobante en el Excel.')
 
   const numerosExcel = new Set<string>()
   for (let i = 0; i < filas.length; i++) {
@@ -116,9 +116,9 @@ export async function registrarCobros(buffer: Buffer, usuario: string) {
     }
   }
 
-  console.log(`✅ Se encontraron ${numerosExcel.size} comprobantes válidos`)
+  console.log(`âœ… Se encontraron ${numerosExcel.size} comprobantes vÃ¡lidos`)
 
-  if (numerosExcel.size === 0) throw new Error('No se encontraron comprobantes válidos en el archivo.')
+  if (numerosExcel.size === 0) throw new Error('No se encontraron comprobantes vÃ¡lidos en el archivo.')
 
   const { data: pendientes, error } = await supabase
     .from('comprobantes')
@@ -128,7 +128,7 @@ export async function registrarCobros(buffer: Buffer, usuario: string) {
 
   if (error) throw error
 
-  console.log(`📌 Se encontraron ${pendientes?.length || 0} comprobantes pendientes`)
+  console.log(`ðŸ“Œ Se encontraron ${pendientes?.length || 0} comprobantes pendientes`)
 
   if (pendientes && pendientes.length > 0) {
     const ahora = new Date().toISOString()
@@ -143,7 +143,7 @@ export async function registrarCobros(buffer: Buffer, usuario: string) {
       ejecutivo:          p.ejecutivo || 'Sin asignar',
     }))
 
-    // 🚀 Actualizaciones masivas por lotes (UI friendly)
+    // ðŸš€ Actualizaciones masivas por lotes (UI friendly)
     const ops: PromiseLike<any>[] = []
 
     // Update todos los comprobantes de una vez
@@ -167,7 +167,7 @@ export async function registrarCobros(buffer: Buffer, usuario: string) {
       }
     }
 
-    console.log(`✅ ${idsACobrar.length} comprobantes marcados como cobrados`)
+    console.log(`âœ… ${idsACobrar.length} comprobantes marcados como cobrados`)
   }
 
   return {
@@ -191,9 +191,12 @@ export async function procesarArchivo(buffer: Buffer, usuario: string, nombreArc
 }
 
 export async function procesarXML(buffer: Buffer, usuario: string, nombreArchivo?: string) {
-  console.log('📋 Procesando XML...')
+  console.log('ðŸ“‹ Procesando XML...')
 
-  const xmlText = buffer.toString('utf-8')
+  const cabecera = buffer.subarray(0, 300).toString('latin1')
+  const xmlText = /encoding=['"]ISO-8859-1['"]/i.test(cabecera)
+    ? buffer.toString('latin1')
+    : buffer.toString('utf-8')
   const hasDatos       = xmlText.includes('<DATO>')
   const esCrystalReports = xmlText.includes('<FormattedReport') || xmlText.includes('FormattedReportObject')
 
@@ -201,13 +204,9 @@ export async function procesarXML(buffer: Buffer, usuario: string, nombreArchivo
   if (hasDatos && !esCrystalReports) {
     const extras = parsearExtrasXML(xmlText)
     if (extras.length === 0) throw new Error('No se encontraron registros DATO en el XML.')
-    for (let i = 0; i < extras.length; i += 500) {
-      const { error } = await supabase.from('comprobante_extras')
-        .upsert(extras.slice(i, i + 500), { onConflict: 'comprobante' })
-      if (error) throw error
-    }
-    console.log(`✅ ${extras.length} extras guardados`)
-    return { nuevos: 0, actualizados: 0, cobradas: 0, total: 0, extrasGuardados: extras.length }
+    const { guardados, omitidos } = await guardarExtrasDeComprobantesExistentes(extras)
+    console.log(`Extras guardados: ${guardados}; omitidos sin comprobante cargado: ${omitidos}`)
+    return { nuevos: 0, actualizados: 0, cobradas: 0, total: 0, extrasGuardados: guardados, extrasOmitidos: omitidos }
   }
 
   const comprobantes = esCrystalReports
@@ -215,10 +214,10 @@ export async function procesarXML(buffer: Buffer, usuario: string, nombreArchivo
     : parsearClientesFlatXML(xmlText)
 
   if (comprobantes.length === 0) {
-    throw new Error('No se encontraron comprobantes válidos en el XML.')
+    throw new Error('No se encontraron comprobantes vÃ¡lidos en el XML.')
   }
 
-  console.log(`✅ Se extrajeron ${comprobantes.length} comprobantes del XML`)
+  console.log(`âœ… Se extrajeron ${comprobantes.length} comprobantes del XML`)
 
   return sincronizarComprobantes(comprobantes, usuario, nombreArchivo)
 }
@@ -255,30 +254,58 @@ function parsearExtrasXML(xmlText: string): any[] {
   return rows
 }
 
+async function guardarExtrasDeComprobantesExistentes(extras: any[]) {
+  const comprobantes = Array.from(new Set(extras.map(e => e.comprobante).filter(Boolean)))
+  const existentes = new Set<string>()
+
+  for (let i = 0; i < comprobantes.length; i += 500) {
+    const { data, error } = await supabase
+      .from('comprobantes')
+      .select('comprobante')
+      .in('comprobante', comprobantes.slice(i, i + 500))
+
+    if (error) throw error
+    for (const row of data || []) existentes.add(row.comprobante)
+  }
+
+  const paraGuardar = extras.filter(e => existentes.has(e.comprobante))
+
+  for (let i = 0; i < paraGuardar.length; i += 500) {
+    const { error } = await supabase.from('comprobante_extras')
+      .upsert(paraGuardar.slice(i, i + 500), { onConflict: 'comprobante' })
+    if (error) throw error
+  }
+
+  return {
+    guardados: paraGuardar.length,
+    omitidos: extras.length - paraGuardar.length
+  }
+}
+
 export async function procesarExcel(buffer: Buffer, usuario: string, nombreArchivo?: string) {
-  console.log('📊 Procesando Excel...')
+  console.log('ðŸ“Š Procesando Excel...')
 
   const workbook = XLSX.read(buffer, { type: 'buffer', cellDates: false })
   const hoja = workbook.Sheets[workbook.SheetNames[0]]
 
   if (!hoja) {
-    throw new Error('El Excel no contiene hojas válidas')
+    throw new Error('El Excel no contiene hojas vÃ¡lidas')
   }
 
   const filas: any[] = XLSX.utils.sheet_to_json(hoja, { header: 1, defval: '' })
 
   if (filas.length === 0) {
-    throw new Error('El Excel está vacío')
+    throw new Error('El Excel estÃ¡ vacÃ­o')
   }
 
-  console.log(`📥 Se leyeron ${filas.length} filas`)
+  console.log(`ðŸ“¥ Se leyeron ${filas.length} filas`)
 
   const norm = (s: any) =>
     String(s || '')
       .trim()
       .toLowerCase()
       .normalize('NFD')
-      .replace(/[̀-ͯ]/g, '')
+      .replace(/[\u0300-\u036f]/g, '')
       .replace(/\s+/g, ' ')
 
   let colFecha = -1
@@ -306,7 +333,7 @@ export async function procesarExcel(buffer: Buffer, usuario: string, nombreArchi
   }
 
   if (colComp === -1) {
-    throw new Error('No se encontró la columna Comprobante en el Excel.')
+    throw new Error('No se encontrÃ³ la columna Comprobante en el Excel.')
   }
 
   const comprobantes: ComprobanteImportado[] = []
@@ -320,9 +347,9 @@ export async function procesarExcel(buffer: Buffer, usuario: string, nombreArchi
   for (let rowIndex = 0; rowIndex < filas.length; rowIndex++) {
     const fila = filas[rowIndex]
 
-    // ✅ Validar que la fila sea válida
+    // âœ… Validar que la fila sea vÃ¡lida
     if (!fila || fila.length === 0) {
-      console.log(`⏭️  Fila ${rowIndex} vacía, saltando...`)
+      console.log(`â­ï¸  Fila ${rowIndex} vacÃ­a, saltando...`)
       continue
     }
 
@@ -353,7 +380,7 @@ export async function procesarExcel(buffer: Buffer, usuario: string, nombreArchi
 
       const comprobante = colComp >= 0 ? limpiarTexto(fila[colComp]) : ''
 
-      // ✅ Validar que sea un comprobante válido
+      // âœ… Validar que sea un comprobante vÃ¡lido
       if (!comprobante || !/^(FCM|FC|NCM|NC|NDM|ND)\s*[A-Z0-9]/i.test(comprobante)) {
         continue
       }
@@ -384,27 +411,27 @@ export async function procesarExcel(buffer: Buffer, usuario: string, nombreArchi
         estado: 'pendiente'
       }
 
-      // ✅ Validar el comprobante antes de agregarlo
+      // âœ… Validar el comprobante antes de agregarlo
       const validacion = validarYLimpiarComprobante(comprobanteObj, rowIndex)
       if (!validacion.valido) {
         erroresValidacion.push(validacion.error || '')
-        console.warn(`⚠️  ${validacion.error}`)
+        console.warn(`âš ï¸  ${validacion.error}`)
         continue
       }
 
       comprobantes.push(validacion.comprobante!)
-      console.log(`✅ Fila ${rowIndex}: ${comprobante} - ${nombreCliente} - $${monto}`)
+      console.log(`âœ… Fila ${rowIndex}: ${comprobante} - ${nombreCliente} - $${monto}`)
 
     } catch (err) {
-      const mensaje = `❌ Error procesando fila ${rowIndex}: ${err instanceof Error ? err.message : String(err)}`
+      const mensaje = `âŒ Error procesando fila ${rowIndex}: ${err instanceof Error ? err.message : String(err)}`
       console.error(mensaje)
       erroresValidacion.push(mensaje)
     }
   }
 
-  console.log(`\n📊 RESUMEN:`)
-  console.log(`✅ Comprobantes válidos: ${comprobantes.length}`)
-  console.log(`⚠️  Errores de validación: ${erroresValidacion.length}`)
+  console.log(`\nðŸ“Š RESUMEN:`)
+  console.log(`âœ… Comprobantes vÃ¡lidos: ${comprobantes.length}`)
+  console.log(`âš ï¸  Errores de validaciÃ³n: ${erroresValidacion.length}`)
 
   if (erroresValidacion.length > 0) {
     console.log(`Errores:\n${erroresValidacion.slice(0, 10).join('\n')}`)
@@ -412,7 +439,7 @@ export async function procesarExcel(buffer: Buffer, usuario: string, nombreArchi
 
   if (comprobantes.length === 0) {
     throw new Error(
-      `No se encontraron comprobantes válidos. ${erroresValidacion.length > 0 ? 'Errores: ' + erroresValidacion[0] : ''}`
+      `No se encontraron comprobantes vÃ¡lidos. ${erroresValidacion.length > 0 ? 'Errores: ' + erroresValidacion[0] : ''}`
     )
   }
 
@@ -424,7 +451,7 @@ async function sincronizarComprobantes(
   usuario: string,
   nombreArchivo?: string
 ) {
-  console.log(`🔄 Sincronizando ${comprobantes.length} comprobantes...`)
+  console.log(`ðŸ”„ Sincronizando ${comprobantes.length} comprobantes...`)
 
   const [{ data: todos, error: errorSelect }, { data: historialExistente }] = await Promise.all([
     supabase.from('comprobantes').select('*'),
@@ -445,7 +472,7 @@ async function sincronizarComprobantes(
     .map(c => todosMap.get(c.comprobante))
     .filter((ex: any) => ex && ex.estado === 'pendiente')
 
-  console.log(`📊 Nuevos: ${nuevosComp.length}, Reapariciones: ${reaparicion.length}, Cobradas: ${cobradas.length}`)
+  console.log(`ðŸ“Š Nuevos: ${nuevosComp.length}, Reapariciones: ${reaparicion.length}, Cobradas: ${cobradas.length}`)
 
   const ahora = new Date().toISOString()
   const idsACobrar = [
@@ -503,7 +530,7 @@ async function sincronizarComprobantes(
   const duplicadosParaNotificar = [...cobradas, ...reaparicion]
   if (duplicadosParaNotificar.length > 0) {
     await notificarDuplicados(usuario, cobradas, reaparicion).catch(err =>
-      console.error('Error enviando notificación de duplicados:', err.message)
+      console.error('Error enviando notificaciÃ³n de duplicados:', err.message)
     )
   }
 
@@ -515,7 +542,7 @@ async function sincronizarComprobantes(
     comprobantes_actualizados: reaparicion.length
   })
 
-  console.log(`✅ Sincronización completada`)
+  console.log(`âœ… SincronizaciÃ³n completada`)
 
   return {
     nuevos: nuevosComp.length,

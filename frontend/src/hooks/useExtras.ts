@@ -50,7 +50,8 @@ export function useExtras() {
 
   const batchUpsert = async (rows: Extra[]) => {
     if (!rows.length) return
-    await supabase.from('comprobante_extras').upsert(rows, { onConflict: 'comprobante' })
+    const { error } = await supabase.from('comprobante_extras').upsert(rows, { onConflict: 'comprobante' })
+    if (error) throw new Error(error.message)
     await load()
   }
 

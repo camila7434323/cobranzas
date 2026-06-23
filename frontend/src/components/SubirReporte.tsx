@@ -5,8 +5,19 @@ import { supabase } from '../lib/supabase'
 
 const MESES = ['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SEPTIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE']
 
+async function leerXmlConEncoding(archivo: File) {
+  const buffer = await archivo.arrayBuffer()
+  const cabecera = new TextDecoder('windows-1252').decode(buffer.slice(0, 300))
+  const encoding = /encoding=['"]([^'"]+)['"]/i.exec(cabecera)?.[1]?.toLowerCase()
+  const decoder = encoding === 'iso-8859-1' || encoding === 'windows-1252'
+    ? new TextDecoder('windows-1252')
+    : new TextDecoder('utf-8')
+  return decoder.decode(buffer)
+}
+
 function parseDescXML(xmlText: string): Extra[] {
-  const doc = new DOMParser().parseFromString(xmlText, 'text/xml')
+  const xmlSeguro = xmlText.replace(/<CC%>/g, '<CCPct>').replace(/<\/CC%>/g, '</CCPct>')
+  const doc = new DOMParser().parseFromString(xmlSeguro, 'text/xml')
   const rows: Extra[] = []
   doc.querySelectorAll('DATO').forEach(dato => {
     const comp = dato.querySelector('Comp')?.textContent?.trim() ?? ''
@@ -27,10 +38,24 @@ function parseDescXML(xmlText: string): Extra[] {
   return rows
 }
 
+async function buscarComprobantesExistentes(nums: string[]) {
+  const existentes = new Set<string>()
+  const unicos = Array.from(new Set(nums))
+  for (let i = 0; i < unicos.length; i += 300) {
+    const { data, error } = await supabase
+      .from('comprobantes')
+      .select('comprobante')
+      .in('comprobante', unicos.slice(i, i + 300))
+    if (error) throw new Error(error.message)
+    for (const row of data ?? []) existentes.add(row.comprobante)
+  }
+  return existentes
+}
+
 type OverlayState =
   | { kind: 'loading'; title: string; sub: string }
   | { kind: 'success'; nuevos: number; actualizados: number; cobradas: number; total: number }
-  | { kind: 'success-xml'; cantidad: number }
+  | { kind: 'success-xml'; cantidad: number; omitidos?: number }
   | { kind: 'warning-xml'; missing: number; found: number; total: number }
   | { kind: 'error'; message: string }
   | null
@@ -72,7 +97,12 @@ function Overlay({ state, onClose, onContinue }: {
           <>
             <div style={{ fontSize: '54px', marginBottom: '18px' }}>✅</div>
             <h2 style={{ color: '#059669', margin: '0 0 14px', fontSize: '22px', fontWeight: 700 }}>XML cargado</h2>
-            <p style={{ color: '#7a8fbb', margin: 0, fontSize: '14px' }}><strong>{state.cantidad}</strong> descripciones guardadas correctamente.</p>
+            <p style={{ color: '#7a8fbb', margin: 0, fontSize: '14px' }}>
+              <strong>{state.cantidad}</strong> descripciones guardadas correctamente.
+              {!!state.omitidos && (
+                <span><br /><strong>{state.omitidos}</strong> no se cargaron porque todavÃ­a no existe ese comprobante.</span>
+              )}
+            </p>
             <button onClick={onClose} style={{ marginTop: '24px', background: '#2554a0', color: '#fff', border: 'none', padding: '10px 28px', borderRadius: '8px', fontSize: '14px', fontWeight: 700, cursor: 'pointer' }}>Cerrar</button>
           </>
         )}
@@ -150,8 +180,8 @@ export function SubirReporte({ batchUpsert, onExport }: Props) {
     formData.append('usuario', 'usuario@asap.com')
     try {
       const { data } = await axios.post('/api/reportes/subir', formData, { timeout: 600000 })
-      if (data.extrasGuardados > 0 && data.total === 0) {
-        setOverlay({ kind: 'success-xml', cantidad: data.extrasGuardados })
+      if (data.extrasGuardados !== undefined && data.total === 0) {
+        setOverlay({ kind: 'success-xml', cantidad: data.extrasGuardados, omitidos: data.extrasOmitidos || 0 })
       } else {
         setOverlay({ kind: 'success', nuevos: data.nuevos, actualizados: data.actualizados, cobradas: data.cobradas, total: data.total })
         setTimeout(() => { window.location.reload() }, 2500)
@@ -203,7 +233,7 @@ export function SubirReporte({ batchUpsert, onExport }: Props) {
     setError('')
     setOverlay({ kind: 'loading', title: 'Procesando XML...', sub: 'Leyendo descripciones de comprobantes' })
     try {
-      const text = await archivo.text()
+      const text = await leerXmlConEncoding(archivo)
       const rows = parseDescXML(text)
       if (rows.length === 0) {
         setOverlay({ kind: 'error', message: 'No se encontraron registros DATO en el XML.' })
@@ -213,25 +243,13 @@ export function SubirReporte({ batchUpsert, onExport }: Props) {
 
       // Verificar cuáles comprobantes existen en la BD
       const nums = rows.map(r => r.comprobante)
-      const { data: existing } = await supabase
-        .from('comprobantes')
-        .select('comprobante')
-        .in('comprobante', nums)
-      const existingSet = new Set((existing ?? []).map((r: any) => r.comprobante))
+      const existingSet = await buscarComprobantesExistentes(nums)
       const missingCount = nums.filter(n => !existingSet.has(n)).length
       const foundCount   = nums.length - missingCount
 
-      if (missingCount > 0) {
-        // Guardar solo las filas que tienen comprobante en la BD
-        pendingRowsRef.current = rows.filter(r => existingSet.has(r.comprobante))
-        setCargandoXml(false)
-        if (xmlRef.current) xmlRef.current.value = ''
-        setOverlay({ kind: 'warning-xml', missing: missingCount, found: foundCount, total: rows.length })
-        return
-      }
-
-      await batchUpsert(rows)
-      setOverlay({ kind: 'success-xml', cantidad: rows.length })
+      const rowsEncontradas = rows.filter(r => existingSet.has(r.comprobante))
+      if (rowsEncontradas.length > 0) await batchUpsert(rowsEncontradas)
+      setOverlay({ kind: 'success-xml', cantidad: foundCount, omitidos: missingCount })
     } catch (err: any) {
       const msg = err?.message || 'Error al procesar el XML.'
       setOverlay({ kind: 'error', message: msg })
