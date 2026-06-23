@@ -24,10 +24,15 @@ export function useExtras() {
   const [extras, setExtras] = useState<Map<string, Extra>>(new Map())
 
   const load = useCallback(async () => {
-    const { data } = await supabase.from('comprobante_extras').select('*')
-    const map = new Map<string, Extra>()
-    for (const row of data ?? []) map.set(row.comprobante, row as Extra)
-    setExtras(map)
+    try {
+      const { data, error } = await supabase.from('comprobante_extras').select('*')
+      if (error) { console.warn('comprobante_extras:', error.message); return }
+      const map = new Map<string, Extra>()
+      for (const row of data ?? []) map.set(row.comprobante, row as Extra)
+      setExtras(map)
+    } catch (err) {
+      console.warn('useExtras load error:', err)
+    }
   }, [])
 
   useEffect(() => { load() }, [load])

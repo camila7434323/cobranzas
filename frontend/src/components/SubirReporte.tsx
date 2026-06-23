@@ -242,12 +242,9 @@ export function SubirReporte({ batchUpsert, onExport }: Props) {
     }
   }
 
-  const spinnerEl = (
-    <span style={{ width: '13px', height: '13px', border: '2px solid rgba(255,255,255,0.35)', borderTopColor: '#fff', borderRadius: '50%', display: 'inline-block', animation: 'spin 0.8s linear infinite', flexShrink: 0 }} />
-  )
-
   return (
     <>
+      <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
       <Overlay
         state={overlay}
         onClose={() => { setOverlay(null); pendingRowsRef.current = [] }}
@@ -278,14 +275,17 @@ export function SubirReporte({ batchUpsert, onExport }: Props) {
           </div>
           <div style={{ display: 'flex', gap: '8px', flexShrink: 0, flexWrap: 'wrap' }}>
             <label style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', background: cargando ? '#7a8fbb' : '#2554a0', color: '#fff', padding: '9px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, cursor: cargando ? 'not-allowed' : 'pointer', userSelect: 'none', whiteSpace: 'nowrap' }}>
-              {cargando ? spinnerEl : <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>}
+              {/* always render both icon and spinner — toggle display to avoid insertBefore */}
+              <span style={{ width: '13px', height: '13px', border: '2px solid rgba(255,255,255,0.35)', borderTopColor: '#fff', borderRadius: '50%', display: cargando ? 'inline-block' : 'none', animation: 'spin 0.8s linear infinite', flexShrink: 0 }} />
+              <svg style={{ display: cargando ? 'none' : '' }} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
               {cargando ? 'Procesando...' : 'Cargar XML cobranzas'}
               <input ref={inputRef} type="file" accept=".xls,.xlsx,.csv,.xml" onChange={handleArchivo} disabled={cargando} style={{ display: 'none' }} />
             </label>
 
             {batchUpsert && (
               <label style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', background: cargandoXml ? '#7a8fbb' : '#0f766e', color: '#fff', padding: '9px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, cursor: cargandoXml ? 'not-allowed' : 'pointer', userSelect: 'none', whiteSpace: 'nowrap' }}>
-                {cargandoXml ? spinnerEl : <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>}
+              <span style={{ width: '13px', height: '13px', border: '2px solid rgba(255,255,255,0.35)', borderTopColor: '#fff', borderRadius: '50%', display: cargandoXml ? 'inline-block' : 'none', animation: 'spin 0.8s linear infinite', flexShrink: 0 }} />
+              <svg style={{ display: cargandoXml ? 'none' : '' }} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
                 {cargandoXml ? 'Procesando...' : 'Cargar XML descripciones'}
                 <input ref={xmlRef} type="file" accept=".xml" onChange={handleXml} disabled={cargandoXml} style={{ display: 'none' }} />
               </label>
