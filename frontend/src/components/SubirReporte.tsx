@@ -5,6 +5,13 @@ import { supabase } from '../lib/supabase'
 
 const MESES = ['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SEPTIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE']
 
+function mergeText(actual: string, nuevo: string) {
+  const limpio = nuevo.trim()
+  if (!limpio) return actual
+  const partes = actual.split(' | ').map(p => p.trim()).filter(Boolean)
+  return partes.includes(limpio) ? actual : [...partes, limpio].join(' | ')
+}
+
 async function leerXmlConEncoding(archivo: File) {
   const buffer = await archivo.arrayBuffer()
   const cabecera = new TextDecoder('windows-1252').decode(buffer.slice(0, 300))
@@ -18,7 +25,7 @@ async function leerXmlConEncoding(archivo: File) {
 function parseDescXML(xmlText: string): Extra[] {
   const xmlSeguro = xmlText.replace(/<CC%>/g, '<CCPct>').replace(/<\/CC%>/g, '</CCPct>')
   const doc = new DOMParser().parseFromString(xmlSeguro, 'text/xml')
-  const rows: Extra[] = []
+  const rows = new Map<string, Extra>()
   doc.querySelectorAll('DATO').forEach(dato => {
     const comp = dato.querySelector('Comp')?.textContent?.trim() ?? ''
     const item = dato.querySelector('Item_Desc')?.textContent?.trim() ?? ''
@@ -29,13 +36,25 @@ function parseDescXML(xmlText: string): Extra[] {
     const oc   = ocM ? ocM[0].trim() : ''
     const perM = item.match(new RegExp(`(${MESES.join('|')})\\s+\\d{4}`, 'i'))
     const per  = perM ? perM[0].toUpperCase() : ''
-    rows.push({
+    const existente = rows.get(comp)
+    if (existente) {
+      rows.set(comp, {
+        ...existente,
+        descripcion: mergeText(existente.descripcion, item),
+        centro_costo: mergeText(existente.centro_costo, cc),
+        tipo_servicio: mergeText(existente.tipo_servicio, tipo),
+        oc_hes_pedido: mergeText(existente.oc_hes_pedido, oc),
+        periodo: mergeText(existente.periodo, per),
+      })
+      return
+    }
+    rows.set(comp, {
       comprobante: comp, descripcion: item, centro_costo: cc, tipo_servicio: tipo,
       oc_hes_pedido: oc, colaborador: '', otros_conceptos: '',
       condicion_override: '', periodo: per, nota: '',
     })
   })
-  return rows
+  return Array.from(rows.values())
 }
 
 async function buscarComprobantesExistentes(nums: string[]) {
