@@ -254,8 +254,10 @@ function AppInterna({ session }: { session: Session }) {
     const v = new Date(r.fecha_vencimiento + 'T00:00:00')
     return v >= hoyDate && v <= en7dias
   })
+  const proxSet = new Set(proxAVencer.map(r => r.id || r.comprobante))
+  const sinVencerArr = dataSel.filter(r => r.dias_mora <= 0 && !proxSet.has(r.id || r.comprobante))
   const totalProxAVencer = proxAVencer.reduce((s, r) => s + r.monto, 0)
-  const totalSinVencer   = dataSel.filter(r => r.dias_mora <= 0).reduce((s, r) => s + r.monto, 0)
+  const totalSinVencer   = sinVencerArr.reduce((s, r) => s + r.monto, 0)
   const porcentajeMora   = carteraTotal > 0 ? Math.round((totalVencido / carteraTotal) * 100) : 0
   const vencidasArr      = dataSel.filter(r => r.dias_mora > 0)
   const moraPromedio     = vencidasArr.length > 0
@@ -779,7 +781,7 @@ function AppInterna({ session }: { session: Session }) {
                   <div style={{ position: 'absolute', right: '-10px', top: '-10px', width: '70px', height: '70px', background: '#d1fae5', borderRadius: '50%', opacity: 0.4 }} />
                   <div style={{ fontSize: '10px', fontWeight: 700, color: '#7a8fbb', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '10px' }}>✅ Sin vencer</div>
                   <div style={{ fontSize: '28px', fontWeight: 800, color: '#059669', fontFamily: 'monospace', lineHeight: 1, marginBottom: '6px' }}>{fmt(totalSinVencer)}</div>
-                  <div style={{ fontSize: '12px', color: '#7a8fbb' }}>{dataSel.filter(r => r.dias_mora <= 0).length} facturas al día</div>
+                  <div style={{ fontSize: '12px', color: '#7a8fbb' }}>{sinVencerArr.length} facturas al día</div>
                 </div>
               </div>
 

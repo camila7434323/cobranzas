@@ -16,6 +16,8 @@ type ComprobanteImportado = {
   estado: 'pendiente'
 }
 
+const COMPROBANTE_VALIDO_RX = /^(FCM|FC|NCM|NC|NDM|ND|CG|CIB|CR|RC|RS)\b/i
+
 // âœ… FUNCIÃ“N PARA VALIDAR Y LIMPIAR DATOS
 function validarYLimpiarComprobante(comp: ComprobanteImportado, rowIndex: number): {
   valido: boolean
@@ -111,7 +113,7 @@ export async function registrarCobros(buffer: Buffer, usuario: string) {
     const fila = filas[i]
     if (!fila || fila.length === 0) continue
     const comp = limpiarTexto(fila[colComp])
-    if (comp && /^(FCM|FC|NCM|NC|NDM|ND)\s*[A-Z0-9]/i.test(comp)) {
+    if (comp && COMPROBANTE_VALIDO_RX.test(comp)) {
       numerosExcel.add(comp)
     }
   }
@@ -396,7 +398,7 @@ export async function procesarExcel(buffer: Buffer, usuario: string, nombreArchi
       const comprobante = colComp >= 0 ? limpiarTexto(fila[colComp]) : ''
 
       // âœ… Validar que sea un comprobante vÃ¡lido
-      if (!comprobante || !/^(FCM|FC|NCM|NC|NDM|ND)\s*[A-Z0-9]/i.test(comprobante)) {
+      if (!comprobante || !COMPROBANTE_VALIDO_RX.test(comprobante)) {
         continue
       }
 
@@ -607,11 +609,13 @@ function parsearCrystalReportsXML(xmlText: string): ComprobanteImportado[] {
 
       const hoy = new Date()
       hoy.setHours(0, 0, 0, 0)
-      let diasMora = parseInt(pending.mora || '0', 10) || 0
-      if (!diasMora && vtoIso) {
+      let diasMora = 0
+      if (vtoIso) {
         const v = new Date(`${vtoIso}T00:00:00`)
         const diff = Math.floor((hoy.getTime() - v.getTime()) / 86400000)
         diasMora = diff > 0 ? diff : 0
+      } else {
+        diasMora = parseInt(pending.mora || '0', 10) || 0
       }
 
       records.push({
@@ -657,7 +661,7 @@ function parsearCrystalReportsXML(xmlText: string): ComprobanteImportado[] {
       flush()
       if (nextName) { currentName = nextName; nextName = null }
       if (nextCode) { currentCode = nextCode; nextCode = null }
-      pending.comp = /^(FCM|FC|NCM|NC|NDM|ND)\s*[A-Z0-9]/i.test(val) ? val : ''
+      pending.comp = COMPROBANTE_VALIDO_RX.test(val) ? val : ''
     }
     if (on === 'Fecha11')         pending.emision   = parsearFecha(val) || undefined
     if (on === 'Fecha21')         pending.fecha21   = parsearFecha(val) || undefined
@@ -696,7 +700,7 @@ function parsearClientesFlatXML(xmlText: string): ComprobanteImportado[] {
     const rest = chunk.substring(idxEnd + '</Cliente>'.length)
 
     const comp = getField(rest, 'Comprobante')
-    if (!comp || !/^(FCM|FC|NCM|NC|NDM|ND)\s*[A-Z0-9]/i.test(comp)) continue
+    if (!comp || !COMPROBANTE_VALIDO_RX.test(comp)) continue
     if (vistos.has(comp)) continue
     vistos.add(comp)
 
