@@ -182,6 +182,12 @@ function AppInterna({ session }: { session: Session }) {
 
   const hoyDate = new Date(); hoyDate.setHours(0, 0, 0, 0)
   const en7dias = new Date(hoyDate.getTime() + 7 * 86400000)
+  const rowKey = (r: any) => String(r.id || r.comprobante)
+  const esProximaAVencer = (r: any) => {
+    if (r.dias_mora > 0 || !r.fecha_vencimiento) return false
+    const v = new Date(r.fecha_vencimiento + 'T00:00:00')
+    return v >= hoyDate && v <= en7dias
+  }
 
   const filtrados = data.filter(r => {
     if (ejecutivoSeleccionado === 'Sin asignar') {
@@ -206,16 +212,14 @@ function AppInterna({ session }: { session: Session }) {
       case '1-30':     return lista.filter(r => r.dias_mora >= 1 && r.dias_mora <= 30)
       case '31-60':    return lista.filter(r => r.dias_mora > 30 && r.dias_mora <= 60)
       case '60+':      return lista.filter(r => r.dias_mora > 60)
-      case 'proximas': return lista.filter(r => {
-        if (r.dias_mora > 0 || !r.fecha_vencimiento) return false
-        const v = new Date(r.fecha_vencimiento + 'T00:00:00')
-        return v >= hoyDate && v <= en7dias
-      })
+      case 'proximas': return lista.filter(esProximaAVencer)
       default: return lista
     }
   }
 
-  const dataSel     = ejecutivoSeleccionado ? data.filter(r => r.ejecutivo === ejecutivoSeleccionado) : data
+  const dataSel     = ejecutivoSeleccionado === 'Sin asignar'
+    ? data.filter(r => esSinAsignar(r.ejecutivo))
+    : ejecutivoSeleccionado ? data.filter(r => r.ejecutivo === ejecutivoSeleccionado) : data
   const totalVencido = dataSel.filter(r => r.dias_mora > 0).reduce((s, r) => s + r.monto, 0)
   const carteraTotal = dataSel.reduce((s, r) => s + r.monto, 0)
 
@@ -249,13 +253,9 @@ function AppInterna({ session }: { session: Session }) {
     .sort((a, b) => b.vencido - a.vencido)
 
   // ── métricas adicionales para nuevo dashboard ─────────────────────────────
-  const proxAVencer = dataSel.filter(r => {
-    if (r.dias_mora > 0 || !r.fecha_vencimiento) return false
-    const v = new Date(r.fecha_vencimiento + 'T00:00:00')
-    return v >= hoyDate && v <= en7dias
-  })
-  const proxSet = new Set(proxAVencer.map(r => r.id || r.comprobante))
-  const sinVencerArr = dataSel.filter(r => r.dias_mora <= 0 && !proxSet.has(r.id || r.comprobante))
+  const proxAVencer = dataSel.filter(esProximaAVencer)
+  const proxSet = new Set(proxAVencer.map(rowKey))
+  const sinVencerArr = dataSel.filter(r => r.dias_mora <= 0 && !proxSet.has(rowKey(r)))
   const totalProxAVencer = proxAVencer.reduce((s, r) => s + r.monto, 0)
   const totalSinVencer   = sinVencerArr.reduce((s, r) => s + r.monto, 0)
   const porcentajeMora   = carteraTotal > 0 ? Math.round((totalVencido / carteraTotal) * 100) : 0
@@ -457,8 +457,9 @@ function AppInterna({ session }: { session: Session }) {
   const hayFiltrosTabla     = !!(ejecutivoSeleccionado || filtroClienteTabla || filtroEstadoTabla)
   const hayFiltrosHistorial = !!(filtroEjecutivoHistorial || filtroClienteHistorial || filtroFechaDesde || filtroFechaHasta)
   const hayFiltrosClientes  = !!(filtroEjecutivoClientes || filtroEstadoClientes)
+  const esPanelEjecutivo    = esTabla && !!ejecutivoSeleccionado
 
-  const limpiarFiltrosTabla     = () => { setEjecutivoSeleccionado(null); setFiltroClienteTabla(''); setFiltroEstadoTabla(''); setFiltroMoraRange(''); setSortCol(null); setSortDir('asc') }
+  const limpiarFiltrosTabla     = () => { if (!esPanelEjecutivo) setEjecutivoSeleccionado(null); setFiltroClienteTabla(''); setFiltroEstadoTabla(''); setFiltroMoraRange(''); setSortCol(null); setSortDir('asc') }
   const limpiarFiltrosHistorial = () => { setFiltroEjecutivoHistorial(''); setFiltroClienteHistorial(''); setFiltroFechaDesde(''); setFiltroFechaHasta('') }
   const limpiarFiltrosClientes  = () => { setFiltroEjecutivoClientes(''); setFiltroEstadoClientes('') }
 
@@ -645,7 +646,7 @@ function AppInterna({ session }: { session: Session }) {
         <div style={{ padding: '0 12px', flex: 1, overflowY: 'auto' }}>
           <div style={{ fontSize: '9px', fontWeight: 700, letterSpacing: '1.6px', textTransform: 'uppercase', color: 'rgba(255,255,255,0.22)', padding: '0 8px', marginBottom: '6px' }}>Ejecutivos</div>
 
-          <div onClick={() => setEjecutivoSeleccionado(null)} style={{ display: 'flex', alignItems: 'center', gap: '9px', padding: '7px 10px', borderRadius: '9px', cursor: 'pointer', background: !ejecutivoSeleccionado ? 'rgba(255,255,255,0.1)' : 'transparent', marginBottom: '2px', transition: 'background 0.15s' }}>
+          <div onClick={() => { setEjecutivoSeleccionado(null); setVista('todos'); setFiltroClienteTabla(''); setFiltroEstadoTabla(''); setFiltroMoraRange(''); setSortCol(null); setSortDir('asc'); setExpandedRows(new Set()) }} style={{ display: 'flex', alignItems: 'center', gap: '9px', padding: '7px 10px', borderRadius: '9px', cursor: 'pointer', background: !ejecutivoSeleccionado ? 'rgba(255,255,255,0.1)' : 'transparent', marginBottom: '2px', transition: 'background 0.15s' }}>
             <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', color: 'rgba(255,255,255,0.4)', flexShrink: 0 }}>✦</div>
             <span style={{ color: !ejecutivoSeleccionado ? '#fff' : 'rgba(255,255,255,0.5)', fontSize: '13px', flex: 1, fontWeight: !ejecutivoSeleccionado ? 600 : 400 }}>Todos</span>
             <span style={{ fontSize: '10px', fontWeight: 700, padding: '2px 7px', borderRadius: '20px', background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.35)' }}>{data.length}</span>
@@ -654,7 +655,7 @@ function AppInterna({ session }: { session: Session }) {
           {sinAsignarClientesCount > 0 && (() => {
             const isActive = ejecutivoSeleccionado === 'Sin asignar'
             return (
-              <div onClick={() => setEjecutivoSeleccionado(isActive ? null : 'Sin asignar')} style={{ display: 'flex', alignItems: 'center', gap: '9px', padding: '7px 10px', borderRadius: '9px', marginBottom: '2px', cursor: 'pointer', background: isActive ? 'rgba(245,158,11,0.15)' : 'transparent', transition: 'background 0.15s' }}>
+              <div onClick={() => { setEjecutivoSeleccionado(isActive ? null : 'Sin asignar'); setVista('todos'); setFiltroClienteTabla(''); setFiltroEstadoTabla(''); setFiltroMoraRange(''); setSortCol(null); setSortDir('asc'); setExpandedRows(new Set()) }} style={{ display: 'flex', alignItems: 'center', gap: '9px', padding: '7px 10px', borderRadius: '9px', marginBottom: '2px', cursor: 'pointer', background: isActive ? 'rgba(245,158,11,0.15)' : 'transparent', transition: 'background 0.15s' }}>
                 <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'rgba(245,158,11,0.18)', border: '1px solid rgba(245,158,11,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', flexShrink: 0 }}>⚠</div>
                 <span style={{ color: '#fcd34d', fontSize: '13px', flex: 1, fontWeight: isActive ? 600 : 400 }}>Sin asignar</span>
                 <span style={{ fontSize: '10px', fontWeight: 700, padding: '2px 7px', borderRadius: '20px', background: 'rgba(245,158,11,0.2)', color: '#fcd34d' }}>{sinAsignarClientesCount}</span>
@@ -668,7 +669,7 @@ function AppInterna({ session }: { session: Session }) {
             const moraCount = data.filter(r => r.ejecutivo === exec && r.dias_mora > 0).length
             const isActive  = ejecutivoSeleccionado === exec
             return (
-              <div key={exec} onClick={() => setEjecutivoSeleccionado(exec)} style={{ display: 'flex', alignItems: 'center', gap: '9px', padding: '7px 10px', borderRadius: '9px', cursor: 'pointer', background: isActive ? 'rgba(255,255,255,0.1)' : 'transparent', marginBottom: '2px', transition: 'background 0.15s' }}>
+              <div key={exec} onClick={() => { setEjecutivoSeleccionado(exec); setVista('todos'); setFiltroClienteTabla(''); setFiltroEstadoTabla(''); setFiltroMoraRange(''); setSortCol(null); setSortDir('asc'); setExpandedRows(new Set()) }} style={{ display: 'flex', alignItems: 'center', gap: '9px', padding: '7px 10px', borderRadius: '9px', cursor: 'pointer', background: isActive ? 'rgba(255,255,255,0.1)' : 'transparent', marginBottom: '2px', transition: 'background 0.15s' }}>
                 <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: ec.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: 700, color: '#fff', flexShrink: 0, boxShadow: '0 2px 8px rgba(0,0,0,0.3)' }}>{ec.initials}</div>
                 <span style={{ color: isActive ? '#fff' : 'rgba(255,255,255,0.55)', fontSize: '12px', flex: 1, fontWeight: isActive ? 600 : 400, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{exec}</span>
                 {moraCount > 0 && <div style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#f87171', flexShrink: 0 }} />}
@@ -716,7 +717,7 @@ function AppInterna({ session }: { session: Session }) {
             )}
             <div>
               <h1 style={{ fontSize: '18px', fontWeight: 700, color: '#0d1b38', margin: 0 }}>
-                {esDashboard ? 'Dashboard ejecutivo'
+                {esDashboard ? 'Dashboard'
                   : esHistorial ? 'Historial cobrado'
                   : esClientes  ? 'Listado de clientes'
                   : ejecutivoSeleccionado || 'Todos los comprobantes'}
@@ -1088,11 +1089,7 @@ function AppInterna({ session }: { session: Session }) {
             {showAlerta && (() => {
               const moraCount    = filtrados.filter(r => r.dias_mora > 0).length
               const criticaCount = filtrados.filter(r => r.dias_mora > 60).length
-              const proximasCount = filtrados.filter(r => {
-                if (r.dias_mora > 0 || !r.fecha_vencimiento) return false
-                const v = new Date(r.fecha_vencimiento + 'T00:00:00')
-                return v >= hoyDate && v <= en7dias
-              }).length
+              const proximasCount = filtrados.filter(esProximaAVencer).length
               if (moraCount === 0 && proximasCount === 0) return null
               return (
                 <div style={{ background: '#fffbeb', border: '1px solid #fcd34d', borderRadius: '8px', padding: '10px 16px', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -1106,8 +1103,32 @@ function AppInterna({ session }: { session: Session }) {
                 </div>
               )
             })()}
+            {esPanelEjecutivo && (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: '14px', marginBottom: '24px' }}>
+                {[
+                  { label: 'Tu cartera total', value: fmt(carteraTotal), sub: `${dataSel.length} comprobantes`, color: '#2554a0', id: '' },
+                  { label: 'Revisión urgente', value: fmt(totalVencido), sub: `${vencidasArr.length} facturas en mora`, color: '#dc2626', id: 'section-revision' },
+                  { label: 'Próximas a vencer', value: String(proxAVencer.length), sub: 'vencen en 7 días', color: '#d97706', id: 'section-proximas' },
+                  { label: 'Al día', value: String(sinVencerArr.length), sub: 'comprobantes sin vencer', color: '#059669', id: 'section-sinvencer' },
+                ].map(card => (
+                  <div
+                    key={card.label}
+                    onClick={() => card.id && document.getElementById(card.id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                    style={{ background: '#fff', border: '1px solid #dde3f0', borderTop: `3px solid ${card.color}`, borderRadius: '10px', padding: '18px 20px', boxShadow: '0 1px 3px rgba(10,22,40,0.08)', position: 'relative', overflow: 'hidden', cursor: card.id ? 'pointer' : 'default' }}
+                  >
+                    <div style={{ position: 'absolute', top: 0, right: 0, width: '70px', height: '70px', borderRadius: '0 10px 0 70px', background: card.color, opacity: 0.06 }} />
+                    <div style={{ fontSize: '10px', fontWeight: 700, color: '#7a8fbb', textTransform: 'uppercase', letterSpacing: '0.9px', marginBottom: '8px' }}>{card.label}</div>
+                    <div style={{ fontSize: '22px', fontWeight: 800, color: card.color, fontFamily: 'monospace', lineHeight: 1, marginBottom: '6px' }}>{card.value}</div>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', fontSize: '11px', color: '#7a8fbb' }}>
+                      <span>{card.sub}</span>
+                      {card.id && <span style={{ color: card.color, fontWeight: 700, textDecoration: 'underline', textUnderlineOffset: '2px' }}>Ver →</span>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
             {/* barra de filtros */}
-            <div style={{ display: 'flex', gap: '8px', marginBottom: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+            {!esPanelEjecutivo && <div style={{ display: 'flex', gap: '8px', marginBottom: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
               <select value={ejecutivoSeleccionado || ''} onChange={e => setEjecutivoSeleccionado(e.target.value || null)} style={SEL}>
                 <option value="">Todos los ejecutivos</option>
                 {EJECUTIVOS.map(e => <option key={e} value={e}>{e}</option>)}
@@ -1126,8 +1147,8 @@ function AppInterna({ session }: { session: Session }) {
                 <option value="60+">Mora +60 días</option>
               </select>
               {hayFiltrosTabla && <button onClick={limpiarFiltrosTabla} style={BTN_LIMPIAR}>✕ Limpiar</button>}
-            </div>
-            {filtroEstadoTabla === 'mora' && (
+            </div>}
+            {!esPanelEjecutivo && filtroEstadoTabla === 'mora' && (
               <div style={{ display: 'flex', gap: '6px', marginBottom: '14px', flexWrap: 'wrap' }}>
                 {([
                   { v: '',         label: 'Todos',            ac: '#374151', ia: '#f1f5f9', tc: '#374151', bc: '#9ca3af' },
@@ -1156,15 +1177,19 @@ function AppInterna({ session }: { session: Session }) {
                            : filtroMoraRange === 'urgente'  ? base.filter(r => r.dias_mora > 30)
                            : base
 
-              const sinVencer = !sortCol ? ranged.filter(r => r.dias_mora <= 0) : []
               const vencidas  = !sortCol ? ranged.filter(r => r.dias_mora > 0)  : []
+              const proximasTabla = !sortCol && esPanelEjecutivo ? ranged.filter(esProximaAVencer) : []
+              const proximasTablaSet = new Set(proximasTabla.map(rowKey))
+              const sinVencer = !sortCol
+                ? ranged.filter(r => r.dias_mora <= 0 && (!esPanelEjecutivo || !proximasTablaSet.has(rowKey(r))))
+                : []
               const ordenados = sortCol
                 ? [...ranged].sort((a: any, b: any) => {
                     const av = a[sortCol]; const bv = b[sortCol]
                     const cmp = typeof av === 'number' ? av - bv : String(av ?? '').localeCompare(String(bv ?? ''))
                     return sortDir === 'asc' ? cmp : -cmp
                   })
-                : [...sinVencer, ...vencidas]
+                : esPanelEjecutivo ? [...vencidas, ...proximasTabla, ...sinVencer] : [...sinVencer, ...vencidas]
 
               const COLS = [
                 { key: '',                  label: '',            sortable: false },
@@ -1210,7 +1235,10 @@ function AppInterna({ session }: { session: Session }) {
                         <tbody>
                           {ordenados.map((r, idx) => {
                             const badge = moraBadge(r.dias_mora)
-                            const showSep = !sortCol && vencidas.length > 0 && sinVencer.length > 0 && idx === sinVencer.length
+                            const showSep = !esPanelEjecutivo && !sortCol && vencidas.length > 0 && sinVencer.length > 0 && idx === sinVencer.length
+                            const showRevision = esPanelEjecutivo && !sortCol && vencidas.length > 0 && idx === 0
+                            const showProximas = esPanelEjecutivo && !sortCol && proximasTabla.length > 0 && idx === vencidas.length
+                            const showSinVencer = esPanelEjecutivo && !sortCol && sinVencer.length > 0 && idx === vencidas.length + proximasTabla.length
                             const rowKey = r.id ? String(r.id) : r.comprobante
                             const isExp  = expandedRows.has(rowKey)
                             const extra  = extras.get(r.comprobante)
@@ -1221,6 +1249,21 @@ function AppInterna({ session }: { session: Session }) {
                                 <tr style={{ display: showSep ? '' : 'none', background: '#fee2e2' }}>
                                   <td colSpan={9} style={{ padding: '8px 16px', fontSize: '12px', fontWeight: 700, color: '#dc2626' }}>
                                     ⚠ Vencidas — {vencidas.length} {vencidas.length === 1 ? 'factura' : 'facturas'}
+                                  </td>
+                                </tr>
+                                <tr id={showRevision ? 'section-revision' : undefined} style={{ display: showRevision ? '' : 'none', background: '#fee2e2' }}>
+                                  <td colSpan={9} style={{ padding: '10px 16px', fontSize: '12px', fontWeight: 700, color: '#991b1b', borderBottom: '2px solid #fca5a5' }}>
+                                    ⚠ Vencidas — {vencidas.length} {vencidas.length === 1 ? 'factura' : 'facturas'}
+                                  </td>
+                                </tr>
+                                <tr id={showProximas ? 'section-proximas' : undefined} style={{ display: showProximas ? '' : 'none', background: '#fef3c7' }}>
+                                  <td colSpan={9} style={{ padding: '10px 16px', fontSize: '12px', fontWeight: 700, color: '#92400e', borderBottom: '2px solid #fde68a' }}>
+                                    Próximas a vencer — {proximasTabla.length} {proximasTabla.length === 1 ? 'factura' : 'facturas'}
+                                  </td>
+                                </tr>
+                                <tr id={showSinVencer ? 'section-sinvencer' : undefined} style={{ display: showSinVencer ? '' : 'none', background: '#d1fae5' }}>
+                                  <td colSpan={9} style={{ padding: '10px 16px', fontSize: '12px', fontWeight: 700, color: '#065f46', borderBottom: '2px solid #6ee7b7' }}>
+                                    Al día — {sinVencer.length} {sinVencer.length === 1 ? 'factura' : 'facturas'}
                                   </td>
                                 </tr>
                                 <tr
