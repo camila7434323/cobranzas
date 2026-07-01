@@ -483,24 +483,13 @@ async function sincronizarComprobantes(
   const cobradas = pendientes.filter((c: any) => !numerosNuevos.has(c.comprobante))
   const nuevosComp = comprobantes.filter(c => !todosMap.has(c.comprobante))
   const yaExisten = comprobantes.filter(c => todosMap.has(c.comprobante))
-  const reaparicion = yaExisten
-    .map(c => todosMap.get(c.comprobante))
-    .filter((ex: any) => ex && ex.estado === 'pendiente')
 
-  console.log(`ðŸ“Š Nuevos: ${nuevosComp.length}, Reapariciones: ${reaparicion.length}, Cobradas: ${cobradas.length}`)
+  console.log(`ðŸ“Š Nuevos: ${nuevosComp.length}, Actualizados: ${yaExisten.length}, Cobradas: ${cobradas.length}`)
 
   const ahora = new Date().toISOString()
-  const idsACobrar = [
-    ...cobradas.map((c: any) => c.id),
-    ...reaparicion.map((c: any) => c.id)
-  ]
+  const idsACobrar = cobradas.map((c: any) => c.id)
 
-  const historialNuevo = [
-    ...cobradas.filter((c: any) => !yaEnHistorial.has(c.id)),
-    ...yaExisten
-      .map(c => todosMap.get(c.comprobante))
-      .filter((ex: any) => ex && !yaEnHistorial.has(ex.id))
-  ].map((c: any) => ({
+  const historialNuevo = cobradas.filter((c: any) => !yaEnHistorial.has(c.id)).map((c: any) => ({
     comprobante_id:     c.id,
     comprobante_numero: c.comprobante,
     cliente:            c.nombre_cliente || 'Sin cliente',
@@ -512,9 +501,19 @@ async function sincronizarComprobantes(
 
   const ops: PromiseLike<any>[] = []
 
-  if (nuevosComp.length > 0) {
-    for (let i = 0; i < nuevosComp.length; i += 500) {
-      ops.push(supabase.from('comprobantes').insert(nuevosComp.slice(i, i + 500)))
+  const comprobantesActivos = comprobantes.map(c => ({
+    ...c,
+    estado: 'pendiente' as const,
+    updated_at: ahora
+  }))
+
+  if (comprobantesActivos.length > 0) {
+    for (let i = 0; i < comprobantesActivos.length; i += 500) {
+      ops.push(
+        supabase
+          .from('comprobantes')
+          .upsert(comprobantesActivos.slice(i, i + 500), { onConflict: 'comprobante' })
+      )
     }
   }
 
@@ -542,9 +541,8 @@ async function sincronizarComprobantes(
   }
 
   // Notificar si hay duplicados detectados
-  const duplicadosParaNotificar = [...cobradas, ...reaparicion]
-  if (duplicadosParaNotificar.length > 0) {
-    await notificarDuplicados(usuario, cobradas, reaparicion).catch(err =>
+  if (cobradas.length > 0) {
+    await notificarDuplicados(usuario, cobradas, []).catch(err =>
       console.error('Error enviando notificaciÃ³n de duplicados:', err.message)
     )
   }
@@ -554,14 +552,14 @@ async function sincronizarComprobantes(
     subido_por: usuario,
     comprobantes_nuevos: nuevosComp.length,
     comprobantes_cobrados: cobradas.length,
-    comprobantes_actualizados: reaparicion.length
+    comprobantes_actualizados: yaExisten.length
   })
 
   console.log(`âœ… SincronizaciÃ³n completada`)
 
   return {
     nuevos: nuevosComp.length,
-    actualizados: reaparicion.length,
+    actualizados: yaExisten.length,
     cobradas: cobradas.length,
     total: comprobantes.length
   }
@@ -661,8 +659,8 @@ function parsearCrystalReportsXML(xmlText: string): ComprobanteImportado[] {
       if (nextCode) { currentCode = nextCode; nextCode = null }
       pending.comp = /^(FCM|FC|NCM|NC|NDM|ND)\s*[A-Z0-9]/i.test(val) ? val : ''
     }
-    if (on === 'Fecha11')         pending.emision   = val
-    if (on === 'Fecha21')         pending.fecha21   = val
+    if (on === 'Fecha11')         pending.emision   = parsearFecha(val) || undefined
+    if (on === 'Fecha21')         pending.fecha21   = parsearFecha(val) || undefined
     if (on === 'CondicionVenta1') pending.condicion = val.replace(/^\d+\s*/, '').trim()
     if (on === 'Simbolo2')        pending.moneda    = val.toLowerCase().trim()
     if (on === 'acSaldo1' && val) pending.monto_ars = val
