@@ -1,19 +1,16 @@
 import { useState, useEffect, useRef, Fragment } from 'react'
-import * as XLSX from 'xlsx'
+import * as XLSX from 'xlsx-js-style'
 import { useComprobantes } from './hooks/useComprobantes'
 import { useHistorial } from './hooks/useHistorial'
 import { SubirReporte } from './components/SubirReporte'
+import { ManualSociedadView } from './components/ManualSociedadView'
 import { Login } from './components/Login'
 import { EJECUTIVOS, CONDICIONES_CLIENTE } from './data/ejecutivos'
 import { supabase } from './lib/supabase'
 import type { Session } from '@supabase/supabase-js'
 import { useExtras } from './hooks/useExtras'
 import type { Extra } from './hooks/useExtras'
-
-const CONDICION_OPTS = [
-  'Cuenta Corriente 7 días', 'Cuenta Corriente a 15 días', 'Cuenta Corriente 30 días',
-  'Cuenta Corriente 45 días', 'Cuenta Corriente 60 días', 'Cuenta Corriente 90 días', 'Contado',
-]
+import { CONDICION_OPTS, SOCIEDADES, type SociedadKey, type ManualFactura } from './types/sociedades'
 
 function DescPanel({ comprobante, extra, adminMode, onUpdate, condicionActual = '' }: {
   comprobante: string
@@ -133,25 +130,14 @@ const COLORES_EXEC: Record<string, { bg: string; color: string; initials: string
 }
 
 type Vista = 'global' | 'dashboard' | 'todos' | 'historial' | 'clientes' | 'nueva'
-type SociedadKey = 'sa' | 'llc' | 'sl'
 
-const SOCIEDADES: Record<SociedadKey, { nombre: string; corto: string; flag: string; manual: boolean; monedas: string[] }> = {
-  sa:  { nombre: 'ASAP Consulting SA',   corto: 'ASAP SA',     flag: '🇦🇷', manual: false, monedas: ['ARS'] },
-  llc: { nombre: 'ASAP Consulting LLC',  corto: 'ASAP LLC',    flag: '🇺🇸', manual: true,  monedas: ['USD'] },
-  sl:  { nombre: 'IT ASAP Solutions SL', corto: 'IT ASAP SL',  flag: '🇪🇸', manual: true,  monedas: ['USD', 'EUR'] },
-}
-
-type ManualFactura = {
-  id: string
-  sociedad: Exclude<SociedadKey, 'sa'>
-  comprobante: string
-  cliente: string
-  ejecutivo: string
-  fecha_emision: string
-  fecha_vencimiento: string
-  moneda: string
-  monto: number
-  pdf_url: string
+function useLocalStorage<T>(key: string, initial: T) {
+  const [value, setValue] = useState<T>(() => {
+    try { const raw = localStorage.getItem(key); return raw ? JSON.parse(raw) as T : initial }
+    catch { return initial }
+  })
+  useEffect(() => { localStorage.setItem(key, JSON.stringify(value)) }, [key, value])
+  return [value, setValue] as const
 }
 
 function getExecColor(nombre: string) {
@@ -184,20 +170,17 @@ function App() {
 }
 
 function AppInterna({ session }: { session: Session }) {
-  const { data, loading, error: errorComprobantes, refetch, asignarEjecutivo, updateEjecutivoLocal, actualizarComprobante } = useComprobantes()
+  const { data, loading, error: errorComprobantes, refetch, asignarEjecutivo, updateEjecutivoLocal, actualizarComprobante, marcarCobrado, deshacerCobro } = useComprobantes()
   const { data: historial, loading: loadingHistorial, error: errorHistorial, refetch: refetchHistorial } = useHistorial()
   const { extras, updateExtra, batchUpsert } = useExtras()
   const [vista, setVista] = useState<Vista>('global')
   const [sociedadActiva, setSociedadActiva] = useState<SociedadKey>('sa')
   const [sociedadesAbiertas, setSociedadesAbiertas] = useState<Record<SociedadKey, boolean>>({ sa: true, llc: true, sl: true })
-  const [manualFacturas, setManualFacturas] = useState<ManualFactura[]>(() => {
-    try { return JSON.parse(localStorage.getItem('cobranzas_manual_sociedades') || '[]') }
-    catch { return [] }
-  })
-  const [manualForm, setManualForm] = useState({
-    comprobante: '', cliente: '', ejecutivo: '', fecha_emision: '', fecha_vencimiento: '',
-    moneda: 'USD', monto: '', pdf_url: '',
-  })
+  const [manualFacturas, setManualFacturas] = useLocalStorage<ManualFactura[]>('cobranzas_manual_sociedades', [])
+  const [manualHistorial, setManualHistorial] = useLocalStorage<Record<SociedadKey, ManualFactura[]>>('cobranzas_manual_historial', { sa: [], llc: [], sl: [] })
+  const [manualExecs, setManualExecs] = useLocalStorage<Record<SociedadKey, string[]>>('cobranzas_manual_execs', { sa: [], llc: [], sl: [] })
+  const [manualClients, setManualClients] = useLocalStorage<Record<SociedadKey, string[]>>('cobranzas_manual_clients', { sa: [], llc: [], sl: [] })
+  const [editandoManual, setEditandoManual] = useState<ManualFactura | null>(null)
   const [tableKey] = useState(0)
   const [busqueda, setBusqueda] = useState('')
   const [ejecutivoSeleccionado, setEjecutivoSeleccionado] = useState<string | null>(null)
@@ -212,12 +195,16 @@ function AppInterna({ session }: { session: Session }) {
   const [sortCol, setSortCol]                 = useState<string | null>(null)
   const [sortDir, setSortDir]                 = useState<'asc' | 'desc'>('asc')
   const [filtroMoraRange, setFiltroMoraRange] = useState('')
+  const [seleccionCobro, setSeleccionCobro]   = useState<Set<string>>(new Set())
+  const [marcandoCobro, setMarcandoCobro]     = useState(false)
+
+  // filtros – vista global
+  const [globalFiltroEjecutivo, setGlobalFiltroEjecutivo] = useState('')
+  const [globalFiltroCliente, setGlobalFiltroCliente]     = useState('')
+  const [globalFiltroEstado, setGlobalFiltroEstado]       = useState('')
 
   const mainRef = useRef<HTMLDivElement>(null)
   useEffect(() => { mainRef.current?.scrollTo({ top: 0 }) }, [vista])
-  useEffect(() => {
-    localStorage.setItem('cobranzas_manual_sociedades', JSON.stringify(manualFacturas))
-  }, [manualFacturas])
 
   // asignación de ejecutivo
   const [errorAsignacion, setErrorAsignacion] = useState('')
@@ -505,35 +492,87 @@ function AppInterna({ session }: { session: Session }) {
     setSortCol(null)
     setSortDir('asc')
     setExpandedRows(new Set())
+    setSeleccionCobro(new Set())
+    setGlobalFiltroEjecutivo('')
+    setGlobalFiltroCliente('')
+    setGlobalFiltroEstado('')
+  }
+
+  const cobradoPorActual = session.user.user_metadata?.full_name || session.user.email || 'Admin'
+
+  const handleMarcarCobradas = async () => {
+    const rows = data.filter(r => seleccionCobro.has(String(r.id)))
+    if (!rows.length || marcandoCobro) return
+    if (!confirm(`¿Marcar ${rows.length} factura${rows.length > 1 ? 's' : ''} como cobrada${rows.length > 1 ? 's' : ''}?`)) return
+    setMarcandoCobro(true)
+    try {
+      await marcarCobrado(rows, cobradoPorActual)
+      setSeleccionCobro(new Set())
+      await refetchHistorial()
+      setToastExito(`${rows.length} factura${rows.length > 1 ? 's' : ''} movida${rows.length > 1 ? 's' : ''} al historial ✓`)
+    } catch {
+      setErrorCarga('No se pudo marcar como cobrada. Intentá de nuevo.')
+    } finally {
+      setMarcandoCobro(false)
+    }
+  }
+
+  const handleDeshacerCobro = async (row: any) => {
+    if (!confirm(`¿Deshacer el cobro de ${row.comprobante_numero}? Volverá a la lista de pendientes.`)) return
+    try {
+      await deshacerCobro(row.id, row.comprobante_id)
+      await Promise.all([refetch(), refetchHistorial()])
+      setToastExito('Cobro deshecho ✓')
+    } catch {
+      setErrorCarga('No se pudo deshacer el cobro. Intentá de nuevo.')
+    }
   }
 
   const irAVista = (nuevaVista: Vista, sociedad: SociedadKey = sociedadActiva) => {
     setSociedadActiva(sociedad)
     setVista(nuevaVista)
-    if (SOCIEDADES[sociedad].manual) setManualForm(prev => ({ ...prev, moneda: SOCIEDADES[sociedad].monedas[0] }))
+    setEditandoManual(null)
     limpiarSeleccionTabla()
     if (nuevaVista === 'historial' || nuevaVista === 'global') refetchHistorial()
     else refetch()
   }
 
-  const guardarFacturaManual = () => {
-    if (sociedadActiva === 'sa' || !manualForm.comprobante || !manualForm.cliente || !manualForm.monto) return
-    const nueva: ManualFactura = {
-      id: `${sociedadActiva}-${Date.now()}`,
-      sociedad: sociedadActiva,
-      comprobante: manualForm.comprobante.trim(),
-      cliente: manualForm.cliente.trim(),
-      ejecutivo: manualForm.ejecutivo.trim() || 'Sin asignar',
-      fecha_emision: manualForm.fecha_emision,
-      fecha_vencimiento: manualForm.fecha_vencimiento,
-      moneda: manualForm.moneda,
-      monto: Number(manualForm.monto) || 0,
-      pdf_url: manualForm.pdf_url.trim(),
+  const guardarOEditarFacturaManual = (factura: ManualFactura) => {
+    setManualFacturas(prev => {
+      const existe = prev.some(r => r.id === factura.id)
+      return existe ? prev.map(r => r.id === factura.id ? factura : r) : [factura, ...prev]
+    })
+    if (factura.ejecutivo && factura.ejecutivo !== 'Sin asignar') {
+      setManualExecs(prev => prev[factura.sociedad].includes(factura.ejecutivo) ? prev : { ...prev, [factura.sociedad]: [...prev[factura.sociedad], factura.ejecutivo] })
     }
-    setManualFacturas(prev => [nueva, ...prev])
-    setManualForm({ comprobante: '', cliente: '', ejecutivo: '', fecha_emision: '', fecha_vencimiento: '', moneda: SOCIEDADES[sociedadActiva].monedas[0], monto: '', pdf_url: '' })
-    setToastExito('Factura manual guardada')
+    if (factura.cliente) {
+      setManualClients(prev => prev[factura.sociedad].includes(factura.cliente) ? prev : { ...prev, [factura.sociedad]: [...prev[factura.sociedad], factura.cliente] })
+    }
+    setEditandoManual(null)
+    setToastExito(editandoManual ? 'Factura actualizada ✓' : 'Factura manual guardada ✓')
     setVista('todos')
+  }
+
+  const marcarCobradaManual = (factura: ManualFactura) => {
+    if (!confirm(`¿Marcar la factura ${factura.comprobante} como cobrada?`)) return
+    const cobrada = { ...factura, cobrado_el: new Date().toISOString() }
+    setManualFacturas(prev => prev.filter(r => r.id !== factura.id))
+    setManualHistorial(prev => ({ ...prev, [factura.sociedad]: [cobrada, ...prev[factura.sociedad]] }))
+    setToastExito('Factura movida al historial ✓')
+  }
+
+  const deshacerCobroManual = (factura: ManualFactura) => {
+    if (!confirm(`¿Deshacer el cobro de ${factura.comprobante}? Volverá a la lista de pendientes.`)) return
+    setManualHistorial(prev => ({ ...prev, [factura.sociedad]: prev[factura.sociedad].filter(r => r.id !== factura.id) }))
+    setManualFacturas(prev => [{ ...factura, cobrado_el: undefined }, ...prev])
+    setToastExito('Cobro deshecho ✓')
+  }
+
+  const reasignarEjecutivoManual = (sociedad: SociedadKey, cliente: string, nuevoEjecutivo: string) => {
+    setManualFacturas(prev => prev.map(r => r.sociedad === sociedad && r.cliente === cliente ? { ...r, ejecutivo: nuevoEjecutivo } : r))
+    setManualHistorial(prev => ({ ...prev, [sociedad]: prev[sociedad].map(r => r.cliente === cliente ? { ...r, ejecutivo: nuevoEjecutivo } : r) }))
+    setManualExecs(prev => prev[sociedad].includes(nuevoEjecutivo) ? prev : { ...prev, [sociedad]: [...prev[sociedad], nuevoEjecutivo] })
+    setToastExito('Ejecutivo actualizado ✓')
   }
 
   // ── asignación de ejecutivo ───────────────────────────────────────────────
@@ -615,7 +654,7 @@ function AppInterna({ session }: { session: Session }) {
   const sociedadInfo = SOCIEDADES[sociedadActiva]
   const esSociedadManual = sociedadInfo.manual
   const manualSociedadRows = sociedadActiva === 'sa' ? [] : manualFacturas.filter(r => r.sociedad === sociedadActiva)
-  const globalRows = [
+  const globalRowsSinFiltrar = [
     ...data.map(r => ({
       empresa: SOCIEDADES.sa.nombre,
       comprobante: r.comprobante,
@@ -623,7 +662,8 @@ function AppInterna({ session }: { session: Session }) {
       ejecutivo: r.ejecutivo || 'Sin asignar',
       fecha: r.fecha_emision,
       monto: r.monto,
-      estado: 'Pendiente',
+      diasMora: r.dias_mora || 0,
+      estado: 'Pendiente' as const,
       factura: r,
     })),
     ...historial.map(r => ({
@@ -633,7 +673,8 @@ function AppInterna({ session }: { session: Session }) {
       ejecutivo: r.ejecutivo || 'Sin asignar',
       fecha: r.fecha_cobro ? r.fecha_cobro.slice(0, 10) : '',
       monto: r.monto,
-      estado: 'Cobrada',
+      diasMora: 0,
+      estado: 'Cobrada' as const,
       factura: null,
     })),
     ...manualFacturas.map(r => ({
@@ -643,14 +684,169 @@ function AppInterna({ session }: { session: Session }) {
       ejecutivo: r.ejecutivo || 'Sin asignar',
       fecha: r.fecha_emision,
       monto: r.monto,
-      estado: 'Pendiente',
+      diasMora: calcularDiasMora(r.fecha_vencimiento || null),
+      estado: 'Pendiente' as const,
       factura: null,
     })),
-  ].filter(r => {
-    if (!busqueda) return true
-    const q = busqueda.toLowerCase()
-    return r.comprobante?.toLowerCase().includes(q) || r.cliente?.toLowerCase().includes(q) || r.empresa?.toLowerCase().includes(q)
+    ...(['llc', 'sl'] as const).flatMap(key => manualHistorial[key].map(r => ({
+      empresa: SOCIEDADES[key].nombre,
+      comprobante: r.comprobante,
+      cliente: r.cliente,
+      ejecutivo: r.ejecutivo || 'Sin asignar',
+      fecha: r.cobrado_el ? r.cobrado_el.slice(0, 10) : '',
+      monto: r.monto,
+      diasMora: 0,
+      estado: 'Cobrada' as const,
+      factura: null,
+    }))),
+  ]
+
+  const globalEjecutivoOpts = [...new Set(globalRowsSinFiltrar.map(r => r.ejecutivo).filter(Boolean))].sort() as string[]
+  const globalClienteOpts   = [...new Set(globalRowsSinFiltrar.filter(r => !globalFiltroEjecutivo || r.ejecutivo === globalFiltroEjecutivo).map(r => r.cliente).filter(Boolean))].sort() as string[]
+
+  const globalRows = globalRowsSinFiltrar.filter(r => {
+    if (busqueda) {
+      const q = busqueda.toLowerCase()
+      if (!r.comprobante?.toLowerCase().includes(q) && !r.cliente?.toLowerCase().includes(q) && !r.empresa?.toLowerCase().includes(q)) return false
+    }
+    if (globalFiltroEjecutivo && r.ejecutivo !== globalFiltroEjecutivo) return false
+    if (globalFiltroCliente   && r.cliente   !== globalFiltroCliente)  return false
+    if (globalFiltroEstado === 'pendiente' && r.estado === 'Cobrada') return false
+    if (globalFiltroEstado === 'cobrado'   && r.estado !== 'Cobrada') return false
+    if (globalFiltroEstado === 'vencida'   && (r.estado === 'Cobrada' || r.diasMora <= 0)) return false
+    if (globalFiltroEstado === 'sinvencer' && (r.estado === 'Cobrada' || r.diasMora > 0)) return false
+    return true
   })
+
+  const exportarGlobal = () => {
+    const hoy = new Date().toISOString().slice(0, 10)
+    const rows = globalRows.map(r => ({
+      'Empresa':    r.empresa,
+      'Comprobante': r.comprobante,
+      'Cliente':    r.cliente,
+      'Ejecutivo':  r.ejecutivo,
+      'Emisión':    fmtFecha(r.fecha),
+      'Monto':      r.monto,
+      'Estado':     r.estado,
+      'Mora (días)': r.diasMora,
+    }))
+    const ws = XLSX.utils.json_to_sheet(rows)
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, 'Consolidado')
+    XLSX.writeFile(wb, `consolidado_${hoy}.xlsx`)
+  }
+
+  // ── export estilizado multi-hoja (dashboard SA) ───────────────────────────
+  const exportDashboard = () => {
+    const hoy = new Date().toLocaleDateString('es-AR')
+    const wb = XLSX.utils.book_new()
+
+    const headerStyle = {
+      fill: { patternType: 'solid', fgColor: { rgb: '1D4170' } },
+      font: { bold: true, color: { rgb: 'FFFFFF' }, sz: 11 },
+      alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
+    }
+    type ColorInfo = { bg?: string; fg?: string; bold?: boolean }
+    const styleSheet = (ws: XLSX.WorkSheet, headers: string[], rows: any[][], colorFn?: (col: string, val: any) => ColorInfo | null) => {
+      headers.forEach((_, ci) => {
+        const cell = XLSX.utils.encode_cell({ r: 0, c: ci })
+        if (ws[cell]) ws[cell].s = headerStyle
+      })
+      rows.forEach((row, ri) => {
+        row.forEach((val, ci) => {
+          const cell = XLSX.utils.encode_cell({ r: ri + 1, c: ci })
+          if (!ws[cell]) return
+          const custom = colorFn ? colorFn(headers[ci], val) : null
+          ws[cell].s = {
+            fill: { patternType: 'solid', fgColor: { rgb: custom?.bg || (ri % 2 ? 'F8FAFF' : 'FFFFFF') } },
+            font: { color: { rgb: custom?.fg || '0F172A' }, bold: !!custom?.bold, sz: 10 },
+          }
+        })
+      })
+    }
+
+    // Hoja 1 — Resumen
+    const wsResumen = XLSX.utils.aoa_to_sheet([
+      ['Dashboard de Cobranzas — ASAP Consulting'],
+      ['Generado el', hoy],
+      [],
+      ['Indicador', 'Valor'],
+      ['Total vencido', totalVencido],
+      ['Facturas en mora', vencidasArr.length],
+      ['Clientes con mora', clientDashList.length],
+      ['Mora promedio (días)', moraPromedio],
+      ['% cartera en mora', porcentajeMora + '%'],
+      ['Total pendiente de cobro', carteraTotal],
+    ])
+    wsResumen['!cols'] = [{ wch: 30 }, { wch: 20 }]
+    if (wsResumen['A1']) wsResumen['A1'].s = { font: { bold: true, sz: 13 } }
+    XLSX.utils.book_append_sheet(wb, wsResumen, 'Resumen')
+
+    // Hoja 2 — Por cliente
+    const clienteHeaders = ['#', 'Cliente', 'Importe vencido', '% del total', 'Facturas', 'Mora promedio (días)']
+    const clienteRows = clientDashList.map((c, i) => [i + 1, c.name, c.monto, c.pct + '%', c.facturas, c.moraProm])
+    const wsClientes = XLSX.utils.aoa_to_sheet([clienteHeaders, ...clienteRows])
+    wsClientes['!cols'] = [{ wch: 4 }, { wch: 35 }, { wch: 18 }, { wch: 12 }, { wch: 10 }, { wch: 20 }]
+    styleSheet(wsClientes, clienteHeaders, clienteRows)
+    XLSX.utils.book_append_sheet(wb, wsClientes, 'Por cliente')
+
+    // Hoja 3 — Por ejecutivo
+    const byExec = new Map<string, { monto: number; facturas: number; moraTotal: number }>()
+    vencidasArr.forEach(r => {
+      const n = r.ejecutivo || 'Sin asignar'
+      const cur = byExec.get(n) || { monto: 0, facturas: 0, moraTotal: 0 }
+      cur.monto += r.monto; cur.facturas += 1; cur.moraTotal += r.dias_mora
+      byExec.set(n, cur)
+    })
+    const execHeaders = ['Ejecutivo', 'Importe vencido', '% del total', 'Facturas', 'Mora promedio (días)']
+    const execRows = Array.from(byExec.entries())
+      .map(([name, d]) => [name, d.monto, totalVencido > 0 ? Math.round(d.monto / totalVencido * 100) + '%' : '0%', d.facturas, Math.round(d.moraTotal / d.facturas)])
+      .sort((a, b) => (b[1] as number) - (a[1] as number))
+    const wsExec = XLSX.utils.aoa_to_sheet([execHeaders, ...execRows])
+    wsExec['!cols'] = [{ wch: 25 }, { wch: 18 }, { wch: 12 }, { wch: 10 }, { wch: 20 }]
+    styleSheet(wsExec, execHeaders, execRows)
+    XLSX.utils.book_append_sheet(wb, wsExec, 'Por ejecutivo')
+
+    // Hoja 4 — Distribución mora
+    const distHeaders = ['Rango de mora', 'Facturas', 'Monto total']
+    const distRows = moraDist.map(b => [b.label, b.items.length, b.items.reduce((s, r) => s + r.monto, 0)])
+    const wsDist = XLSX.utils.aoa_to_sheet([distHeaders, ...distRows])
+    wsDist['!cols'] = [{ wch: 15 }, { wch: 10 }, { wch: 18 }]
+    styleSheet(wsDist, distHeaders, distRows)
+    XLSX.utils.book_append_sheet(wb, wsDist, 'Distribución mora')
+
+    // Hoja 5 — Detalle facturas vencidas
+    const detHeaders = ['Comprobante', 'Cliente', 'Ejecutivo', 'Emisión', 'Vencimiento', 'Condición', 'Monto', 'Días mora', 'Estado']
+    const detRows = vencidasArr.map(r => {
+      const estado = r.dias_mora <= 7 ? 'Reciente vencida' : r.dias_mora <= 15 ? 'Atención' : r.dias_mora <= 30 ? 'Crítica' : 'Urgente'
+      return [
+        r.comprobante, r.nombre_cliente, r.ejecutivo || 'Sin asignar', fmtFecha(r.fecha_emision), fmtFecha(r.fecha_vencimiento),
+        extras.get(r.comprobante)?.condicion_override || r.condicion || '', r.monto, r.dias_mora, estado,
+      ]
+    })
+    const estadoColores: Record<string, ColorInfo> = {
+      'Reciente vencida': { bg: 'FEF9C3', fg: '854D0E' },
+      'Atención':         { bg: 'FFEDD5', fg: '9A3412' },
+      'Crítica':          { bg: 'FEE2E2', fg: '7F1D1D' },
+      'Urgente':          { bg: 'DC2626', fg: 'FFFFFF', bold: true },
+    }
+    const wsDetalle = XLSX.utils.aoa_to_sheet([detHeaders, ...detRows])
+    wsDetalle['!cols'] = [{ wch: 22 }, { wch: 30 }, { wch: 20 }, { wch: 12 }, { wch: 12 }, { wch: 16 }, { wch: 15 }, { wch: 12 }, { wch: 16 }]
+    styleSheet(wsDetalle, detHeaders, detRows, (col, val) => {
+      if (col === 'Estado') return estadoColores[val] || null
+      if (col === 'Días mora' && typeof val === 'number') {
+        if (val <= 7) return { bg: 'FEF9C3', fg: '854D0E' }
+        if (val <= 15) return { bg: 'FFEDD5', fg: '9A3412' }
+        if (val <= 30) return { bg: 'FEE2E2', fg: '7F1D1D' }
+        return { bg: 'DC2626', fg: 'FFFFFF', bold: true }
+      }
+      if (col === 'Monto') return { bold: true }
+      return null
+    })
+    XLSX.utils.book_append_sheet(wb, wsDetalle, 'Detalle facturas')
+
+    XLSX.writeFile(wb, `Cobranzas_ASAP_${hoy.replace(/\//g, '-')}.xlsx`)
+  }
 
   // opciones de clientes para dropdowns
   const clientesTablaOpts    = [...new Set(data.map(r => r.nombre_cliente).filter(Boolean))].sort() as string[]
@@ -823,7 +1019,8 @@ function AppInterna({ session }: { session: Session }) {
             const abierta = sociedadesAbiertas[key]
             const activa = sociedadActiva === key && vista !== 'global'
             const pendienteCount = key === 'sa' ? data.length : manualFacturas.filter(r => r.sociedad === key).length
-            const historialCount = key === 'sa' ? historial.length : 0
+            const historialCount = key === 'sa' ? historial.length : manualHistorial[key].length
+            const clientesCount  = key === 'sa' ? clientesMap.size : new Set(manualFacturas.filter(r => r.sociedad === key).map(r => r.cliente)).size
             return (
               <div key={key} style={{ marginBottom: '8px' }}>
                 <button
@@ -843,7 +1040,7 @@ function AppInterna({ session }: { session: Session }) {
                       { vista: 'todos' as Vista, label: 'Comprobantes por cobrar', count: pendienteCount },
                       ...(sociedad.manual ? [{ vista: 'nueva' as Vista, label: 'Agregar factura', count: 0 }] : []),
                       { vista: 'historial' as Vista, label: 'Historial cobranzas', count: historialCount },
-                      { vista: 'clientes' as Vista, label: 'Listado de clientes', count: key === 'sa' ? clientesMap.size : 0 },
+                      { vista: 'clientes' as Vista, label: 'Listado de clientes', count: clientesCount },
                     ].map(item => {
                       const itemActivo = sociedadActiva === key && vista === item.vista
                       return (
@@ -1024,16 +1221,24 @@ function AppInterna({ session }: { session: Session }) {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
             <div style={{ background: '#fff', border: '1px solid #dde3f0', borderRadius: '10px', padding: '16px 20px', boxShadow: '0 2px 12px rgba(38,63,101,0.06)' }}>
               <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
-                <select style={SEL} value="" onChange={() => {}}>
-                  <option>Todos los ejecutivos</option>
+                <select style={SEL} value={globalFiltroEjecutivo} onChange={e => setGlobalFiltroEjecutivo(e.target.value)}>
+                  <option value="">Todos los ejecutivos</option>
+                  {globalEjecutivoOpts.map(e => <option key={e} value={e}>{e}</option>)}
                 </select>
-                <select style={SEL} value="" onChange={() => {}}>
-                  <option>Todos los clientes</option>
+                <select style={SEL} value={globalFiltroCliente} onChange={e => setGlobalFiltroCliente(e.target.value)}>
+                  <option value="">Todos los clientes</option>
+                  {globalClienteOpts.map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
-                <select style={SEL} value="" onChange={() => {}}>
-                  <option>Todos los estados</option>
+                <select style={SEL} value={globalFiltroEstado} onChange={e => setGlobalFiltroEstado(e.target.value)}>
+                  <option value="">Todos los estados</option>
+                  <option value="pendiente">⏳ Pendientes de cobro</option>
+                  <option value="cobrado">✅ Cobrados</option>
+                  <option value="vencida">⚠ Vencidas</option>
+                  <option value="sinvencer">🟢 Sin vencer</option>
                 </select>
-                <button onClick={() => setBusqueda('')} style={BTN_LIMPIAR}>× Limpiar</button>
+                {(busqueda || globalFiltroEjecutivo || globalFiltroCliente || globalFiltroEstado) && (
+                  <button onClick={() => { setBusqueda(''); setGlobalFiltroEjecutivo(''); setGlobalFiltroCliente(''); setGlobalFiltroEstado('') }} style={BTN_LIMPIAR}>× Limpiar</button>
+                )}
               </div>
               <div style={{ marginTop: '14px', color: '#4a6fa5', fontSize: '13px' }}>
                 📊 Vista consolidada · ASAP SA · ASAP LLC · IT ASAP SL · incluye pendientes y cobrados
@@ -1044,6 +1249,9 @@ function AppInterna({ session }: { session: Session }) {
               <div style={{ padding: '14px 22px', borderBottom: '1px solid #dde3f0', background: '#f8faff', display: 'flex', gap: '8px', alignItems: 'center' }}>
                 <strong style={{ fontSize: '14px', color: '#0d1b38' }}>Comprobantes</strong>
                 <span style={{ color: '#7a8fbb', fontSize: '12px' }}>{globalRows.length} comprobantes</span>
+                <button onClick={exportarGlobal} style={{ marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: '6px', background: '#2554a0', color: '#fff', border: 'none', borderRadius: '8px', padding: '6px 12px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>
+                  ↓ .xlsx
+                </button>
               </div>
               <div style={{ overflowX: 'auto' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -1080,86 +1288,34 @@ function AppInterna({ session }: { session: Session }) {
             </div>
           </div>
         ) : esSociedadManual ? (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
-            {esNueva && adminMode && (
-              <div style={{ background: '#fff', border: '1px solid #dde3f0', borderRadius: '10px', padding: '18px 22px', boxShadow: '0 2px 12px rgba(38,63,101,0.06)' }}>
-                <div style={{ fontSize: '14px', fontWeight: 700, color: '#0d1b38', marginBottom: '6px' }}>Agregar factura manual</div>
-                <div style={{ color: '#7a8fbb', fontSize: '13px', marginBottom: '14px' }}>{sociedadInfo.nombre} · Moneda: {sociedadInfo.monedas.join(' / ')}</div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: '10px' }}>
-                  {[
-                    ['comprobante', 'Comprobante'],
-                    ['cliente', 'Cliente'],
-                    ['ejecutivo', 'Ejecutivo'],
-                    ['fecha_emision', 'Emision'],
-                    ['fecha_vencimiento', 'Vencimiento'],
-                    ['monto', 'Monto'],
-                    ['pdf_url', 'PDF / SharePoint URL'],
-                  ].map(([key, label]) => (
-                    <div key={key} style={key === 'pdf_url' ? { gridColumn: '1 / -1' } : {}}>
-                      <div style={{ fontSize: '10px', fontWeight: 700, color: '#7a8fbb', textTransform: 'uppercase', marginBottom: '4px' }}>{label}</div>
-                      <input
-                        type={key.includes('fecha') ? 'date' : key === 'monto' ? 'number' : 'text'}
-                        value={(manualForm as any)[key]}
-                        onChange={e => setManualForm(prev => ({ ...prev, [key]: e.target.value }))}
-                        style={{ width: '100%', padding: '8px 10px', borderRadius: '8px', border: '1px solid #dde3f0', fontSize: '13px', boxSizing: 'border-box' }}
-                      />
-                    </div>
-                  ))}
-                  <div>
-                    <div style={{ fontSize: '10px', fontWeight: 700, color: '#7a8fbb', textTransform: 'uppercase', marginBottom: '4px' }}>Moneda</div>
-                    <select value={manualForm.moneda} onChange={e => setManualForm(prev => ({ ...prev, moneda: e.target.value }))} style={{ width: '100%', padding: '8px 10px', borderRadius: '8px', border: '1px solid #dde3f0', fontSize: '13px' }}>
-                      {sociedadInfo.monedas.map(m => <option key={m} value={m}>{m}</option>)}
-                    </select>
-                  </div>
-                </div>
-                <button onClick={guardarFacturaManual} style={{ marginTop: '14px', background: '#2554a0', color: '#fff', border: 'none', borderRadius: '8px', padding: '9px 18px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}>
-                  Guardar factura
-                </button>
-              </div>
-            )}
-            {manualSociedadRows.length === 0 ? (
-              <div style={{ background: '#fff', border: '1px solid #bcd0f7', borderRadius: '12px', padding: '90px 24px', textAlign: 'center' }}>
-                <div style={{ fontSize: '42px', marginBottom: '12px' }}>📋</div>
-                <div style={{ fontSize: '18px', fontWeight: 800, color: '#0d1b38', marginBottom: '8px' }}>Sin datos aun</div>
-                <div style={{ color: '#6b7fb3', fontSize: '14px', maxWidth: '420px', margin: '0 auto' }}>
-                  Los indicadores aparecen automaticamente a medida que cargues facturas para {sociedadInfo.nombre}.
-                </div>
-                {!adminMode && (
-                  <button onClick={() => setShowAdminPrompt(true)} style={{ marginTop: '18px', background: '#2554a0', color: '#fff', border: 'none', borderRadius: '8px', padding: '9px 18px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}>
-                    Activar Admin
-                  </button>
-                )}
-              </div>
-            ) : (
-              <div style={{ background: '#fff', border: '1px solid #dde3f0', borderRadius: '10px', overflow: 'hidden' }}>
-                <div style={{ padding: '14px 18px', background: '#f8faff', borderBottom: '1px solid #dde3f0', display: 'flex', gap: '8px' }}>
-                  <strong>Comprobantes por cobrar</strong>
-                  <span style={{ color: '#7a8fbb' }}>{manualSociedadRows.length} comprobantes</span>
-                </div>
-                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                  <thead>
-                    <tr>{['Comprobante','Cliente','Ejecutivo','Emision','Vencimiento','Monto','PDF'].map(h => <th key={h} style={{ padding: '10px 16px', textAlign: h === 'Monto' ? 'right' : 'left', fontSize: '10px', color: '#7a8fbb', textTransform: 'uppercase', borderBottom: '1px solid #dde3f0' }}>{h}</th>)}</tr>
-                  </thead>
-                  <tbody>
-                    {manualSociedadRows.map(r => (
-                      <tr key={r.id} style={{ borderBottom: '1px solid #dde3f0' }}>
-                        <td style={{ padding: '11px 16px', fontFamily: 'monospace', fontSize: '12px' }}>{r.comprobante}</td>
-                        <td style={{ padding: '11px 16px', fontWeight: 700 }}>{r.cliente}</td>
-                        <td style={{ padding: '11px 16px', color: '#7a8fbb' }}>{r.ejecutivo}</td>
-                        <td style={{ padding: '11px 16px', color: '#7a8fbb' }}>{fmtFecha(r.fecha_emision)}</td>
-                        <td style={{ padding: '11px 16px', color: '#7a8fbb' }}>{fmtFecha(r.fecha_vencimiento)}</td>
-                        <td style={{ padding: '11px 16px', textAlign: 'right', fontFamily: 'monospace', fontWeight: 700 }}>{r.moneda} {Math.round(r.monto).toLocaleString('es-AR')}</td>
-                        <td style={{ padding: '11px 16px' }}>{r.pdf_url ? <a href={r.pdf_url} target="_blank" rel="noreferrer" style={{ color: '#2554a0', fontWeight: 700 }}>Abrir PDF</a> : '-'}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
+          <ManualSociedadView
+            vista={vista}
+            sociedad={sociedadActiva as Exclude<SociedadKey, 'sa'>}
+            nombreSociedad={sociedadInfo.nombre}
+            monedas={sociedadInfo.monedas}
+            condicionOpts={CONDICION_OPTS}
+            adminMode={adminMode}
+            facturas={manualSociedadRows}
+            historial={manualHistorial[sociedadActiva]}
+            execsConocidos={manualExecs[sociedadActiva]}
+            clientesConocidos={manualClients[sociedadActiva]}
+            busqueda={busqueda}
+            editando={editandoManual}
+            fmtFecha={fmtFecha}
+            calcularVencimientoPorCondicion={calcularVencimientoPorCondicion}
+            calcularDiasMora={calcularDiasMora}
+            onShowAdminPrompt={() => setShowAdminPrompt(true)}
+            onIrANueva={() => irAVista('nueva', sociedadActiva)}
+            onEditar={f => { setEditandoManual(f); setVista('nueva') }}
+            onGuardarFactura={guardarOEditarFacturaManual}
+            onCancelarFactura={() => { setEditandoManual(null); setVista('todos') }}
+            onMarcarCobrada={marcarCobradaManual}
+            onDeshacerCobro={deshacerCobroManual}
+            onReasignarEjecutivo={(cliente, nuevo) => reasignarEjecutivoManual(sociedadActiva, cliente, nuevo)}
+          />
         ) : esDashboard ? (
           <>
-            <SubirReporte batchUpsert={batchUpsert} onExport={exportar} />
+            <SubirReporte batchUpsert={batchUpsert} onExport={exportDashboard} />
             {loading && data.length === 0 ? (
               <div style={{ padding: '80px 20px', textAlign: 'center', color: '#7a8fbb', fontSize: '16px' }}>
                 <div style={{ display: 'inline-block', width: '32px', height: '32px', border: '3px solid #dde3f0', borderTopColor: '#2554a0', borderRadius: '50%', animation: 'spin 0.8s linear infinite', marginBottom: '16px' }} />
@@ -1350,8 +1506,8 @@ function AppInterna({ session }: { session: Session }) {
                   <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                     <thead>
                       <tr style={{ background: '#f8faff', borderBottom: '1px solid #dde3f0' }}>
-                        {['Comprobante', 'Cliente', 'Ejecutivo', 'Fecha cobro', 'Monto', 'Estado', 'PDF'].map(h => (
-                          <th key={h} style={{ padding: '10px 16px', textAlign: 'left', fontSize: '10px', fontWeight: 600, color: '#7a8fbb', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>{h}</th>
+                        {[...['Comprobante', 'Cliente', 'Ejecutivo', 'Fecha cobro', 'Monto', 'Estado', 'PDF'], ...(adminMode ? [''] : [])].map((h, i) => (
+                          <th key={h || `acc-${i}`} style={{ padding: '10px 16px', textAlign: 'left', fontSize: '10px', fontWeight: 600, color: '#7a8fbb', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>{h}</th>
                         ))}
                       </tr>
                     </thead>
@@ -1382,6 +1538,13 @@ function AppInterna({ session }: { session: Session }) {
                                 📄 Ver PDF
                               </button>
                             </td>
+                            {adminMode && (
+                              <td style={{ padding: '12px 16px' }}>
+                                <button onClick={() => handleDeshacerCobro(r)} style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', background: '#fff5f5', color: '#dc2626', border: '1px solid #fca5a5', borderRadius: '8px', padding: '5px 12px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                                  ↩ Deshacer
+                                </button>
+                              </td>
+                            )}
                           </tr>
                         )
                       })}
@@ -1614,7 +1777,16 @@ function AppInterna({ session }: { session: Session }) {
                     <span style={{ fontSize: '13px', fontWeight: 600, color: '#0d1b38' }}>Comprobantes</span>
                     <span style={{ fontSize: '12px', color: '#7a8fbb' }}>{ordenados.length} comprobantes</span>
                     {loading && <span style={{ fontSize: '11px', color: '#d97706' }}>Actualizando...</span>}
-                    <button onClick={exportar} style={{ marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: '6px', background: '#2554a0', color: '#fff', border: 'none', borderRadius: '8px', padding: '6px 12px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>
+                    {adminMode && (
+                      <button
+                        onClick={handleMarcarCobradas}
+                        disabled={seleccionCobro.size === 0 || marcandoCobro}
+                        style={{ marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: '6px', background: seleccionCobro.size === 0 || marcandoCobro ? '#94a3b8' : '#059669', color: '#fff', border: 'none', borderRadius: '8px', padding: '6px 12px', fontSize: '12px', fontWeight: 700, cursor: seleccionCobro.size === 0 || marcandoCobro ? 'not-allowed' : 'pointer' }}
+                      >
+                        {marcandoCobro ? 'Marcando...' : `✓ Marcar cobradas${seleccionCobro.size > 0 ? ` (${seleccionCobro.size})` : ''}`}
+                      </button>
+                    )}
+                    <button onClick={exportar} style={{ marginLeft: adminMode ? 0 : 'auto', display: 'inline-flex', alignItems: 'center', gap: '6px', background: '#2554a0', color: '#fff', border: 'none', borderRadius: '8px', padding: '6px 12px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>
                       ↓ .xlsx
                     </button>
                   </div>
@@ -1627,6 +1799,16 @@ function AppInterna({ session }: { session: Session }) {
                       <table key={tableKey} style={{ width: '100%', borderCollapse: 'collapse' }}>
                         <thead>
                           <tr style={{ background: '#f8faff', borderBottom: '1px solid #dde3f0' }}>
+                            {adminMode && (
+                              <th style={{ padding: '10px 6px', width: '32px', textAlign: 'center' }}>
+                                <input
+                                  type="checkbox"
+                                  checked={ordenados.length > 0 && ordenados.every(r => seleccionCobro.has(String(r.id)))}
+                                  onChange={e => setSeleccionCobro(e.target.checked ? new Set(ordenados.map(r => String(r.id))) : new Set())}
+                                  style={{ cursor: 'pointer', width: '15px', height: '15px' }}
+                                />
+                              </th>
+                            )}
                             {COLS.map((col, ci) => (
                               <th key={ci}
                                 onClick={col.sortable ? () => handleSort(col.key) : undefined}
@@ -1652,22 +1834,22 @@ function AppInterna({ session }: { session: Session }) {
                               <Fragment key={rowKey}>
                                 {/* separator — always in DOM, hidden via display to avoid insertBefore */}
                                 <tr style={{ display: showSep ? '' : 'none', background: '#fee2e2' }}>
-                                  <td colSpan={9} style={{ padding: '8px 16px', fontSize: '12px', fontWeight: 700, color: '#dc2626' }}>
+                                  <td colSpan={adminMode ? 10 : 9} style={{ padding: '8px 16px', fontSize: '12px', fontWeight: 700, color: '#dc2626' }}>
                                     ⚠ Vencidas — {vencidas.length} {vencidas.length === 1 ? 'factura' : 'facturas'}
                                   </td>
                                 </tr>
                                 <tr id={showRevision ? 'section-revision' : undefined} style={{ display: showRevision ? '' : 'none', background: '#fee2e2' }}>
-                                  <td colSpan={9} style={{ padding: '10px 16px', fontSize: '12px', fontWeight: 700, color: '#991b1b', borderBottom: '2px solid #fca5a5' }}>
+                                  <td colSpan={adminMode ? 10 : 9} style={{ padding: '10px 16px', fontSize: '12px', fontWeight: 700, color: '#991b1b', borderBottom: '2px solid #fca5a5' }}>
                                     ⚠ Vencidas — {vencidas.length} {vencidas.length === 1 ? 'factura' : 'facturas'}
                                   </td>
                                 </tr>
                                 <tr id={showProximas ? 'section-proximas' : undefined} style={{ display: showProximas ? '' : 'none', background: '#fef3c7' }}>
-                                  <td colSpan={9} style={{ padding: '10px 16px', fontSize: '12px', fontWeight: 700, color: '#92400e', borderBottom: '2px solid #fde68a' }}>
+                                  <td colSpan={adminMode ? 10 : 9} style={{ padding: '10px 16px', fontSize: '12px', fontWeight: 700, color: '#92400e', borderBottom: '2px solid #fde68a' }}>
                                     Próximas a vencer — {proximasTabla.length} {proximasTabla.length === 1 ? 'factura' : 'facturas'}
                                   </td>
                                 </tr>
                                 <tr id={showSinVencer ? 'section-sinvencer' : undefined} style={{ display: showSinVencer ? '' : 'none', background: '#d1fae5' }}>
-                                  <td colSpan={9} style={{ padding: '10px 16px', fontSize: '12px', fontWeight: 700, color: '#065f46', borderBottom: '2px solid #6ee7b7' }}>
+                                  <td colSpan={adminMode ? 10 : 9} style={{ padding: '10px 16px', fontSize: '12px', fontWeight: 700, color: '#065f46', borderBottom: '2px solid #6ee7b7' }}>
                                     Al día — {sinVencer.length} {sinVencer.length === 1 ? 'factura' : 'facturas'}
                                   </td>
                                 </tr>
@@ -1676,6 +1858,16 @@ function AppInterna({ session }: { session: Session }) {
                                   onMouseEnter={e => (e.currentTarget.style.background = '#f8faff')}
                                   onMouseLeave={e => (e.currentTarget.style.background = r.dias_mora > 0 ? 'rgba(254,226,226,0.25)' : '')}
                                 >
+                                  {adminMode && (
+                                    <td style={{ padding: '11px 6px', textAlign: 'center' }} onClick={e => e.stopPropagation()}>
+                                      <input
+                                        type="checkbox"
+                                        checked={seleccionCobro.has(String(r.id))}
+                                        onChange={e => setSeleccionCobro(prev => { const next = new Set(prev); const key = String(r.id); if (e.target.checked) next.add(key); else next.delete(key); return next })}
+                                        style={{ cursor: 'pointer', width: '15px', height: '15px' }}
+                                      />
+                                    </td>
+                                  )}
                                   <td style={{ padding: '8px 4px 8px 12px', width: '32px' }}>
                                     <button
                                       onClick={() => setExpandedRows(prev => { const next = new Set(prev); if (next.has(rowKey)) next.delete(rowKey); else next.add(rowKey); return next })}
@@ -1701,7 +1893,7 @@ function AppInterna({ session }: { session: Session }) {
                                 </tr>
                                 {/* expanded row — always in DOM, hidden via display to avoid insertBefore */}
                                 <tr style={{ display: isExp ? '' : 'none', borderBottom: '1px solid #dde3f0' }}>
-                                  <td colSpan={9} style={{ padding: 0 }}>
+                                  <td colSpan={adminMode ? 10 : 9} style={{ padding: 0 }}>
                                     {isExp && <DescPanel comprobante={r.comprobante} extra={extra} adminMode={adminMode} condicionActual={r.condicion || ''} onUpdate={handleUpdateExtra} />}
                                   </td>
                                 </tr>

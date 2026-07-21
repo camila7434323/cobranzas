@@ -60,7 +60,34 @@ export function useComprobantes() {
     updateComprobanteLocal(comprobante, fields)
   }
 
+  const marcarCobrado = async (rows: any[], cobradoPor: string) => {
+    if (!rows.length) return
+    const ahora = new Date().toISOString()
+    const ids = rows.map(r => r.id)
+    const historialNuevo = rows.map(r => ({
+      comprobante_id:     r.id,
+      comprobante_numero: r.comprobante,
+      cliente:            r.nombre_cliente || 'Sin cliente',
+      monto:              r.monto || 0,
+      fecha_cobro:        ahora,
+      cobrado_por:        cobradoPor,
+      ejecutivo:          r.ejecutivo || 'Sin asignar',
+    }))
+    const { error: errHist } = await supabase.from('historial_cobros').insert(historialNuevo)
+    if (errHist) throw errHist
+    const { error: errUpd } = await supabase.from('comprobantes').update({ estado: 'cobrado', updated_at: ahora }).in('id', ids)
+    if (errUpd) throw errUpd
+    setData(prev => prev.filter(r => !ids.includes(r.id)))
+  }
+
+  const deshacerCobro = async (historialId: string, comprobanteId: string) => {
+    const { error: errDel } = await supabase.from('historial_cobros').delete().eq('id', historialId)
+    if (errDel) throw errDel
+    const { error: errUpd } = await supabase.from('comprobantes').update({ estado: 'pendiente' }).eq('id', comprobanteId)
+    if (errUpd) throw errUpd
+  }
+
   useEffect(() => { cargar() }, [cargar])
 
-  return { data, loading, error, refetch: cargar, asignarEjecutivo, updateEjecutivoLocal, actualizarComprobante, updateComprobanteLocal }
+  return { data, loading, error, refetch: cargar, asignarEjecutivo, updateEjecutivoLocal, actualizarComprobante, updateComprobanteLocal, marcarCobrado, deshacerCobro }
 }
