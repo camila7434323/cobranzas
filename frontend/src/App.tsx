@@ -132,7 +132,27 @@ const COLORES_EXEC: Record<string, { bg: string; color: string; initials: string
   'Matias Gimenez':        { bg: '#0f4c75', color: '#fff', initials: 'MG' },
 }
 
-type Vista = 'dashboard' | 'todos' | 'historial' | 'clientes'
+type Vista = 'global' | 'dashboard' | 'todos' | 'historial' | 'clientes' | 'nueva'
+type SociedadKey = 'sa' | 'llc' | 'sl'
+
+const SOCIEDADES: Record<SociedadKey, { nombre: string; corto: string; flag: string; manual: boolean; monedas: string[] }> = {
+  sa:  { nombre: 'ASAP Consulting SA',   corto: 'ASAP SA',     flag: '🇦🇷', manual: false, monedas: ['ARS'] },
+  llc: { nombre: 'ASAP Consulting LLC',  corto: 'ASAP LLC',    flag: '🇺🇸', manual: true,  monedas: ['USD'] },
+  sl:  { nombre: 'IT ASAP Solutions SL', corto: 'IT ASAP SL',  flag: '🇪🇸', manual: true,  monedas: ['USD', 'EUR'] },
+}
+
+type ManualFactura = {
+  id: string
+  sociedad: Exclude<SociedadKey, 'sa'>
+  comprobante: string
+  cliente: string
+  ejecutivo: string
+  fecha_emision: string
+  fecha_vencimiento: string
+  moneda: string
+  monto: number
+  pdf_url: string
+}
 
 function getExecColor(nombre: string) {
   return COLORES_EXEC[nombre] || { bg: '#374151', color: '#fff', initials: nombre?.slice(0, 2).toUpperCase() || '?' }
@@ -167,7 +187,17 @@ function AppInterna({ session }: { session: Session }) {
   const { data, loading, error: errorComprobantes, refetch, asignarEjecutivo, updateEjecutivoLocal, actualizarComprobante } = useComprobantes()
   const { data: historial, loading: loadingHistorial, error: errorHistorial, refetch: refetchHistorial } = useHistorial()
   const { extras, updateExtra, batchUpsert } = useExtras()
-  const [vista, setVista] = useState<Vista>('dashboard')
+  const [vista, setVista] = useState<Vista>('global')
+  const [sociedadActiva, setSociedadActiva] = useState<SociedadKey>('sa')
+  const [sociedadesAbiertas, setSociedadesAbiertas] = useState<Record<SociedadKey, boolean>>({ sa: true, llc: true, sl: true })
+  const [manualFacturas, setManualFacturas] = useState<ManualFactura[]>(() => {
+    try { return JSON.parse(localStorage.getItem('cobranzas_manual_sociedades') || '[]') }
+    catch { return [] }
+  })
+  const [manualForm, setManualForm] = useState({
+    comprobante: '', cliente: '', ejecutivo: '', fecha_emision: '', fecha_vencimiento: '',
+    moneda: 'USD', monto: '', pdf_url: '',
+  })
   const [tableKey] = useState(0)
   const [busqueda, setBusqueda] = useState('')
   const [ejecutivoSeleccionado, setEjecutivoSeleccionado] = useState<string | null>(null)
@@ -185,6 +215,9 @@ function AppInterna({ session }: { session: Session }) {
 
   const mainRef = useRef<HTMLDivElement>(null)
   useEffect(() => { mainRef.current?.scrollTo({ top: 0 }) }, [vista])
+  useEffect(() => {
+    localStorage.setItem('cobranzas_manual_sociedades', JSON.stringify(manualFacturas))
+  }, [manualFacturas])
 
   // asignación de ejecutivo
   const [errorAsignacion, setErrorAsignacion] = useState('')
@@ -460,6 +493,49 @@ function AppInterna({ session }: { session: Session }) {
 
   const cerrarModal = () => { setModalComprobante(null); setLinkCopiado(false) }
 
+  const limpiarSeleccionTabla = () => {
+    setEjecutivoSeleccionado(null)
+    setFiltroClienteTabla('')
+    setFiltroEstadoTabla('')
+    setFiltroMoraRange('')
+    setFiltroEjecutivoHistorial('')
+    setFiltroClienteHistorial('')
+    setFiltroEjecutivoClientes('')
+    setFiltroEstadoClientes('')
+    setSortCol(null)
+    setSortDir('asc')
+    setExpandedRows(new Set())
+  }
+
+  const irAVista = (nuevaVista: Vista, sociedad: SociedadKey = sociedadActiva) => {
+    setSociedadActiva(sociedad)
+    setVista(nuevaVista)
+    if (SOCIEDADES[sociedad].manual) setManualForm(prev => ({ ...prev, moneda: SOCIEDADES[sociedad].monedas[0] }))
+    limpiarSeleccionTabla()
+    if (nuevaVista === 'historial' || nuevaVista === 'global') refetchHistorial()
+    else refetch()
+  }
+
+  const guardarFacturaManual = () => {
+    if (sociedadActiva === 'sa' || !manualForm.comprobante || !manualForm.cliente || !manualForm.monto) return
+    const nueva: ManualFactura = {
+      id: `${sociedadActiva}-${Date.now()}`,
+      sociedad: sociedadActiva,
+      comprobante: manualForm.comprobante.trim(),
+      cliente: manualForm.cliente.trim(),
+      ejecutivo: manualForm.ejecutivo.trim() || 'Sin asignar',
+      fecha_emision: manualForm.fecha_emision,
+      fecha_vencimiento: manualForm.fecha_vencimiento,
+      moneda: manualForm.moneda,
+      monto: Number(manualForm.monto) || 0,
+      pdf_url: manualForm.pdf_url.trim(),
+    }
+    setManualFacturas(prev => [nueva, ...prev])
+    setManualForm({ comprobante: '', cliente: '', ejecutivo: '', fecha_emision: '', fecha_vencimiento: '', moneda: SOCIEDADES[sociedadActiva].monedas[0], monto: '', pdf_url: '' })
+    setToastExito('Factura manual guardada')
+    setVista('todos')
+  }
+
   // ── asignación de ejecutivo ───────────────────────────────────────────────
   const handleAsignarEjecutivo = async (cliente: string, nuevoEjecutivo: string, viejoEjecutivo: string) => {
     try {
@@ -530,10 +606,51 @@ function AppInterna({ session }: { session: Session }) {
   }
 
   // ── booleanos de vista ────────────────────────────────────────────────────
+  const esGlobal = vista === 'global'
   const esDashboard = vista === 'dashboard'
   const esHistorial = vista === 'historial'
   const esClientes  = vista === 'clientes'
-  const esTabla     = !esDashboard && !esHistorial && !esClientes
+  const esNueva     = vista === 'nueva'
+  const esTabla     = !esGlobal && !esDashboard && !esHistorial && !esClientes && !esNueva
+  const sociedadInfo = SOCIEDADES[sociedadActiva]
+  const esSociedadManual = sociedadInfo.manual
+  const manualSociedadRows = sociedadActiva === 'sa' ? [] : manualFacturas.filter(r => r.sociedad === sociedadActiva)
+  const globalRows = [
+    ...data.map(r => ({
+      empresa: SOCIEDADES.sa.nombre,
+      comprobante: r.comprobante,
+      cliente: r.nombre_cliente,
+      ejecutivo: r.ejecutivo || 'Sin asignar',
+      fecha: r.fecha_emision,
+      monto: r.monto,
+      estado: 'Pendiente',
+      factura: r,
+    })),
+    ...historial.map(r => ({
+      empresa: SOCIEDADES.sa.nombre,
+      comprobante: r.comprobante_numero,
+      cliente: r.cliente,
+      ejecutivo: r.ejecutivo || 'Sin asignar',
+      fecha: r.fecha_cobro ? r.fecha_cobro.slice(0, 10) : '',
+      monto: r.monto,
+      estado: 'Cobrada',
+      factura: null,
+    })),
+    ...manualFacturas.map(r => ({
+      empresa: SOCIEDADES[r.sociedad].nombre,
+      comprobante: r.comprobante,
+      cliente: r.cliente,
+      ejecutivo: r.ejecutivo || 'Sin asignar',
+      fecha: r.fecha_emision,
+      monto: r.monto,
+      estado: 'Pendiente',
+      factura: null,
+    })),
+  ].filter(r => {
+    if (!busqueda) return true
+    const q = busqueda.toLowerCase()
+    return r.comprobante?.toLowerCase().includes(q) || r.cliente?.toLowerCase().includes(q) || r.empresa?.toLowerCase().includes(q)
+  })
 
   // opciones de clientes para dropdowns
   const clientesTablaOpts    = [...new Set(data.map(r => r.nombre_cliente).filter(Boolean))].sort() as string[]
@@ -690,8 +807,66 @@ function AppInterna({ session }: { session: Session }) {
 
         <div style={{ height: '1px', background: 'rgba(255,255,255,0.06)', margin: '0 20px 14px' }} />
 
+        <div style={{ padding: '0 12px 10px' }}>
+          <div
+            onClick={() => irAVista('global', 'sa')}
+            style={{ display: 'flex', alignItems: 'center', gap: '9px', padding: '9px 10px', borderRadius: '9px', cursor: 'pointer', background: vista === 'global' ? 'rgba(37,84,160,0.45)' : 'transparent', border: vista === 'global' ? '1px solid rgba(107,151,232,0.3)' : '1px solid transparent', marginBottom: '8px' }}
+          >
+            <span style={{ color: '#fff', fontSize: '15px' }}>⊕</span>
+            <span style={{ color: vista === 'global' ? '#fff' : 'rgba(255,255,255,0.65)', fontSize: '13px', fontWeight: 600, flex: 1 }}>Todos los comprobantes</span>
+            <span style={{ fontSize: '10px', fontWeight: 700, padding: '2px 7px', borderRadius: '20px', background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.45)' }}>{data.length + historial.length}</span>
+          </div>
+
+          <div style={{ height: '1px', background: 'rgba(255,255,255,0.08)', margin: '8px 0' }} />
+
+          {(Object.entries(SOCIEDADES) as [SociedadKey, typeof SOCIEDADES[SociedadKey]][]).map(([key, sociedad]) => {
+            const abierta = sociedadesAbiertas[key]
+            const activa = sociedadActiva === key && vista !== 'global'
+            const pendienteCount = key === 'sa' ? data.length : manualFacturas.filter(r => r.sociedad === key).length
+            const historialCount = key === 'sa' ? historial.length : 0
+            return (
+              <div key={key} style={{ marginBottom: '8px' }}>
+                <button
+                  onClick={() => { setSociedadActiva(key); setSociedadesAbiertas(prev => ({ ...prev, [key]: !prev[key] })); if (vista === 'global') setVista('dashboard') }}
+                  style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', padding: '10px 12px', borderRadius: '9px', border: activa ? '1px solid #3b6bc9' : '1px solid rgba(255,255,255,0.12)', background: activa ? '#2554a0' : 'rgba(255,255,255,0.06)', color: '#fff', cursor: 'pointer', fontSize: '13px', fontWeight: 700 }}
+                >
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
+                    <span>{sociedad.flag}</span>
+                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{sociedad.nombre}</span>
+                  </span>
+                  <span>{abierta ? '▼' : '▶'}</span>
+                </button>
+                {abierta && (
+                  <div style={{ padding: '6px 0 0 10px' }}>
+                    {[
+                      { vista: 'dashboard' as Vista, label: 'Dashboard', count: pendienteCount },
+                      { vista: 'todos' as Vista, label: 'Comprobantes por cobrar', count: pendienteCount },
+                      ...(sociedad.manual ? [{ vista: 'nueva' as Vista, label: 'Agregar factura', count: 0 }] : []),
+                      { vista: 'historial' as Vista, label: 'Historial cobranzas', count: historialCount },
+                      { vista: 'clientes' as Vista, label: 'Listado de clientes', count: key === 'sa' ? clientesMap.size : 0 },
+                    ].map(item => {
+                      const itemActivo = sociedadActiva === key && vista === item.vista
+                      return (
+                        <div
+                          key={`${key}-${item.vista}`}
+                          onClick={() => item.vista === 'nueva' && !adminMode ? setShowAdminPrompt(true) : irAVista(item.vista, key)}
+                          style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '7px 10px', borderRadius: '8px', cursor: 'pointer', background: itemActivo ? 'rgba(37,84,160,0.4)' : 'transparent', color: itemActivo ? '#fff' : 'rgba(255,255,255,0.52)', fontSize: '12px', marginBottom: '1px' }}
+                        >
+                          <span>{item.vista === 'nueva' ? '+' : item.vista === 'historial' ? '○' : item.vista === 'clientes' ? '♧' : '▥'}</span>
+                          <span style={{ flex: 1 }}>{item.label}</span>
+                          {item.count > 0 && <span style={{ fontSize: '10px', padding: '1px 7px', borderRadius: '20px', background: item.vista === 'historial' ? 'rgba(5,150,105,0.25)' : 'rgba(220,38,38,0.3)', color: item.vista === 'historial' ? '#6ee7b7' : '#fca5a5', fontWeight: 700 }}>{item.count}</span>}
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </div>
+
         {/* vistas */}
-        <div style={{ padding: '0 12px 8px' }}>
+        <div style={{ display: 'none', padding: '0 12px 8px' }}>
           <div style={{ fontSize: '9px', fontWeight: 700, letterSpacing: '1.6px', textTransform: 'uppercase', color: 'rgba(255,255,255,0.22)', padding: '0 8px', marginBottom: '6px' }}>Vistas</div>
           {([
             { key: 'dashboard', label: 'Dashboard',              count: data.length,       badgeStyle: 'blue'  },
@@ -736,7 +911,7 @@ function AppInterna({ session }: { session: Session }) {
         <div style={{ height: '1px', background: 'rgba(255,255,255,0.06)', margin: '8px 20px 14px' }} />
 
         {/* ejecutivos */}
-        <div style={{ padding: '0 12px', flex: 1, overflowY: 'auto' }}>
+        <div style={{ display: sociedadActiva === 'sa' && vista !== 'global' ? 'block' : 'none', padding: '0 12px', flex: 1, overflowY: 'auto' }}>
           <div style={{ fontSize: '9px', fontWeight: 700, letterSpacing: '1.6px', textTransform: 'uppercase', color: 'rgba(255,255,255,0.22)', padding: '0 8px', marginBottom: '6px' }}>Ejecutivos</div>
 
           <div onClick={() => { setEjecutivoSeleccionado(null); setVista('todos'); setFiltroClienteTabla(''); setFiltroEstadoTabla(''); setFiltroMoraRange(''); setSortCol(null); setSortDir('asc'); setExpandedRows(new Set()) }} style={{ display: 'flex', alignItems: 'center', gap: '9px', padding: '7px 10px', borderRadius: '9px', cursor: 'pointer', background: !ejecutivoSeleccionado ? 'rgba(255,255,255,0.1)' : 'transparent', marginBottom: '2px', transition: 'background 0.15s' }}>
@@ -819,7 +994,7 @@ function AppInterna({ session }: { session: Session }) {
             </div>
           </div>
           <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-            {esTabla && (
+            {(esTabla || esGlobal) && (
               <div style={{ position: 'relative' }}>
                 <span style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: '#7a8fbb', fontSize: '13px' }}>🔍</span>
                 <input type="text" placeholder="Buscar cliente o factura..." value={busqueda} onChange={e => setBusqueda(e.target.value)} style={{ padding: '8px 12px 8px 32px', borderRadius: '8px', border: '1px solid #dde3f0', fontSize: '13px', width: '220px', outline: 'none', color: '#0d1b38', background: '#fff' }} />
@@ -842,10 +1017,147 @@ function AppInterna({ session }: { session: Session }) {
           </div>
         </div>
 
-        {adminMode && !esDashboard && <SubirReporte batchUpsert={batchUpsert} />}
+        {adminMode && sociedadActiva === 'sa' && !esDashboard && !esGlobal && <SubirReporte batchUpsert={batchUpsert} />}
 
         {/* ── DASHBOARD ─────────────────────────────────────────────────── */}
-        {esDashboard ? (
+        {esGlobal ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+            <div style={{ background: '#fff', border: '1px solid #dde3f0', borderRadius: '10px', padding: '16px 20px', boxShadow: '0 2px 12px rgba(38,63,101,0.06)' }}>
+              <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
+                <select style={SEL} value="" onChange={() => {}}>
+                  <option>Todos los ejecutivos</option>
+                </select>
+                <select style={SEL} value="" onChange={() => {}}>
+                  <option>Todos los clientes</option>
+                </select>
+                <select style={SEL} value="" onChange={() => {}}>
+                  <option>Todos los estados</option>
+                </select>
+                <button onClick={() => setBusqueda('')} style={BTN_LIMPIAR}>× Limpiar</button>
+              </div>
+              <div style={{ marginTop: '14px', color: '#4a6fa5', fontSize: '13px' }}>
+                📊 Vista consolidada · ASAP SA · ASAP LLC · IT ASAP SL · incluye pendientes y cobrados
+              </div>
+            </div>
+
+            <div style={{ background: '#fff', border: '1px solid #dde3f0', borderRadius: '10px', overflow: 'hidden', boxShadow: '0 2px 12px rgba(38,63,101,0.06)' }}>
+              <div style={{ padding: '14px 22px', borderBottom: '1px solid #dde3f0', background: '#f8faff', display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <strong style={{ fontSize: '14px', color: '#0d1b38' }}>Comprobantes</strong>
+                <span style={{ color: '#7a8fbb', fontSize: '12px' }}>{globalRows.length} comprobantes</span>
+              </div>
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr style={{ background: '#f8faff' }}>
+                      {['Empresa', 'Comprobante', 'Cliente', 'Ejecutivo', 'Emision', 'Monto', 'Estado', 'Factura'].map(h => (
+                        <th key={h} style={{ padding: '10px 16px', textAlign: h === 'Monto' ? 'right' : 'left', fontSize: '10px', color: '#7a8fbb', textTransform: 'uppercase', letterSpacing: '0.8px', borderBottom: '1px solid #dde3f0' }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {globalRows.length === 0 ? (
+                      <tr><td colSpan={8} style={{ padding: '58px', textAlign: 'center', color: '#7a8fbb' }}>Sin resultados.</td></tr>
+                    ) : globalRows.map((r, idx) => (
+                      <tr key={`${r.estado}-${r.comprobante}-${idx}`} style={{ borderBottom: '1px solid #dde3f0' }}>
+                        <td style={{ padding: '11px 16px', fontSize: '12px', color: '#3d5278', whiteSpace: 'nowrap' }}>{r.empresa}</td>
+                        <td style={{ padding: '11px 16px', fontSize: '12px', fontFamily: 'monospace', color: '#3d5278', whiteSpace: 'nowrap' }}>{r.comprobante}</td>
+                        <td style={{ padding: '11px 16px', fontSize: '13px', fontWeight: 600, color: '#0d1b38' }}>{r.cliente}</td>
+                        <td style={{ padding: '11px 16px', fontSize: '12px', color: '#7a8fbb' }}>{r.ejecutivo}</td>
+                        <td style={{ padding: '11px 16px', fontSize: '12px', color: '#7a8fbb', whiteSpace: 'nowrap' }}>{fmtFecha(r.fecha)}</td>
+                        <td style={{ padding: '11px 16px', fontSize: '12px', fontWeight: 700, fontFamily: 'monospace', textAlign: 'right' }}>{fmt(r.monto)}</td>
+                        <td style={{ padding: '11px 16px' }}>
+                          <span style={{ background: r.estado === 'Cobrada' ? '#d1fae5' : '#fef3c7', color: r.estado === 'Cobrada' ? '#065f46' : '#92400e', padding: '3px 9px', borderRadius: '20px', fontSize: '11px', fontWeight: 700 }}>{r.estado}</span>
+                        </td>
+                        <td style={{ padding: '11px 16px' }}>
+                          {r.factura ? <button onClick={() => abrirPdf(r.factura)} style={{ background: '#f0f4ff', color: '#2554a0', border: 'none', borderRadius: '8px', padding: '5px 12px', fontWeight: 700, cursor: 'pointer' }}>Abrir PDF</button> : <span style={{ color: '#94a3b8', fontSize: '12px' }}>Historial</span>}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <div style={{ padding: '10px 18px', borderTop: '1px solid #dde3f0', background: '#f8faff', color: '#6b7fb3', fontSize: '11px', textAlign: 'right' }}>📁 PDFs en SharePoint · Microsoft 365</div>
+            </div>
+          </div>
+        ) : esSociedadManual ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+            {esNueva && adminMode && (
+              <div style={{ background: '#fff', border: '1px solid #dde3f0', borderRadius: '10px', padding: '18px 22px', boxShadow: '0 2px 12px rgba(38,63,101,0.06)' }}>
+                <div style={{ fontSize: '14px', fontWeight: 700, color: '#0d1b38', marginBottom: '6px' }}>Agregar factura manual</div>
+                <div style={{ color: '#7a8fbb', fontSize: '13px', marginBottom: '14px' }}>{sociedadInfo.nombre} · Moneda: {sociedadInfo.monedas.join(' / ')}</div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: '10px' }}>
+                  {[
+                    ['comprobante', 'Comprobante'],
+                    ['cliente', 'Cliente'],
+                    ['ejecutivo', 'Ejecutivo'],
+                    ['fecha_emision', 'Emision'],
+                    ['fecha_vencimiento', 'Vencimiento'],
+                    ['monto', 'Monto'],
+                    ['pdf_url', 'PDF / SharePoint URL'],
+                  ].map(([key, label]) => (
+                    <div key={key} style={key === 'pdf_url' ? { gridColumn: '1 / -1' } : {}}>
+                      <div style={{ fontSize: '10px', fontWeight: 700, color: '#7a8fbb', textTransform: 'uppercase', marginBottom: '4px' }}>{label}</div>
+                      <input
+                        type={key.includes('fecha') ? 'date' : key === 'monto' ? 'number' : 'text'}
+                        value={(manualForm as any)[key]}
+                        onChange={e => setManualForm(prev => ({ ...prev, [key]: e.target.value }))}
+                        style={{ width: '100%', padding: '8px 10px', borderRadius: '8px', border: '1px solid #dde3f0', fontSize: '13px', boxSizing: 'border-box' }}
+                      />
+                    </div>
+                  ))}
+                  <div>
+                    <div style={{ fontSize: '10px', fontWeight: 700, color: '#7a8fbb', textTransform: 'uppercase', marginBottom: '4px' }}>Moneda</div>
+                    <select value={manualForm.moneda} onChange={e => setManualForm(prev => ({ ...prev, moneda: e.target.value }))} style={{ width: '100%', padding: '8px 10px', borderRadius: '8px', border: '1px solid #dde3f0', fontSize: '13px' }}>
+                      {sociedadInfo.monedas.map(m => <option key={m} value={m}>{m}</option>)}
+                    </select>
+                  </div>
+                </div>
+                <button onClick={guardarFacturaManual} style={{ marginTop: '14px', background: '#2554a0', color: '#fff', border: 'none', borderRadius: '8px', padding: '9px 18px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}>
+                  Guardar factura
+                </button>
+              </div>
+            )}
+            {manualSociedadRows.length === 0 ? (
+              <div style={{ background: '#fff', border: '1px solid #bcd0f7', borderRadius: '12px', padding: '90px 24px', textAlign: 'center' }}>
+                <div style={{ fontSize: '42px', marginBottom: '12px' }}>📋</div>
+                <div style={{ fontSize: '18px', fontWeight: 800, color: '#0d1b38', marginBottom: '8px' }}>Sin datos aun</div>
+                <div style={{ color: '#6b7fb3', fontSize: '14px', maxWidth: '420px', margin: '0 auto' }}>
+                  Los indicadores aparecen automaticamente a medida que cargues facturas para {sociedadInfo.nombre}.
+                </div>
+                {!adminMode && (
+                  <button onClick={() => setShowAdminPrompt(true)} style={{ marginTop: '18px', background: '#2554a0', color: '#fff', border: 'none', borderRadius: '8px', padding: '9px 18px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}>
+                    Activar Admin
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div style={{ background: '#fff', border: '1px solid #dde3f0', borderRadius: '10px', overflow: 'hidden' }}>
+                <div style={{ padding: '14px 18px', background: '#f8faff', borderBottom: '1px solid #dde3f0', display: 'flex', gap: '8px' }}>
+                  <strong>Comprobantes por cobrar</strong>
+                  <span style={{ color: '#7a8fbb' }}>{manualSociedadRows.length} comprobantes</span>
+                </div>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr>{['Comprobante','Cliente','Ejecutivo','Emision','Vencimiento','Monto','PDF'].map(h => <th key={h} style={{ padding: '10px 16px', textAlign: h === 'Monto' ? 'right' : 'left', fontSize: '10px', color: '#7a8fbb', textTransform: 'uppercase', borderBottom: '1px solid #dde3f0' }}>{h}</th>)}</tr>
+                  </thead>
+                  <tbody>
+                    {manualSociedadRows.map(r => (
+                      <tr key={r.id} style={{ borderBottom: '1px solid #dde3f0' }}>
+                        <td style={{ padding: '11px 16px', fontFamily: 'monospace', fontSize: '12px' }}>{r.comprobante}</td>
+                        <td style={{ padding: '11px 16px', fontWeight: 700 }}>{r.cliente}</td>
+                        <td style={{ padding: '11px 16px', color: '#7a8fbb' }}>{r.ejecutivo}</td>
+                        <td style={{ padding: '11px 16px', color: '#7a8fbb' }}>{fmtFecha(r.fecha_emision)}</td>
+                        <td style={{ padding: '11px 16px', color: '#7a8fbb' }}>{fmtFecha(r.fecha_vencimiento)}</td>
+                        <td style={{ padding: '11px 16px', textAlign: 'right', fontFamily: 'monospace', fontWeight: 700 }}>{r.moneda} {Math.round(r.monto).toLocaleString('es-AR')}</td>
+                        <td style={{ padding: '11px 16px' }}>{r.pdf_url ? <a href={r.pdf_url} target="_blank" rel="noreferrer" style={{ color: '#2554a0', fontWeight: 700 }}>Abrir PDF</a> : '-'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        ) : esDashboard ? (
           <>
             <SubirReporte batchUpsert={batchUpsert} onExport={exportar} />
             {loading && data.length === 0 ? (
