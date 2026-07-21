@@ -29,9 +29,36 @@ function DescPanel({ comprobante, extra, adminMode, onUpdate, condicionActual = 
     condicion_override: e?.condicion_override ?? condicionActual, periodo: e?.periodo ?? '', nota: e?.nota ?? '',
   })
   const [vals, setVals] = useState<Record<string, string>>(toVals(extra))
-  useEffect(() => { setVals(toVals(extra)) }, [extra, condicionActual])
+  const [initialVals, setInitialVals] = useState<Record<string, string>>(toVals(extra))
+  const [saving, setSaving] = useState(false)
+  const [saveState, setSaveState] = useState<'idle' | 'saved' | 'error'>('idle')
 
-  const save = (field: string, value: string) => onUpdate(comprobante, { [field]: value })
+  useEffect(() => {
+    const nextVals = toVals(extra)
+    setVals(nextVals)
+    setInitialVals(nextVals)
+    setSaveState('idle')
+  }, [extra, condicionActual])
+
+  const hasChanges = Object.keys(vals).some(key => (vals[key] || '') !== (initialVals[key] || ''))
+
+  const handleSave = async () => {
+    if (!adminMode || !hasChanges || saving) return
+    setSaving(true)
+    setSaveState('idle')
+    try {
+      const changedFields = Object.fromEntries(
+        Object.entries(vals).filter(([key, value]) => (value || '') !== (initialVals[key] || ''))
+      )
+      await onUpdate(comprobante, changedFields)
+      setInitialVals(vals)
+      setSaveState('saved')
+    } catch {
+      setSaveState('error')
+    } finally {
+      setSaving(false)
+    }
+  }
 
   const FIELDS = [
     { key: 'descripcion',        label: 'Descripción',       wide: true },
@@ -57,7 +84,7 @@ function DescPanel({ comprobante, extra, adminMode, onUpdate, condicionActual = 
             {f.type === 'select' ? (
               <select
                 value={vals[f.key] || ''}
-                onChange={e => { const v = e.target.value; setVals(p => ({ ...p, [f.key]: v })); if (adminMode) save(f.key, v) }}
+                onChange={e => { setVals(p => ({ ...p, [f.key]: e.target.value })); setSaveState('idle') }}
                 disabled={!adminMode}
                 style={{ width: '100%', padding: '6px 10px', borderRadius: '6px', border: '1px solid #dde3f0', fontSize: '12px', background: '#fff', color: '#374151', outline: 'none' }}
               >
@@ -68,8 +95,7 @@ function DescPanel({ comprobante, extra, adminMode, onUpdate, condicionActual = 
               <input
                 type="text"
                 value={vals[f.key] || ''}
-                onChange={e => setVals(p => ({ ...p, [f.key]: e.target.value }))}
-                onBlur={e => { if (adminMode) save(f.key, e.target.value) }}
+                onChange={e => { setVals(p => ({ ...p, [f.key]: e.target.value })); setSaveState('idle') }}
                 readOnly={!adminMode}
                 style={{ width: '100%', padding: '6px 10px', borderRadius: '6px', border: '1px solid #dde3f0', fontSize: '12px', background: adminMode ? '#fff' : '#f1f5f9', color: '#374151', outline: 'none', boxSizing: 'border-box' }}
               />
@@ -77,6 +103,19 @@ function DescPanel({ comprobante, extra, adminMode, onUpdate, condicionActual = 
           </div>
         ))}
       </div>
+      {adminMode && (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '10px', marginTop: '14px' }}>
+          {saveState === 'saved' && <span style={{ color: '#059669', fontSize: '12px', fontWeight: 600 }}>Cambios guardados</span>}
+          {saveState === 'error' && <span style={{ color: '#dc2626', fontSize: '12px', fontWeight: 600 }}>No se pudo guardar</span>}
+          <button
+            onClick={handleSave}
+            disabled={!hasChanges || saving}
+            style={{ background: !hasChanges || saving ? '#94a3b8' : '#2554a0', color: '#fff', border: 'none', borderRadius: '8px', padding: '8px 16px', fontSize: '13px', fontWeight: 700, cursor: !hasChanges || saving ? 'not-allowed' : 'pointer' }}
+          >
+            {saving ? 'Guardando...' : 'Guardar cambios'}
+          </button>
+        </div>
+      )}
     </div>
   )
 }
