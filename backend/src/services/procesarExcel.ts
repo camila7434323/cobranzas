@@ -18,6 +18,34 @@ type ComprobanteImportado = {
 
 const COMPROBANTE_VALIDO_RX = /^(FCM|FC|NCM|NC|NDM|ND|CG|CIB|CR|RC|RS)\b/i
 
+function normalizarComprobante(comp: string) {
+  return String(comp || '').replace(/\s+/g, ' ').replace(/\s*-\s*/g, '-').trim()
+}
+
+function variantesComprobante(comp: string) {
+  const base = normalizarComprobante(comp)
+  const variantes = new Set([base])
+  const cambios: [RegExp, string][] = [
+    [/^FCM\s+/i, 'FC '],
+    [/^FC\s+/i, 'FCM '],
+    [/^NCM\s+/i, 'NC '],
+    [/^NC\s+/i, 'NCM '],
+    [/^NDM\s+/i, 'ND '],
+    [/^ND\s+/i, 'NDM '],
+  ]
+  for (const [rx, reemplazo] of cambios) {
+    if (rx.test(base)) variantes.add(base.replace(rx, reemplazo))
+  }
+  return Array.from(variantes)
+}
+
+function mergeTexto(actual: string, nuevo: string) {
+  const limpio = String(nuevo || '').trim()
+  if (!limpio) return actual || ''
+  const partes = String(actual || '').split(' | ').map(p => p.trim()).filter(Boolean)
+  return partes.includes(limpio) ? partes.join(' | ') : [...partes, limpio].join(' | ')
+}
+
 // âœ… FUNCIÃ“N PARA VALIDAR Y LIMPIAR DATOS
 function validarYLimpiarComprobante(comp: ComprobanteImportado, rowIndex: number): {
   valido: boolean
@@ -241,8 +269,7 @@ function extraerPeriodoExtra(descripcion: string, fechaEmision: string) {
 }
 
 function parsearExtrasXML(xmlText: string): any[] {
-  const rows: any[] = []
-  const vistos = new Set<string>()
+  const rows = new Map<string, any>()
   const datoRx = /<DATO>([\s\S]*?)<\/DATO>/g
   let m: RegExpExecArray | null
   while ((m = datoRx.exec(xmlText)) !== null) {
@@ -251,9 +278,8 @@ function parsearExtrasXML(xmlText: string): any[] {
       const tm = block.match(new RegExp(`<${tag}[^>]*>([^<]*)<\/${tag}>`, 'i'))
       return tm ? tm[1].replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').trim() : ''
     }
-    const comp = get('Comp')
-    if (!comp || vistos.has(comp)) continue
-    vistos.add(comp)
+    const comp = normalizarComprobante(get('Comp'))
+    if (!comp) continue
     const item = get('Item_Desc')
     const cc   = get('CCDescripcion')
     const tipo = get('CoditemDesc')
@@ -262,30 +288,46 @@ function parsearExtrasXML(xmlText: string): any[] {
     const ocM  = item.match(/(?:OC|HES|PEDIDO)[^\w]*([\w\/-]+)/i)
     const oc   = ocM ? ocM[0].trim() : ''
     const per  = extraerPeriodoExtra(item, fechaEmision)
-    rows.push({
-      comprobante: comp, descripcion: item, centro_costo: cc, tipo_servicio: tipo,
-      oc_hes_pedido: oc, colaborador: '', otros_conceptos: '',
-      condicion_override: condicion, periodo: per, nota: ''
+    const existente = rows.get(comp)
+    rows.set(comp, {
+      comprobante: comp,
+      descripcion: mergeTexto(existente?.descripcion || '', item),
+      centro_costo: mergeTexto(existente?.centro_costo || '', cc),
+      tipo_servicio: mergeTexto(existente?.tipo_servicio || '', tipo),
+      oc_hes_pedido: mergeTexto(existente?.oc_hes_pedido || '', oc),
+      colaborador: existente?.colaborador || '',
+      otros_conceptos: existente?.otros_conceptos || '',
+      condicion_override: existente?.condicion_override || condicion,
+      periodo: mergeTexto(existente?.periodo || '', per),
+      nota: existente?.nota || ''
     })
   }
-  return rows
+  return Array.from(rows.values())
 }
 
 async function guardarExtrasDeComprobantesExistentes(extras: any[]) {
   const comprobantes = Array.from(new Set(extras.map(e => e.comprobante).filter(Boolean)))
-  const existentes = new Set<string>()
+  const existentes = new Map<string, string>()
+  const variantes = Array.from(new Set(comprobantes.flatMap(variantesComprobante)))
 
-  for (let i = 0; i < comprobantes.length; i += 500) {
+  for (let i = 0; i < variantes.length; i += 500) {
     const { data, error } = await supabase
       .from('comprobantes')
       .select('comprobante')
-      .in('comprobante', comprobantes.slice(i, i + 500))
+      .in('comprobante', variantes.slice(i, i + 500))
 
     if (error) throw error
-    for (const row of data || []) existentes.add(row.comprobante)
+    for (const row of data || []) {
+      for (const variante of variantesComprobante(row.comprobante)) existentes.set(variante, row.comprobante)
+    }
   }
 
-  const paraGuardar = extras.filter(e => existentes.has(e.comprobante))
+  const paraGuardar = extras
+    .map(e => {
+      const comprobante = variantesComprobante(e.comprobante).map(v => existentes.get(v)).find(Boolean)
+      return comprobante ? { ...e, comprobante } : null
+    })
+    .filter(Boolean)
 
   for (let i = 0; i < paraGuardar.length; i += 500) {
     const { error } = await supabase.from('comprobante_extras')

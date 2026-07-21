@@ -199,6 +199,14 @@ function AppInterna({ session }: { session: Session }) {
     }
   }, [errorCarga])
 
+  const [toastExito, setToastExito] = useState('')
+  useEffect(() => {
+    if (toastExito) {
+      const timer = setTimeout(() => setToastExito(''), 3000)
+      return () => clearTimeout(timer)
+    }
+  }, [toastExito])
+
   // filtros – tabla
   const [filtroClienteTabla, setFiltroClienteTabla] = useState('')
   const [filtroEstadoTabla, setFiltroEstadoTabla] = useState('')
@@ -411,6 +419,7 @@ function AppInterna({ session }: { session: Session }) {
         })
       }
       await updateExtra(comprobante, fields)
+      setToastExito('Actualizado correctamente ✓')
     } catch {
       setErrorCarga('No se pudo guardar el cambio. Intentá de nuevo.')
     }
@@ -630,6 +639,14 @@ function AppInterna({ session }: { session: Session }) {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* ── TOAST ÉXITO ───────────────────────────────────────────────────── */}
+      {toastExito && (
+        <div style={{ position: 'fixed', bottom: '28px', right: '28px', zIndex: 1002, background: '#0d1b38', color: '#fff', padding: '14px 22px', borderRadius: '10px', boxShadow: '0 10px 30px rgba(0,0,0,0.3)', fontSize: '13px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <span style={{ color: '#4ade80', fontSize: '16px' }}>✓</span>
+          {toastExito}
         </div>
       )}
 

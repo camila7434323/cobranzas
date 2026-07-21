@@ -26,6 +26,27 @@ function mergeText(actual: string, nuevo: string) {
   return partes.includes(limpio) ? actual : [...partes, limpio].join(' | ')
 }
 
+function normalizarComprobante(comp: string) {
+  return comp.replace(/\s+/g, ' ').replace(/\s*-\s*/g, '-').trim()
+}
+
+function variantesComprobante(comp: string) {
+  const base = normalizarComprobante(comp)
+  const variantes = new Set([base])
+  const cambios: [RegExp, string][] = [
+    [/^FCM\s+/i, 'FC '],
+    [/^FC\s+/i, 'FCM '],
+    [/^NCM\s+/i, 'NC '],
+    [/^NC\s+/i, 'NCM '],
+    [/^NDM\s+/i, 'ND '],
+    [/^ND\s+/i, 'NDM '],
+  ]
+  for (const [rx, reemplazo] of cambios) {
+    if (rx.test(base)) variantes.add(base.replace(rx, reemplazo))
+  }
+  return Array.from(variantes)
+}
+
 async function leerXmlConEncoding(archivo: File) {
   const buffer = await archivo.arrayBuffer()
   const cabecera = new TextDecoder('windows-1252').decode(buffer.slice(0, 300))
@@ -41,7 +62,7 @@ function parseDescXML(xmlText: string): Extra[] {
   const doc = new DOMParser().parseFromString(xmlSeguro, 'text/xml')
   const rows = new Map<string, Extra>()
   doc.querySelectorAll('DATO').forEach(dato => {
-    const comp = dato.querySelector('Comp')?.textContent?.trim() ?? ''
+    const comp = normalizarComprobante(dato.querySelector('Comp')?.textContent ?? '')
     const item = dato.querySelector('Item_Desc')?.textContent?.trim() ?? ''
     const cc   = dato.querySelector('CCDescripcion')?.textContent?.trim() ?? ''
     const tipo = dato.querySelector('CoditemDesc')?.textContent?.trim() ?? ''
@@ -74,17 +95,20 @@ function parseDescXML(xmlText: string): Extra[] {
 }
 
 async function buscarComprobantesExistentes(nums: string[]) {
-  const existentes = new Set<string>()
-  const unicos = Array.from(new Set(nums))
+  const encontrados = new Map<string, string>()
+  const unicos = Array.from(new Set(nums.flatMap(variantesComprobante)))
   for (let i = 0; i < unicos.length; i += 300) {
     const { data, error } = await supabase
       .from('comprobantes')
       .select('comprobante')
       .in('comprobante', unicos.slice(i, i + 300))
     if (error) throw new Error(error.message)
-    for (const row of data ?? []) existentes.add(row.comprobante)
+    for (const row of data ?? []) {
+      const existente = normalizarComprobante(row.comprobante)
+      for (const variante of variantesComprobante(existente)) encontrados.set(variante, row.comprobante)
+    }
   }
-  return existentes
+  return encontrados
 }
 
 type OverlayState =
@@ -277,12 +301,17 @@ export function SubirReporte({ batchUpsert, onExport }: Props) {
       }
 
       // Verificar cuáles comprobantes existen en la BD
-      const nums = rows.map(r => r.comprobante)
-      const existingSet = await buscarComprobantesExistentes(nums)
-      const missingCount = nums.filter(n => !existingSet.has(n)).length
-      const foundCount   = nums.length - missingCount
+      const existingMap = await buscarComprobantesExistentes(rows.map(r => r.comprobante))
+      const canonicalRows = rows.map(row => {
+        const comprobante = variantesComprobante(row.comprobante)
+          .map(v => existingMap.get(v))
+          .find(Boolean)
+        return comprobante ? { ...row, comprobante } : null
+      })
+      const rowsEncontradas = canonicalRows.filter(Boolean) as Extra[]
+      const foundCount = rowsEncontradas.length
+      const missingCount = rows.length - foundCount
 
-      const rowsEncontradas = rows.filter(r => existingSet.has(r.comprobante))
       if (rowsEncontradas.length > 0) await batchUpsert(rowsEncontradas)
       setOverlay({ kind: 'success-xml', cantidad: foundCount, omitidos: missingCount })
     } catch (err: any) {
