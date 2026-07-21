@@ -69,9 +69,10 @@ export function useExtras() {
   useEffect(() => { load() }, [load])
 
   const updateExtra = async (comprobante: string, fields: Record<string, string>) => {
-    await supabase
+    const { error } = await supabase
       .from('comprobante_extras')
       .upsert({ comprobante, ...fields }, { onConflict: 'comprobante' })
+    if (error) throw new Error(error.message)
     setExtras(prev => {
       const next = new Map(prev)
       next.set(comprobante, { ...(prev.get(comprobante) ?? BLANK_EXTRA(comprobante)), ...fields })

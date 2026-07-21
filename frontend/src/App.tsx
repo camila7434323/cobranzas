@@ -15,20 +15,21 @@ const CONDICION_OPTS = [
   'Cuenta Corriente 45 días', 'Cuenta Corriente 60 días', 'Cuenta Corriente 90 días', 'Contado',
 ]
 
-function DescPanel({ comprobante, extra, adminMode, onUpdate }: {
+function DescPanel({ comprobante, extra, adminMode, onUpdate, condicionActual = '' }: {
   comprobante: string
   extra: Extra | undefined
   adminMode: boolean
-  onUpdate: (comp: string, fields: Record<string, string>) => void
+  onUpdate: (comp: string, fields: Record<string, string>) => void | Promise<void>
+  condicionActual?: string
 }) {
   const toVals = (e: Extra | undefined): Record<string, string> => ({
     descripcion: e?.descripcion ?? '', centro_costo: e?.centro_costo ?? '',
     tipo_servicio: e?.tipo_servicio ?? '', oc_hes_pedido: e?.oc_hes_pedido ?? '',
     colaborador: e?.colaborador ?? '', otros_conceptos: e?.otros_conceptos ?? '',
-    condicion_override: e?.condicion_override ?? '', periodo: e?.periodo ?? '', nota: e?.nota ?? '',
+    condicion_override: e?.condicion_override ?? condicionActual, periodo: e?.periodo ?? '', nota: e?.nota ?? '',
   })
   const [vals, setVals] = useState<Record<string, string>>(toVals(extra))
-  useEffect(() => { setVals(toVals(extra)) }, [extra])
+  useEffect(() => { setVals(toVals(extra)) }, [extra, condicionActual])
 
   const save = (field: string, value: string) => onUpdate(comprobante, { [field]: value })
 
@@ -124,7 +125,7 @@ function App() {
 }
 
 function AppInterna({ session }: { session: Session }) {
-  const { data, loading, error: errorComprobantes, refetch, asignarEjecutivo, updateEjecutivoLocal } = useComprobantes()
+  const { data, loading, error: errorComprobantes, refetch, asignarEjecutivo, updateEjecutivoLocal, actualizarComprobante } = useComprobantes()
   const { data: historial, loading: loadingHistorial, error: errorHistorial, refetch: refetchHistorial } = useHistorial()
   const { extras, updateExtra, batchUpsert } = useExtras()
   const [vista, setVista] = useState<Vista>('dashboard')
@@ -229,8 +230,10 @@ function AppInterna({ session }: { session: Session }) {
     const actual = acc.get(r.nombre_cliente) || {
       cliente: r.nombre_cliente, ejecutivo: r.ejecutivo || 'Sin asignar',
       monto: 0, vencido: 0, facturas: 0, moraMax: 0,
-      condiciones: CONDICIONES_CLIENTE[r.nombre_cliente] ?? [],
+      condiciones: [...(CONDICIONES_CLIENTE[r.nombre_cliente] ?? [])],
     }
+    const condicionActual = extras.get(r.comprobante)?.condicion_override || r.condicion || ''
+    if (condicionActual && !actual.condiciones.includes(condicionActual)) actual.condiciones.push(condicionActual)
     actual.monto   += r.monto
     actual.vencido += r.dias_mora > 0 ? r.monto : 0
     actual.facturas += 1
@@ -338,6 +341,40 @@ function AppInterna({ session }: { session: Session }) {
     if (!fecha) return '-'
     const [y, m, d] = fecha.split('-')
     return `${d}/${m}/${y}`
+  }
+
+  const calcularVencimientoPorCondicion = (fechaEmision: string | null | undefined, condicion: string) => {
+    if (!fechaEmision || !/^\d{4}-\d{2}-\d{2}$/.test(fechaEmision) || !condicion) return null
+    const diasMatch = condicion.match(/(\d+)/)
+    const dias = diasMatch ? parseInt(diasMatch[1], 10) : /^contado$/i.test(condicion.trim()) ? 0 : 30
+    const fecha = new Date(`${fechaEmision}T00:00:00`)
+    fecha.setDate(fecha.getDate() + dias)
+    return `${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, '0')}-${String(fecha.getDate()).padStart(2, '0')}`
+  }
+
+  const calcularDiasMora = (fechaVencimiento: string | null) => {
+    if (!fechaVencimiento) return 0
+    const hoy = new Date(); hoy.setHours(0, 0, 0, 0)
+    const vencimiento = new Date(`${fechaVencimiento}T00:00:00`)
+    return Math.max(0, Math.floor((hoy.getTime() - vencimiento.getTime()) / 86400000))
+  }
+
+  const handleUpdateExtra = async (comprobante: string, fields: Record<string, string>) => {
+    try {
+      if ('condicion_override' in fields) {
+        const condicion = fields.condicion_override || ''
+        const row = data.find(r => r.comprobante === comprobante)
+        const fecha_vencimiento = calcularVencimientoPorCondicion(row?.fecha_emision, condicion)
+        await actualizarComprobante(comprobante, {
+          condicion,
+          fecha_vencimiento,
+          dias_mora: calcularDiasMora(fecha_vencimiento),
+        })
+      }
+      await updateExtra(comprobante, fields)
+    } catch {
+      setErrorCarga('No se pudo guardar el cambio. Intentá de nuevo.')
+    }
   }
 
   const moraBadge = (dias: number) => {
@@ -1297,7 +1334,7 @@ function AppInterna({ session }: { session: Session }) {
                                 {/* expanded row — always in DOM, hidden via display to avoid insertBefore */}
                                 <tr style={{ display: isExp ? '' : 'none', borderBottom: '1px solid #dde3f0' }}>
                                   <td colSpan={9} style={{ padding: 0 }}>
-                                    {isExp && <DescPanel comprobante={r.comprobante} extra={extra} adminMode={adminMode} onUpdate={updateExtra} />}
+                                    {isExp && <DescPanel comprobante={r.comprobante} extra={extra} adminMode={adminMode} condicionActual={r.condicion || ''} onUpdate={handleUpdateExtra} />}
                                   </td>
                                 </tr>
                               </Fragment>

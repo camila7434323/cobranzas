@@ -37,6 +37,12 @@ export function useComprobantes() {
     ))
   }
 
+  const updateComprobanteLocal = (comprobante: string, fields: Record<string, any>) => {
+    setData(prev => prev.map(r =>
+      r.comprobante === comprobante ? { ...r, ...fields } : r
+    ))
+  }
+
   const asignarEjecutivo = async (nombreCliente: string, ejecutivo: string) => {
     const { error } = await supabase
       .from('comprobantes')
@@ -45,7 +51,16 @@ export function useComprobantes() {
     if (error) throw error
   }
 
+  const actualizarComprobante = async (comprobante: string, fields: Record<string, any>) => {
+    const { error } = await supabase
+      .from('comprobantes')
+      .update(fields)
+      .eq('comprobante', comprobante)
+    if (error) throw error
+    updateComprobanteLocal(comprobante, fields)
+  }
+
   useEffect(() => { cargar() }, [cargar])
 
-  return { data, loading, error, refetch: cargar, asignarEjecutivo, updateEjecutivoLocal }
+  return { data, loading, error, refetch: cargar, asignarEjecutivo, updateEjecutivoLocal, actualizarComprobante, updateComprobanteLocal }
 }
