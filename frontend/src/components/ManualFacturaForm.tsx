@@ -1,5 +1,14 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { ManualFactura, SociedadKey } from '../types/sociedades'
+
+const parseNumeroES = (str: string): number => {
+  const sinMiles = str.trim().replace(/\./g, '')
+  const conPunto = sinMiles.replace(',', '.')
+  const n = parseFloat(conPunto)
+  return isNaN(n) ? 0 : n
+}
+
+const formatNumeroES = (n: number): string => n ? n.toLocaleString('es-AR') : ''
 
 const LBL: React.CSSProperties = { fontSize: '10px', fontWeight: 700, color: '#7a8fbb', textTransform: 'uppercase', marginBottom: '4px' }
 const INPUT: React.CSSProperties = { width: '100%', padding: '8px 10px', borderRadius: '8px', border: '1px solid #dde3f0', fontSize: '13px', boxSizing: 'border-box', fontFamily: 'inherit' }
@@ -30,6 +39,13 @@ export function ManualFacturaForm({
 }: Props) {
   const [form, setForm] = useState<ManualFactura>(() => factura ?? vacio(sociedad, monedas[0]))
   const set = (fields: Partial<ManualFactura>) => setForm(prev => ({ ...prev, ...fields }))
+
+  const [valorUnitarioStr, setValorUnitarioStr] = useState(() => formatNumeroES(form.valor_unitario))
+  const [montoStr, setMontoStr] = useState(() => formatNumeroES(form.monto))
+  useEffect(() => {
+    setValorUnitarioStr(formatNumeroES(factura?.valor_unitario ?? 0))
+    setMontoStr(formatNumeroES(factura?.monto ?? 0))
+  }, [factura?.id])
 
   const totalCalculado = form.cantidad > 0 && form.valor_unitario > 0 ? form.cantidad * form.valor_unitario : null
 
@@ -124,7 +140,13 @@ export function ManualFacturaForm({
             </div>
             <div>
               <div style={{ fontSize: '10px', color: '#94a3b8', marginBottom: '4px' }}>Valor unitario</div>
-              <input type="number" min={0} value={form.valor_unitario || ''} onChange={e => set({ valor_unitario: Number(e.target.value) || 0 })} style={INPUT} />
+              <input
+                type="text" inputMode="decimal" placeholder="0,00"
+                value={valorUnitarioStr}
+                onChange={e => { setValorUnitarioStr(e.target.value); set({ valor_unitario: parseNumeroES(e.target.value) }) }}
+                onBlur={() => setValorUnitarioStr(formatNumeroES(form.valor_unitario))}
+                style={INPUT}
+              />
             </div>
           </div>
           <div style={{ marginTop: '10px', display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -132,7 +154,13 @@ export function ManualFacturaForm({
             {totalCalculado ? (
               <span style={{ fontSize: '16px', fontWeight: 700, color: '#2554a0', fontFamily: 'monospace' }}>{form.moneda} {totalCalculado.toLocaleString('es-AR')}</span>
             ) : (
-              <input type="number" min={0} placeholder="Monto" value={form.monto || ''} onChange={e => set({ monto: Number(e.target.value) || 0 })} style={{ ...INPUT, width: '160px' }} />
+              <input
+                type="text" inputMode="decimal" placeholder="Monto"
+                value={montoStr}
+                onChange={e => { setMontoStr(e.target.value); set({ monto: parseNumeroES(e.target.value) }) }}
+                onBlur={() => setMontoStr(formatNumeroES(form.monto))}
+                style={{ ...INPUT, width: '160px' }}
+              />
             )}
           </div>
         </div>
