@@ -587,6 +587,38 @@ function AppInterna({ session }: { session: Session }) {
     }
   }
 
+  // ── da formato de tabla a una hoja (encabezado, bandas, filtro, bordes) ────
+  const estilizarComoTabla = (ws: XLSX.WorkSheet, rows: object[]) => {
+    if (rows.length === 0) return
+    const headers = Object.keys(rows[0])
+    const thinBorder = { style: 'thin', color: { rgb: 'DDE3F0' } }
+    headers.forEach((_, ci) => {
+      const cell = XLSX.utils.encode_cell({ r: 0, c: ci })
+      if (!ws[cell]) return
+      ws[cell].s = {
+        fill: { patternType: 'solid', fgColor: { rgb: '1D4170' } },
+        font: { bold: true, color: { rgb: 'FFFFFF' }, sz: 11 },
+        alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
+        border: { top: thinBorder, bottom: thinBorder, left: thinBorder, right: thinBorder },
+      }
+    })
+    rows.forEach((_, ri) => {
+      headers.forEach((_, ci) => {
+        const cell = XLSX.utils.encode_cell({ r: ri + 1, c: ci })
+        if (!ws[cell]) return
+        ws[cell].s = {
+          fill: { patternType: 'solid', fgColor: { rgb: ri % 2 ? 'F8FAFF' : 'FFFFFF' } },
+          font: { color: { rgb: '0F172A' }, sz: 10 },
+          border: { top: thinBorder, bottom: thinBorder, left: thinBorder, right: thinBorder },
+        }
+      })
+    })
+    ws['!cols'] = headers.map(h => ({
+      wch: Math.min(40, Math.max(10, h.length, ...rows.map(r => String((r as any)[h] ?? '').length)) + 2),
+    }))
+    ws['!autofilter'] = { ref: XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: rows.length, c: headers.length - 1 } }) }
+  }
+
   // ── exportar xlsx (solo filas visibles) ───────────────────────────────────
   const exportar = () => {
     const hoy = new Date().toISOString().slice(0, 10)
@@ -639,6 +671,7 @@ function AppInterna({ session }: { session: Session }) {
     }
 
     const ws = XLSX.utils.json_to_sheet(rows)
+    estilizarComoTabla(ws, rows)
     const wb = XLSX.utils.book_new()
     XLSX.utils.book_append_sheet(wb, ws, sheet)
     XLSX.writeFile(wb, file)
@@ -731,6 +764,7 @@ function AppInterna({ session }: { session: Session }) {
       'Mora (días)': r.diasMora,
     }))
     const ws = XLSX.utils.json_to_sheet(rows)
+    estilizarComoTabla(ws, rows)
     const wb = XLSX.utils.book_new()
     XLSX.utils.book_append_sheet(wb, ws, 'Consolidado')
     XLSX.writeFile(wb, `consolidado_${hoy}.xlsx`)
@@ -1028,7 +1062,7 @@ function AppInterna({ session }: { session: Session }) {
                   style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', padding: '10px 12px', borderRadius: '9px', border: activa ? '1px solid #3b6bc9' : '1px solid rgba(255,255,255,0.12)', background: activa ? '#2554a0' : 'rgba(255,255,255,0.06)', color: '#fff', cursor: 'pointer', fontSize: '13px', fontWeight: 700 }}
                 >
                   <span style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
-                    <span>{sociedad.flag}</span>
+                    <span className={`fi fi-${sociedad.flagCode}`} style={{ borderRadius: '2px', flexShrink: 0 }} />
                     <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{sociedad.nombre}</span>
                   </span>
                   <span>{abierta ? '▼' : '▶'}</span>

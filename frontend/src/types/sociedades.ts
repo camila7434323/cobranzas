@@ -5,10 +5,10 @@ export const CONDICION_OPTS = [
 
 export type SociedadKey = 'sa' | 'llc' | 'sl'
 
-export const SOCIEDADES: Record<SociedadKey, { nombre: string; corto: string; flag: string; manual: boolean; monedas: string[] }> = {
-  sa:  { nombre: 'ASAP Consulting SA',   corto: 'ASAP SA',     flag: '🇦🇷', manual: false, monedas: ['ARS'] },
-  llc: { nombre: 'ASAP Consulting LLC',  corto: 'ASAP LLC',    flag: '🇺🇸', manual: true,  monedas: ['USD'] },
-  sl:  { nombre: 'IT ASAP Solutions SL', corto: 'IT ASAP SL',  flag: '🇪🇸', manual: true,  monedas: ['USD', 'EUR'] },
+export const SOCIEDADES: Record<SociedadKey, { nombre: string; corto: string; flag: string; flagCode: string; manual: boolean; monedas: string[] }> = {
+  sa:  { nombre: 'ASAP Consulting SA',   corto: 'ASAP SA',     flag: '🇦🇷', flagCode: 'ar', manual: false, monedas: ['ARS'] },
+  llc: { nombre: 'ASAP Consulting LLC',  corto: 'ASAP LLC',    flag: '🇺🇸', flagCode: 'us', manual: true,  monedas: ['USD'] },
+  sl:  { nombre: 'IT ASAP Solutions SL', corto: 'IT ASAP SL',  flag: '🇪🇸', flagCode: 'es', manual: true,  monedas: ['USD', 'EUR'] },
 }
 
 export type ManualFactura = {
