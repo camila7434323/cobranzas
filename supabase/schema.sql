@@ -106,3 +106,45 @@ drop policy if exists "Lectura publica reportes" on public.reportes;
 create policy "Lectura publica reportes"
 on public.reportes for select
 using (true);
+
+create table if not exists public.facturas_manuales (
+  id text primary key,
+  sociedad text not null check (sociedad in ('llc', 'sl')),
+  comprobante text not null,
+  cliente text not null,
+  ejecutivo text not null default 'Sin asignar',
+  fecha_emision date,
+  fecha_vencimiento date,
+  condicion text not null default '',
+  moneda text not null default '',
+  descripcion text not null default '',
+  unidad text not null default '',
+  cantidad numeric(14, 2) not null default 0,
+  valor_unitario numeric(14, 2) not null default 0,
+  monto numeric(14, 2) not null default 0,
+  oc_hes_pedido text not null default '',
+  periodo text not null default '',
+  colaborador text not null default '',
+  otros_conceptos text not null default '',
+  pdf_url text not null default '',
+  pdf_base64 text not null default '',
+  pdf_nombre text not null default '',
+  estado text not null default 'pendiente' check (estado in ('pendiente', 'cobrado')),
+  creado_el timestamptz not null default now(),
+  cobrado_el timestamptz
+);
+
+create index if not exists facturas_manuales_sociedad_idx on public.facturas_manuales (sociedad);
+create index if not exists facturas_manuales_estado_idx on public.facturas_manuales (estado);
+
+alter table public.facturas_manuales enable row level security;
+
+drop policy if exists "Lectura publica facturas manuales" on public.facturas_manuales;
+create policy "Lectura publica facturas manuales"
+on public.facturas_manuales for select
+using (true);
+
+drop policy if exists "Escritura autenticada facturas manuales" on public.facturas_manuales;
+create policy "Escritura autenticada facturas manuales"
+on public.facturas_manuales for all
+using (auth.role() = 'authenticated');

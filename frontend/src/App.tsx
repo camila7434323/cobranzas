@@ -10,6 +10,7 @@ import { supabase } from './lib/supabase'
 import type { Session } from '@supabase/supabase-js'
 import { useExtras } from './hooks/useExtras'
 import type { Extra } from './hooks/useExtras'
+import { useFacturasManuales } from './hooks/useFacturasManuales'
 import { CONDICION_OPTS, SOCIEDADES, type SociedadKey, type ManualFactura } from './types/sociedades'
 
 function DescPanel({ comprobante, extra, adminMode, onUpdate, condicionActual = '' }: {
@@ -131,15 +132,6 @@ const COLORES_EXEC: Record<string, { bg: string; color: string; initials: string
 
 type Vista = 'global' | 'dashboard' | 'todos' | 'historial' | 'clientes' | 'nueva'
 
-function useLocalStorage<T>(key: string, initial: T) {
-  const [value, setValue] = useState<T>(() => {
-    try { const raw = localStorage.getItem(key); return raw ? JSON.parse(raw) as T : initial }
-    catch { return initial }
-  })
-  useEffect(() => { localStorage.setItem(key, JSON.stringify(value)) }, [key, value])
-  return [value, setValue] as const
-}
-
 function getExecColor(nombre: string) {
   return COLORES_EXEC[nombre] || { bg: '#374151', color: '#fff', initials: nombre?.slice(0, 2).toUpperCase() || '?' }
 }
@@ -176,10 +168,12 @@ function AppInterna({ session }: { session: Session }) {
   const [vista, setVista] = useState<Vista>('global')
   const [sociedadActiva, setSociedadActiva] = useState<SociedadKey>('sa')
   const [sociedadesAbiertas, setSociedadesAbiertas] = useState<Record<SociedadKey, boolean>>({ sa: true, llc: true, sl: true })
-  const [manualFacturas, setManualFacturas] = useLocalStorage<ManualFactura[]>('cobranzas_manual_sociedades', [])
-  const [manualHistorial, setManualHistorial] = useLocalStorage<Record<SociedadKey, ManualFactura[]>>('cobranzas_manual_historial', { sa: [], llc: [], sl: [] })
-  const [manualExecs, setManualExecs] = useLocalStorage<Record<SociedadKey, string[]>>('cobranzas_manual_execs', { sa: [], llc: [], sl: [] })
-  const [manualClients, setManualClients] = useLocalStorage<Record<SociedadKey, string[]>>('cobranzas_manual_clients', { sa: [], llc: [], sl: [] })
+  const {
+    facturas: manualFacturas, historial: manualHistorial, execsConocidos: manualExecs, clientesConocidos: manualClients,
+    error: errorFacturasManuales,
+    guardarFactura: guardarFacturaManualDb, marcarCobrada: marcarCobradaManualDb,
+    deshacerCobro: deshacerCobroManualDb, reasignarEjecutivo: reasignarEjecutivoManualDb,
+  } = useFacturasManuales()
   const [editandoManual, setEditandoManual] = useState<ManualFactura | null>(null)
   const [tableKey] = useState(0)
   const [busqueda, setBusqueda] = useState('')
@@ -537,42 +531,44 @@ function AppInterna({ session }: { session: Session }) {
     else refetch()
   }
 
-  const guardarOEditarFacturaManual = (factura: ManualFactura) => {
-    setManualFacturas(prev => {
-      const existe = prev.some(r => r.id === factura.id)
-      return existe ? prev.map(r => r.id === factura.id ? factura : r) : [factura, ...prev]
-    })
-    if (factura.ejecutivo && factura.ejecutivo !== 'Sin asignar') {
-      setManualExecs(prev => prev[factura.sociedad].includes(factura.ejecutivo) ? prev : { ...prev, [factura.sociedad]: [...prev[factura.sociedad], factura.ejecutivo] })
+  const guardarOEditarFacturaManual = async (factura: ManualFactura) => {
+    try {
+      await guardarFacturaManualDb(factura)
+      setEditandoManual(null)
+      setToastExito(editandoManual ? 'Factura actualizada ✓' : 'Factura manual guardada ✓')
+      setVista('todos')
+    } catch {
+      setErrorCarga('No se pudo guardar la factura. Intentá de nuevo.')
     }
-    if (factura.cliente) {
-      setManualClients(prev => prev[factura.sociedad].includes(factura.cliente) ? prev : { ...prev, [factura.sociedad]: [...prev[factura.sociedad], factura.cliente] })
-    }
-    setEditandoManual(null)
-    setToastExito(editandoManual ? 'Factura actualizada ✓' : 'Factura manual guardada ✓')
-    setVista('todos')
   }
 
-  const marcarCobradaManual = (factura: ManualFactura) => {
+  const marcarCobradaManual = async (factura: ManualFactura) => {
     if (!confirm(`¿Marcar la factura ${factura.comprobante} como cobrada?`)) return
-    const cobrada = { ...factura, cobrado_el: new Date().toISOString() }
-    setManualFacturas(prev => prev.filter(r => r.id !== factura.id))
-    setManualHistorial(prev => ({ ...prev, [factura.sociedad]: [cobrada, ...prev[factura.sociedad]] }))
-    setToastExito('Factura movida al historial ✓')
+    try {
+      await marcarCobradaManualDb(factura)
+      setToastExito('Factura movida al historial ✓')
+    } catch {
+      setErrorCarga('No se pudo marcar como cobrada. Intentá de nuevo.')
+    }
   }
 
-  const deshacerCobroManual = (factura: ManualFactura) => {
+  const deshacerCobroManual = async (factura: ManualFactura) => {
     if (!confirm(`¿Deshacer el cobro de ${factura.comprobante}? Volverá a la lista de pendientes.`)) return
-    setManualHistorial(prev => ({ ...prev, [factura.sociedad]: prev[factura.sociedad].filter(r => r.id !== factura.id) }))
-    setManualFacturas(prev => [{ ...factura, cobrado_el: undefined }, ...prev])
-    setToastExito('Cobro deshecho ✓')
+    try {
+      await deshacerCobroManualDb(factura)
+      setToastExito('Cobro deshecho ✓')
+    } catch {
+      setErrorCarga('No se pudo deshacer el cobro. Intentá de nuevo.')
+    }
   }
 
-  const reasignarEjecutivoManual = (sociedad: SociedadKey, cliente: string, nuevoEjecutivo: string) => {
-    setManualFacturas(prev => prev.map(r => r.sociedad === sociedad && r.cliente === cliente ? { ...r, ejecutivo: nuevoEjecutivo } : r))
-    setManualHistorial(prev => ({ ...prev, [sociedad]: prev[sociedad].map(r => r.cliente === cliente ? { ...r, ejecutivo: nuevoEjecutivo } : r) }))
-    setManualExecs(prev => prev[sociedad].includes(nuevoEjecutivo) ? prev : { ...prev, [sociedad]: [...prev[sociedad], nuevoEjecutivo] })
-    setToastExito('Ejecutivo actualizado ✓')
+  const reasignarEjecutivoManual = async (sociedad: SociedadKey, cliente: string, nuevoEjecutivo: string) => {
+    try {
+      await reasignarEjecutivoManualDb(sociedad, cliente, nuevoEjecutivo)
+      setToastExito('Ejecutivo actualizado ✓')
+    } catch {
+      setErrorCarga('No se pudo actualizar el ejecutivo. Intentá de nuevo.')
+    }
   }
 
   // ── asignación de ejecutivo ───────────────────────────────────────────────
@@ -1196,9 +1192,9 @@ function AppInterna({ session }: { session: Session }) {
       {/* ── MAIN ──────────────────────────────────────────────────────────── */}
       <main ref={mainRef} style={{ flex: 1, minWidth: 0, padding: '28px 32px', overflowY: 'auto', background: '#eef2f8' }}>
 
-        {(errorCarga || errorComprobantes || errorHistorial) && (
+        {(errorCarga || errorComprobantes || errorHistorial || errorFacturasManuales) && (
           <div style={{ background: '#fee2e2', border: '1px solid #fca5a5', borderRadius: '8px', padding: '10px 16px', marginBottom: '14px', fontSize: '13px', color: '#dc2626', fontWeight: 500 }}>
-            ⚠ {String(errorCarga || errorComprobantes || errorHistorial)}
+            ⚠ {String(errorCarga || errorComprobantes || errorHistorial || errorFacturasManuales)}
           </div>
         )}
 
