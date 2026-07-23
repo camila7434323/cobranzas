@@ -28,6 +28,7 @@ type Props = {
   onMarcarCobrada: (factura: ManualFactura) => void
   onDeshacerCobro: (factura: ManualFactura) => void
   onReasignarEjecutivo: (cliente: string, nuevoEjecutivo: string) => void
+  onAbrirPdf: (factura: ManualFactura) => void
 }
 
 const fmtMonto = (moneda: string, n: number) => {
@@ -40,7 +41,7 @@ export function ManualSociedadView({
   execsConocidos, clientesConocidos, busqueda, editando, fmtFecha,
   calcularVencimientoPorCondicion, calcularDiasMora,
   onShowAdminPrompt, onIrANueva, onEditar, onGuardarFactura, onCancelarFactura,
-  onMarcarCobrada, onDeshacerCobro, onReasignarEjecutivo,
+  onMarcarCobrada, onDeshacerCobro, onReasignarEjecutivo, onAbrirPdf,
 }: Props) {
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set())
 
@@ -104,9 +105,9 @@ export function ManualSociedadView({
                     <td style={{ padding: '12px 16px', fontSize: '13px', fontWeight: 600, fontFamily: 'monospace', color: '#059669' }}>{fmtMonto(r.moneda, r.monto)}</td>
                     <td style={{ padding: '12px 16px', fontSize: '12px', color: '#7a8fbb' }}>{r.cobrado_el ? fmtFecha(r.cobrado_el.slice(0, 10)) : '-'}</td>
                     <td style={{ padding: '12px 16px' }}>
-                      {r.pdf_base64 || r.pdf_url
-                        ? <a href={r.pdf_base64 || r.pdf_url} download={r.pdf_base64 ? (r.pdf_nombre || `${r.comprobante}.pdf`) : undefined} target="_blank" rel="noreferrer" style={{ color: '#2554a0', fontWeight: 700 }}>Abrir PDF</a>
-                        : '-'}
+                      <button onClick={() => onAbrirPdf(r)} style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', background: '#f0f4ff', color: '#2554a0', padding: '5px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, border: 'none', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                        📄 Abrir PDF
+                      </button>
                     </td>
                     {adminMode && (
                       <td style={{ padding: '12px 16px' }}>
@@ -294,9 +295,9 @@ export function ManualSociedadView({
                       <td style={{ padding: '11px 16px', color: '#7a8fbb' }}>{fmtFecha(r.fecha_vencimiento)}</td>
                       <td style={{ padding: '11px 16px', textAlign: 'right', fontFamily: 'monospace', fontWeight: 700 }}>{fmtMonto(r.moneda, r.monto)}</td>
                       <td style={{ padding: '11px 16px' }}>
-                        {r.pdf_base64 || r.pdf_url
-                          ? <a href={r.pdf_base64 || r.pdf_url} download={r.pdf_base64 ? (r.pdf_nombre || `${r.comprobante}.pdf`) : undefined} target="_blank" rel="noreferrer" style={{ color: '#2554a0', fontWeight: 700 }}>Abrir PDF</a>
-                          : '-'}
+                        <button onClick={() => onAbrirPdf(r)} style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', background: '#f0f4ff', color: '#2554a0', padding: '5px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, border: 'none', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                          📄 Abrir PDF
+                        </button>
                       </td>
                       {adminMode && (
                         <td style={{ padding: '11px 16px' }}>

@@ -1335,6 +1335,7 @@ function AppInterna({ session }: { session: Session }) {
             onMarcarCobrada={marcarCobradaManual}
             onDeshacerCobro={deshacerCobroManual}
             onReasignarEjecutivo={(cliente, nuevo) => reasignarEjecutivoManual(sociedadActiva, cliente, nuevo)}
+            onAbrirPdf={f => abrirPdf({ comprobante: f.comprobante, nombre_cliente: f.cliente, ejecutivo: f.ejecutivo, fecha_emision: f.fecha_emision, fecha_vencimiento: f.fecha_vencimiento, monto: f.monto, dias_mora: calcularDiasMora(f.fecha_vencimiento) }, f.pdf_base64 || f.pdf_url || undefined)}
           />
         ) : esDashboard ? (
           <>
