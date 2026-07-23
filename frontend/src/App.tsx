@@ -11,6 +11,7 @@ import type { Session } from '@supabase/supabase-js'
 import { useExtras } from './hooks/useExtras'
 import type { Extra } from './hooks/useExtras'
 import { useFacturasManuales } from './hooks/useFacturasManuales'
+import { usePdfsStorage } from './hooks/usePdfsStorage'
 import { CONDICION_OPTS, SOCIEDADES, type SociedadKey, type ManualFactura } from './types/sociedades'
 
 function DescPanel({ comprobante, extra, adminMode, onUpdate, condicionActual = '' }: {
@@ -174,6 +175,7 @@ function AppInterna({ session }: { session: Session }) {
     guardarFactura: guardarFacturaManualDb, marcarCobrada: marcarCobradaManualDb,
     deshacerCobro: deshacerCobroManualDb, reasignarEjecutivo: reasignarEjecutivoManualDb,
   } = useFacturasManuales()
+  const { buscarPdf } = usePdfsStorage()
   const [editandoManual, setEditandoManual] = useState<ManualFactura | null>(null)
   const [tableKey] = useState(0)
   const [busqueda, setBusqueda] = useState('')
@@ -446,28 +448,19 @@ function AppInterna({ session }: { session: Session }) {
     return           { label: `🔴 ${dias}d`,      color: '#dc2626', bg: '#fee2e2' }
   }
 
-  const pdfUrl = (comprobante: string) =>
-    `${import.meta.env.VITE_SUPABASE_STORAGE_URL}/${encodeURIComponent(comprobante)}.pdf`
-
-  const abrirPdf = async (row: any) => {
-    const url = pdfUrl(row.comprobante || row.comprobante_numero)
-    try {
-      const res = await fetch(url, { method: 'HEAD' })
-      if (!res.ok) {
-        setPdfNoEncontrado(row.comprobante || row.comprobante_numero)
-        setTimeout(() => setPdfNoEncontrado(''), 4000)
-        return
-      }
-    } catch {
-      setPdfNoEncontrado(row.comprobante || row.comprobante_numero)
+  const abrirPdf = (row: any, urlDirecta?: string) => {
+    const comprobante = row.comprobante || row.comprobante_numero
+    const url = urlDirecta || buscarPdf(comprobante)?.url
+    if (!url) {
+      setPdfNoEncontrado(comprobante)
       setTimeout(() => setPdfNoEncontrado(''), 4000)
       return
     }
-    setModalComprobante(row)
+    setModalComprobante({ ...row, comprobante, _pdfUrl: url })
   }
 
   const copiarLink = () => {
-    navigator.clipboard.writeText(pdfUrl(modalComprobante.comprobante))
+    navigator.clipboard.writeText(modalComprobante._pdfUrl)
     setLinkCopiado(true)
     setTimeout(() => setLinkCopiado(false), 2000)
   }
@@ -693,7 +686,7 @@ function AppInterna({ session }: { session: Session }) {
       monto: r.monto,
       diasMora: r.dias_mora || 0,
       estado: 'Pendiente' as const,
-      factura: r,
+      pdfDirecta: '',
     })),
     ...historial.map(r => ({
       empresa: SOCIEDADES.sa.nombre,
@@ -704,7 +697,7 @@ function AppInterna({ session }: { session: Session }) {
       monto: r.monto,
       diasMora: 0,
       estado: 'Cobrada' as const,
-      factura: null,
+      pdfDirecta: '',
     })),
     ...manualFacturas.map(r => ({
       empresa: SOCIEDADES[r.sociedad].nombre,
@@ -715,7 +708,7 @@ function AppInterna({ session }: { session: Session }) {
       monto: r.monto,
       diasMora: calcularDiasMora(r.fecha_vencimiento || null),
       estado: 'Pendiente' as const,
-      factura: null,
+      pdfDirecta: r.pdf_base64 || r.pdf_url || '',
     })),
     ...(['llc', 'sl'] as const).flatMap(key => manualHistorial[key].map(r => ({
       empresa: SOCIEDADES[key].nombre,
@@ -726,7 +719,7 @@ function AppInterna({ session }: { session: Session }) {
       monto: r.monto,
       diasMora: 0,
       estado: 'Cobrada' as const,
-      factura: null,
+      pdfDirecta: r.pdf_base64 || r.pdf_url || '',
     }))),
   ]
 
@@ -912,7 +905,7 @@ function AppInterna({ session }: { session: Session }) {
               <button onClick={cerrarModal} style={{ background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '8px', width: '32px', height: '32px', cursor: 'pointer', color: '#fff', fontSize: '16px', flexShrink: 0 }}>✕</button>
             </div>
             <div style={{ background: '#f4f6fb', padding: '16px' }}>
-              <iframe src={pdfUrl(modalComprobante.comprobante)} style={{ width: '100%', height: '380px', border: 'none', borderRadius: '8px', background: '#fff' }} title="PDF" />
+              <iframe src={modalComprobante._pdfUrl} style={{ width: '100%', height: '380px', border: 'none', borderRadius: '8px', background: '#fff' }} title="PDF" />
             </div>
             <div style={{ padding: '16px 24px 24px' }}>
               {modalComprobante.dias_mora > 0 && (
@@ -936,7 +929,7 @@ function AppInterna({ session }: { session: Session }) {
                 ))}
               </div>
               <div style={{ display: 'flex', gap: '10px' }}>
-                <a href={pdfUrl(modalComprobante.comprobante)} download style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', background: '#2554a0', color: '#fff', padding: '10px', borderRadius: '10px', fontSize: '13px', fontWeight: 600, textDecoration: 'none' }}>⬇ Descargar</a>
+                <a href={modalComprobante._pdfUrl} download style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', background: '#2554a0', color: '#fff', padding: '10px', borderRadius: '10px', fontSize: '13px', fontWeight: 600, textDecoration: 'none' }}>⬇ Descargar</a>
                 <button onClick={copiarLink} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', background: linkCopiado ? '#d1fae5' : '#f0f4ff', color: linkCopiado ? '#059669' : '#2554a0', padding: '10px', borderRadius: '10px', fontSize: '13px', fontWeight: 600, border: linkCopiado ? '1px solid #6ee7b7' : '1px solid transparent', cursor: 'pointer', transition: 'all 0.2s ease' }}>
                   {linkCopiado ? '✅ Copiado!' : '🔗 Copiar link'}
                 </button>
@@ -1307,7 +1300,7 @@ function AppInterna({ session }: { session: Session }) {
                           <span style={{ background: r.estado === 'Cobrada' ? '#d1fae5' : '#fef3c7', color: r.estado === 'Cobrada' ? '#065f46' : '#92400e', padding: '3px 9px', borderRadius: '20px', fontSize: '11px', fontWeight: 700 }}>{r.estado}</span>
                         </td>
                         <td style={{ padding: '11px 16px' }}>
-                          {r.factura ? <button onClick={() => abrirPdf(r.factura)} style={{ background: '#f0f4ff', color: '#2554a0', border: 'none', borderRadius: '8px', padding: '5px 12px', fontWeight: 700, cursor: 'pointer' }}>Abrir PDF</button> : <span style={{ color: '#94a3b8', fontSize: '12px' }}>Historial</span>}
+                          <button onClick={() => abrirPdf({ comprobante: r.comprobante, nombre_cliente: r.cliente, ejecutivo: r.ejecutivo, fecha_emision: null, fecha_vencimiento: null, monto: r.monto, dias_mora: r.diasMora }, r.pdfDirecta)} style={{ background: '#f0f4ff', color: '#2554a0', border: 'none', borderRadius: '8px', padding: '5px 12px', fontWeight: 700, cursor: 'pointer' }}>Abrir PDF</button>
                         </td>
                       </tr>
                     ))}

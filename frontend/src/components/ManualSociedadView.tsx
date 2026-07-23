@@ -90,7 +90,7 @@ export function ManualSociedadView({
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ background: '#f8faff', borderBottom: '1px solid #dde3f0' }}>
-                  {['Comprobante', 'Cliente', 'Ejecutivo', 'Monto', 'Cobrado el', ...(adminMode ? [''] : [])].map((h, i) => (
+                  {['Comprobante', 'Cliente', 'Ejecutivo', 'Monto', 'Cobrado el', 'PDF', ...(adminMode ? [''] : [])].map((h, i) => (
                     <th key={h || `a-${i}`} style={{ padding: '10px 16px', textAlign: 'left', fontSize: '10px', fontWeight: 600, color: '#7a8fbb', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>{h}</th>
                   ))}
                 </tr>
@@ -103,6 +103,11 @@ export function ManualSociedadView({
                     <td style={{ padding: '12px 16px', fontSize: '12px', color: '#7a8fbb' }}>{r.ejecutivo}</td>
                     <td style={{ padding: '12px 16px', fontSize: '13px', fontWeight: 600, fontFamily: 'monospace', color: '#059669' }}>{fmtMonto(r.moneda, r.monto)}</td>
                     <td style={{ padding: '12px 16px', fontSize: '12px', color: '#7a8fbb' }}>{r.cobrado_el ? fmtFecha(r.cobrado_el.slice(0, 10)) : '-'}</td>
+                    <td style={{ padding: '12px 16px' }}>
+                      {r.pdf_base64 || r.pdf_url
+                        ? <a href={r.pdf_base64 || r.pdf_url} download={r.pdf_base64 ? (r.pdf_nombre || `${r.comprobante}.pdf`) : undefined} target="_blank" rel="noreferrer" style={{ color: '#2554a0', fontWeight: 700 }}>Abrir PDF</a>
+                        : '-'}
+                    </td>
                     {adminMode && (
                       <td style={{ padding: '12px 16px' }}>
                         <button onClick={() => onDeshacerCobro(r)} style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', background: '#fff5f5', color: '#dc2626', border: '1px solid #fca5a5', borderRadius: '8px', padding: '5px 12px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}>

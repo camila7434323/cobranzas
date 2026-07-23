@@ -148,3 +148,8 @@ drop policy if exists "Escritura autenticada facturas manuales" on public.factur
 create policy "Escritura autenticada facturas manuales"
 on public.facturas_manuales for all
 using (auth.role() = 'authenticated');
+
+drop policy if exists "Lectura publica facturas-pdf" on storage.objects;
+create policy "Lectura publica facturas-pdf"
+on storage.objects for select
+using (bucket_id = 'facturas-pdf');
