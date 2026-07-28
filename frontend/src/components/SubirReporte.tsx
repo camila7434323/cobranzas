@@ -44,6 +44,23 @@ function variantesComprobante(comp: string) {
   for (const [rx, reemplazo] of cambios) {
     if (rx.test(base)) variantes.add(base.replace(rx, reemplazo))
   }
+
+  const agregarVariantesLetra = (valor: string) => {
+    const conLetra = valor.match(/^([A-Z]+)\s+([A-Z])\s+(.+)$/i)
+    if (conLetra) {
+      variantes.add(normalizarComprobante(`${conLetra[1]} ${conLetra[3]}`))
+      return
+    }
+
+    const sinLetra = valor.match(/^([A-Z]+)\s+(\d{4,5}-\d+)$/i)
+    if (sinLetra) {
+      for (const letra of ['A', 'B', 'C']) {
+        variantes.add(normalizarComprobante(`${sinLetra[1]} ${letra} ${sinLetra[2]}`))
+      }
+    }
+  }
+
+  for (const variante of Array.from(variantes)) agregarVariantesLetra(variante)
   return Array.from(variantes)
 }
 
@@ -62,16 +79,19 @@ function parseDescXML(xmlText: string): Extra[] {
   const doc = new DOMParser().parseFromString(xmlSeguro, 'text/xml')
   const rows = new Map<string, Extra>()
   doc.querySelectorAll('DATO').forEach(dato => {
-    const comp = normalizarComprobante(dato.querySelector('Comp')?.textContent ?? '')
+    const text = (tag: string) => dato.querySelector(tag)?.textContent?.trim() ?? ''
+    const comp = normalizarComprobante(text('Comp') || text('CompPpal'))
     const item = dato.querySelector('Item_Desc')?.textContent?.trim() ?? ''
     const cc   = dato.querySelector('CCDescripcion')?.textContent?.trim() ?? ''
     const tipo = dato.querySelector('CoditemDesc')?.textContent?.trim() ?? ''
     const condicion = dato.querySelector('CondVenta')?.textContent?.trim() ?? ''
     const fechaEmision = dato.querySelector('Comp_FEmision')?.textContent?.trim() ?? ''
+    const vendedor = text('Vendedor')
+    const periodoFacturacion = text('PeriodoFacturacion')
     if (!comp) return
     const ocM  = item.match(/(?:OC|HES|PEDIDO)[^\w]*([\w/-]+)/i)
     const oc   = ocM ? ocM[0].trim() : ''
-    const per  = extraerPeriodo(item, fechaEmision)
+    const per  = periodoFacturacion || extraerPeriodo(item, fechaEmision)
     const existente = rows.get(comp)
     if (existente) {
       rows.set(comp, {
@@ -81,13 +101,14 @@ function parseDescXML(xmlText: string): Extra[] {
         tipo_servicio: mergeText(existente.tipo_servicio, tipo),
         oc_hes_pedido: mergeText(existente.oc_hes_pedido, oc),
         periodo: mergeText(existente.periodo, per),
+        colaborador: mergeText(existente.colaborador, vendedor),
         condicion_override: existente.condicion_override || condicion,
       })
       return
     }
     rows.set(comp, {
       comprobante: comp, descripcion: item, centro_costo: cc, tipo_servicio: tipo,
-      oc_hes_pedido: oc, colaborador: '', otros_conceptos: '',
+      oc_hes_pedido: oc, colaborador: vendedor, otros_conceptos: '',
       condicion_override: condicion, periodo: per, nota: '',
     })
   })

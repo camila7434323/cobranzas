@@ -36,6 +36,23 @@ function variantesComprobante(comp: string) {
   for (const [rx, reemplazo] of cambios) {
     if (rx.test(base)) variantes.add(base.replace(rx, reemplazo))
   }
+
+  const agregarVariantesLetra = (valor: string) => {
+    const conLetra = valor.match(/^([A-Z]+)\s+([A-Z])\s+(.+)$/i)
+    if (conLetra) {
+      variantes.add(normalizarComprobante(`${conLetra[1]} ${conLetra[3]}`))
+      return
+    }
+
+    const sinLetra = valor.match(/^([A-Z]+)\s+(\d{4,5}-\d+)$/i)
+    if (sinLetra) {
+      for (const letra of ['A', 'B', 'C']) {
+        variantes.add(normalizarComprobante(`${sinLetra[1]} ${letra} ${sinLetra[2]}`))
+      }
+    }
+  }
+
+  for (const variante of Array.from(variantes)) agregarVariantesLetra(variante)
   return Array.from(variantes)
 }
 
@@ -278,16 +295,19 @@ function parsearExtrasXML(xmlText: string): any[] {
       const tm = block.match(new RegExp(`<${tag}[^>]*>([^<]*)<\/${tag}>`, 'i'))
       return tm ? tm[1].replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').trim() : ''
     }
-    const comp = normalizarComprobante(get('Comp'))
+    const getAny = (...tags: string[]) => tags.map(get).find(Boolean) || ''
+    const comp = normalizarComprobante(getAny('Comp', 'CompPpal'))
     if (!comp) continue
     const item = get('Item_Desc')
     const cc   = get('CCDescripcion')
     const tipo = get('CoditemDesc')
     const condicion = get('CondVenta')
+    const vendedor = get('Vendedor')
     const fechaEmision = get('Comp_FEmision')
+    const periodoFacturacion = get('PeriodoFacturacion')
     const ocM  = item.match(/(?:OC|HES|PEDIDO)[^\w]*([\w\/-]+)/i)
     const oc   = ocM ? ocM[0].trim() : ''
-    const per  = extraerPeriodoExtra(item, fechaEmision)
+    const per  = periodoFacturacion || extraerPeriodoExtra(item, fechaEmision)
     const existente = rows.get(comp)
     rows.set(comp, {
       comprobante: comp,
@@ -295,7 +315,7 @@ function parsearExtrasXML(xmlText: string): any[] {
       centro_costo: mergeTexto(existente?.centro_costo || '', cc),
       tipo_servicio: mergeTexto(existente?.tipo_servicio || '', tipo),
       oc_hes_pedido: mergeTexto(existente?.oc_hes_pedido || '', oc),
-      colaborador: existente?.colaborador || '',
+      colaborador: mergeTexto(existente?.colaborador || '', vendedor),
       otros_conceptos: existente?.otros_conceptos || '',
       condicion_override: existente?.condicion_override || condicion,
       periodo: mergeTexto(existente?.periodo || '', per),
