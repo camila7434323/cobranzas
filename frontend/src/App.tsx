@@ -305,9 +305,6 @@ function AppInterna({ session }: { session: Session }) {
     return acc
   }, new Map<string, ClienteRow>())
 
-  const sinAsignarClientesCount = Array.from(clientesMap.values())
-    .filter(c => (localEjecutivos[c.cliente] || c.ejecutivo) === 'Sin asignar').length
-
   const clientesFiltrados = Array.from(clientesMap.values())
     .filter(c => {
       if (filtroEjecutivoClientes && c.ejecutivo !== filtroEjecutivoClientes) return false
@@ -1078,6 +1075,25 @@ function AppInterna({ session }: { session: Session }) {
                         </div>
                       )
                     })}
+                    {key === 'sa' && (
+                      <div style={{ padding: '10px 0 0' }}>
+                        <div style={{ fontSize: '9px', fontWeight: 700, letterSpacing: '1.6px', textTransform: 'uppercase', color: 'rgba(255,255,255,0.22)', padding: '0 8px', marginBottom: '6px' }}>Por ejecutivo</div>
+                        {ejecutivos.map(exec => {
+                          const ec = getExecColor(exec)
+                          const count     = data.filter(r => r.ejecutivo === exec).length
+                          const moraCount = data.filter(r => r.ejecutivo === exec && r.dias_mora > 0).length
+                          const isActive  = sociedadActiva === 'sa' && ejecutivoSeleccionado === exec
+                          return (
+                            <div key={`sa-exec-${exec}`} onClick={() => { setSociedadActiva('sa'); setEjecutivoSeleccionado(exec); setVista('todos'); setFiltroClienteTabla(''); setFiltroEstadoTabla(''); setFiltroMoraRange(''); setSortCol(null); setSortDir('asc'); setExpandedRows(new Set()) }} style={{ display: 'flex', alignItems: 'center', gap: '9px', padding: '7px 10px', borderRadius: '9px', cursor: 'pointer', background: isActive ? 'rgba(255,255,255,0.1)' : 'transparent', marginBottom: '2px', transition: 'background 0.15s' }}>
+                              <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: ec.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: 700, color: '#fff', flexShrink: 0, boxShadow: '0 2px 8px rgba(0,0,0,0.3)' }}>{ec.initials}</div>
+                              <span style={{ color: isActive ? '#fff' : 'rgba(255,255,255,0.55)', fontSize: '12px', flex: 1, fontWeight: isActive ? 600 : 400, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{exec}</span>
+                              {moraCount > 0 && <div style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#f87171', flexShrink: 0 }} />}
+                              <span style={{ fontSize: '10px', fontWeight: 700, padding: '2px 7px', borderRadius: '20px', background: 'rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.3)' }}>{count}</span>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -1128,44 +1144,7 @@ function AppInterna({ session }: { session: Session }) {
           })}
         </div>
 
-        <div style={{ height: '1px', background: 'rgba(255,255,255,0.06)', margin: '8px 20px 14px' }} />
-
-        {/* ejecutivos */}
-        <div style={{ display: sociedadActiva === 'sa' && vista !== 'global' ? 'block' : 'none', padding: '0 12px', flex: 1, overflowY: 'auto' }}>
-          <div style={{ fontSize: '9px', fontWeight: 700, letterSpacing: '1.6px', textTransform: 'uppercase', color: 'rgba(255,255,255,0.22)', padding: '0 8px', marginBottom: '6px' }}>Ejecutivos</div>
-
-          <div onClick={() => { setEjecutivoSeleccionado(null); setVista('todos'); setFiltroClienteTabla(''); setFiltroEstadoTabla(''); setFiltroMoraRange(''); setSortCol(null); setSortDir('asc'); setExpandedRows(new Set()) }} style={{ display: 'flex', alignItems: 'center', gap: '9px', padding: '7px 10px', borderRadius: '9px', cursor: 'pointer', background: !ejecutivoSeleccionado ? 'rgba(255,255,255,0.1)' : 'transparent', marginBottom: '2px', transition: 'background 0.15s' }}>
-            <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', color: 'rgba(255,255,255,0.4)', flexShrink: 0 }}>✦</div>
-            <span style={{ color: !ejecutivoSeleccionado ? '#fff' : 'rgba(255,255,255,0.5)', fontSize: '13px', flex: 1, fontWeight: !ejecutivoSeleccionado ? 600 : 400 }}>Todos</span>
-            <span style={{ fontSize: '10px', fontWeight: 700, padding: '2px 7px', borderRadius: '20px', background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.35)' }}>{data.length}</span>
-          </div>
-
-          {sinAsignarClientesCount > 0 && (() => {
-            const isActive = ejecutivoSeleccionado === 'Sin asignar'
-            return (
-              <div onClick={() => { setEjecutivoSeleccionado(isActive ? null : 'Sin asignar'); setVista('todos'); setFiltroClienteTabla(''); setFiltroEstadoTabla(''); setFiltroMoraRange(''); setSortCol(null); setSortDir('asc'); setExpandedRows(new Set()) }} style={{ display: 'flex', alignItems: 'center', gap: '9px', padding: '7px 10px', borderRadius: '9px', marginBottom: '2px', cursor: 'pointer', background: isActive ? 'rgba(245,158,11,0.15)' : 'transparent', transition: 'background 0.15s' }}>
-                <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'rgba(245,158,11,0.18)', border: '1px solid rgba(245,158,11,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', flexShrink: 0 }}>⚠</div>
-                <span style={{ color: '#fcd34d', fontSize: '13px', flex: 1, fontWeight: isActive ? 600 : 400 }}>Sin asignar</span>
-                <span style={{ fontSize: '10px', fontWeight: 700, padding: '2px 7px', borderRadius: '20px', background: 'rgba(245,158,11,0.2)', color: '#fcd34d' }}>{sinAsignarClientesCount}</span>
-              </div>
-            )
-          })()}
-
-          {ejecutivos.map(exec => {
-            const ec = getExecColor(exec)
-            const count     = data.filter(r => r.ejecutivo === exec).length
-            const moraCount = data.filter(r => r.ejecutivo === exec && r.dias_mora > 0).length
-            const isActive  = ejecutivoSeleccionado === exec
-            return (
-              <div key={exec} onClick={() => { setEjecutivoSeleccionado(exec); setVista('todos'); setFiltroClienteTabla(''); setFiltroEstadoTabla(''); setFiltroMoraRange(''); setSortCol(null); setSortDir('asc'); setExpandedRows(new Set()) }} style={{ display: 'flex', alignItems: 'center', gap: '9px', padding: '7px 10px', borderRadius: '9px', cursor: 'pointer', background: isActive ? 'rgba(255,255,255,0.1)' : 'transparent', marginBottom: '2px', transition: 'background 0.15s' }}>
-                <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: ec.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: 700, color: '#fff', flexShrink: 0, boxShadow: '0 2px 8px rgba(0,0,0,0.3)' }}>{ec.initials}</div>
-                <span style={{ color: isActive ? '#fff' : 'rgba(255,255,255,0.55)', fontSize: '12px', flex: 1, fontWeight: isActive ? 600 : 400, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{exec}</span>
-                {moraCount > 0 && <div style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#f87171', flexShrink: 0 }} />}
-                <span style={{ fontSize: '10px', fontWeight: 700, padding: '2px 7px', borderRadius: '20px', background: 'rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.3)' }}>{count}</span>
-              </div>
-            )
-          })}
-        </div>
+        <div style={{ flex: 1 }} />
 
         {/* footer */}
         <div style={{ padding: '14px 20px', borderTop: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>

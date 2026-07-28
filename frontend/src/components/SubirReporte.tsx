@@ -180,7 +180,7 @@ function Overlay({ state, onClose, onContinue }: {
             <p style={{ color: '#7a8fbb', margin: 0, fontSize: '14px' }}>
               <strong>{state.cantidad}</strong> descripciones guardadas correctamente.
               {!!state.omitidos && (
-                <span><br /><strong>{state.omitidos}</strong> no se cargaron porque todavÃ­a no existe ese comprobante.</span>
+                <span><br /><strong>{state.omitidos}</strong> no se cargaron porque todavía no existe ese comprobante.</span>
               )}
             </p>
             <button onClick={onClose} style={{ marginTop: '24px', background: '#2554a0', color: '#fff', border: 'none', padding: '10px 28px', borderRadius: '8px', fontSize: '14px', fontWeight: 700, cursor: 'pointer' }}>Cerrar</button>
