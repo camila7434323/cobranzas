@@ -1024,7 +1024,7 @@ function AppInterna({ session }: { session: Session }) {
 
         <div style={{ height: '1px', background: 'rgba(255,255,255,0.06)', margin: '0 20px 14px' }} />
 
-        <div style={{ padding: '0 12px 10px' }}>
+        <div className="scroll-sin-barra" style={{ padding: '0 12px 10px', flex: 1, minHeight: 0, overflowY: 'auto' }}>
           <div
             onClick={() => irAVista('global', 'sa')}
             style={{ display: 'flex', alignItems: 'center', gap: '9px', padding: '9px 10px', borderRadius: '9px', cursor: 'pointer', background: vista === 'global' ? 'rgba(37,84,160,0.45)' : 'transparent', border: vista === 'global' ? '1px solid rgba(107,151,232,0.3)' : '1px solid transparent', marginBottom: '8px' }}
@@ -1071,7 +1071,7 @@ function AppInterna({ session }: { session: Session }) {
                         >
                           <span>{item.vista === 'nueva' ? '+' : item.vista === 'historial' ? '○' : item.vista === 'clientes' ? '♧' : '▥'}</span>
                           <span style={{ flex: 1 }}>{item.label}</span>
-                          {item.vista !== 'dashboard' && item.vista !== 'nueva' && <span style={{ fontSize: '10px', padding: '1px 7px', borderRadius: '20px', background: item.vista === 'historial' ? 'rgba(5,150,105,0.25)' : item.vista === 'clientes' ? 'rgba(255,255,255,0.08)' : 'rgba(220,38,38,0.3)', color: item.vista === 'historial' ? '#6ee7b7' : item.vista === 'clientes' ? 'rgba(255,255,255,0.45)' : '#fca5a5', fontWeight: 700 }}>{item.count}</span>}
+                          {(item.vista === 'todos' || item.vista === 'historial') && <span style={{ fontSize: '10px', padding: '1px 7px', borderRadius: '20px', background: item.vista === 'historial' ? 'rgba(5,150,105,0.25)' : 'rgba(220,38,38,0.3)', color: item.vista === 'historial' ? '#6ee7b7' : '#fca5a5', fontWeight: 700 }}>{item.count}</span>}
                         </div>
                       )
                     })}

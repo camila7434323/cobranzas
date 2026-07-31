@@ -34,6 +34,17 @@ input {
   font: inherit;
 }
 
+.scroll-sin-barra {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.scroll-sin-barra::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+}
+
 @keyframes spin {
   to {
     transform: rotate(360deg);
