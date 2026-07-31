@@ -985,7 +985,7 @@ function AppInterna({ session }: { session: Session }) {
       )}
 
       {/* ── SIDEBAR ───────────────────────────────────────────────────────── */}
-      <aside style={{ width: sidebarAbierto ? '260px' : '0px', overflow: 'hidden', transition: 'width 0.25s ease', background: 'linear-gradient(180deg, #081a35 0%, #05101f 100%)', display: 'flex', flexDirection: 'column', flexShrink: 0, boxShadow: '4px 0 24px rgba(0,0,0,0.35)' }}>
+      <aside className="scroll-sin-barra" style={{ width: sidebarAbierto ? '260px' : '0px', overflowX: 'hidden', overflowY: 'auto', transition: 'width 0.25s ease', background: 'linear-gradient(180deg, #081a35 0%, #05101f 100%)', display: 'flex', flexDirection: 'column', flexShrink: 0, boxShadow: '4px 0 24px rgba(0,0,0,0.35)' }}>
 
         {/* logo */}
         <div style={{ padding: '20px 16px 16px' }}>
