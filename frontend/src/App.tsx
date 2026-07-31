@@ -1031,7 +1031,6 @@ function AppInterna({ session }: { session: Session }) {
           >
             <span style={{ color: '#fff', fontSize: '15px' }}>⊕</span>
             <span style={{ color: vista === 'global' ? '#fff' : 'rgba(255,255,255,0.65)', fontSize: '13px', fontWeight: 600, flex: 1 }}>Todos los comprobantes</span>
-            <span style={{ fontSize: '10px', fontWeight: 700, padding: '2px 7px', borderRadius: '20px', background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.45)' }}>{data.length + historial.length}</span>
           </div>
 
           <div style={{ height: '1px', background: 'rgba(255,255,255,0.08)', margin: '8px 0' }} />
@@ -1072,7 +1071,7 @@ function AppInterna({ session }: { session: Session }) {
                         >
                           <span>{item.vista === 'nueva' ? '+' : item.vista === 'historial' ? '○' : item.vista === 'clientes' ? '♧' : '▥'}</span>
                           <span style={{ flex: 1 }}>{item.label}</span>
-                          {item.count > 0 && <span style={{ fontSize: '10px', padding: '1px 7px', borderRadius: '20px', background: item.vista === 'historial' ? 'rgba(5,150,105,0.25)' : 'rgba(220,38,38,0.3)', color: item.vista === 'historial' ? '#6ee7b7' : '#fca5a5', fontWeight: 700 }}>{item.count}</span>}
+                          {item.count > 0 && (item.vista === 'todos' || item.vista === 'historial') && <span style={{ fontSize: '10px', padding: '1px 7px', borderRadius: '20px', background: item.vista === 'historial' ? 'rgba(5,150,105,0.25)' : 'rgba(220,38,38,0.3)', color: item.vista === 'historial' ? '#6ee7b7' : '#fca5a5', fontWeight: 700 }}>{item.count}</span>}
                         </div>
                       )
                     })}
