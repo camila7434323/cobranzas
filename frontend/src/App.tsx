@@ -201,7 +201,7 @@ function AppInterna({ session }: { session: Session }) {
   const [globalFiltroEstado, setGlobalFiltroEstado]       = useState('')
 
   const mainRef = useRef<HTMLDivElement>(null)
-  useEffect(() => { window.scrollTo({ top: 0 }) }, [vista])
+  useEffect(() => { mainRef.current?.scrollTo({ top: 0 }) }, [vista])
 
   // asignación de ejecutivo
   const [errorAsignacion, setErrorAsignacion] = useState('')
@@ -888,7 +888,7 @@ function AppInterna({ session }: { session: Session }) {
   }
 
   return (
-    <div style={{ display: 'flex', width: '100vw', minHeight: '100vh', fontFamily: 'Inter, sans-serif', background: '#eef2f8' }}>
+    <div style={{ display: 'flex', width: '100vw', height: '100vh', fontFamily: 'Inter, sans-serif', background: '#eef2f8', overflow: 'hidden' }}>
 
       {/* ── MODAL PDF ─────────────────────────────────────────────────────── */}
       {modalComprobante && (
@@ -985,7 +985,7 @@ function AppInterna({ session }: { session: Session }) {
       )}
 
       {/* ── SIDEBAR ───────────────────────────────────────────────────────── */}
-      <aside className="scroll-sin-barra" style={{ width: sidebarAbierto ? '260px' : '0px', overflow: sidebarAbierto ? 'visible' : 'hidden', transition: 'width 0.25s ease', background: 'linear-gradient(180deg, #081a35 0%, #05101f 100%)', display: 'flex', flexDirection: 'column', flexShrink: 0, boxShadow: '4px 0 24px rgba(0,0,0,0.35)' }}>
+      <aside style={{ width: sidebarAbierto ? '260px' : '0px', overflow: 'hidden', transition: 'width 0.25s ease', background: 'linear-gradient(180deg, #081a35 0%, #05101f 100%)', display: 'flex', flexDirection: 'column', flexShrink: 0, boxShadow: '4px 0 24px rgba(0,0,0,0.35)' }}>
 
         {/* logo */}
         <div style={{ padding: '20px 16px 16px' }}>
@@ -1024,7 +1024,7 @@ function AppInterna({ session }: { session: Session }) {
 
         <div style={{ height: '1px', background: 'rgba(255,255,255,0.06)', margin: '0 20px 14px' }} />
 
-        <div style={{ padding: '0 12px 10px', flex: 1, minHeight: 0 }}>
+        <div className="scroll-sin-barra" style={{ padding: '0 12px 10px', flex: 1, minHeight: 0, overflowY: 'auto' }}>
           <div
             onClick={() => irAVista('global', 'sa')}
             style={{ display: 'flex', alignItems: 'center', gap: '9px', padding: '9px 10px', borderRadius: '9px', cursor: 'pointer', background: vista === 'global' ? 'rgba(37,84,160,0.45)' : 'transparent', border: vista === 'global' ? '1px solid rgba(107,151,232,0.3)' : '1px solid transparent', marginBottom: '8px' }}
@@ -1161,7 +1161,7 @@ function AppInterna({ session }: { session: Session }) {
       </aside>
 
       {/* ── MAIN ──────────────────────────────────────────────────────────── */}
-      <main ref={mainRef} style={{ flex: 1, minWidth: 0, padding: '28px 32px', background: '#eef2f8' }}>
+      <main ref={mainRef} style={{ flex: 1, minWidth: 0, padding: '28px 32px', overflowY: 'auto', background: '#eef2f8' }}>
 
         {(errorCarga || errorComprobantes || errorHistorial || errorFacturasManuales) && (
           <div style={{ background: '#fee2e2', border: '1px solid #fca5a5', borderRadius: '8px', padding: '10px 16px', marginBottom: '14px', fontSize: '13px', color: '#dc2626', fontWeight: 500 }}>
