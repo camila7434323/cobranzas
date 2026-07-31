@@ -188,6 +188,7 @@ function AppInterna({ session }: { session: Session }) {
   const [showAdminPrompt, setShowAdminPrompt] = useState(false)
   const [adminPwInput, setAdminPwInput]       = useState('')
   const [expandedRows, setExpandedRows]       = useState<Set<string>>(new Set())
+  const [expandedGlobalRows, setExpandedGlobalRows] = useState<Set<string>>(new Set())
   const [sortCol, setSortCol]                 = useState<string | null>(null)
   const [sortDir, setSortDir]                 = useState<'asc' | 'desc'>('asc')
   const [filtroMoraRange, setFiltroMoraRange] = useState('')
@@ -1259,6 +1260,7 @@ function AppInterna({ session }: { session: Session }) {
                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                   <thead>
                     <tr style={{ background: '#f8faff' }}>
+                      <th style={{ padding: '10px 6px', width: '32px' }} />
                       {['Empresa', 'Comprobante', 'Cliente', 'Ejecutivo', 'Emision', 'Monto', 'Estado', 'Factura'].map(h => (
                         <th key={h} style={{ padding: '10px 16px', textAlign: h === 'Monto' ? 'right' : 'left', fontSize: '10px', color: '#7a8fbb', textTransform: 'uppercase', letterSpacing: '0.8px', borderBottom: '1px solid #dde3f0' }}>{h}</th>
                       ))}
@@ -1266,23 +1268,45 @@ function AppInterna({ session }: { session: Session }) {
                   </thead>
                   <tbody>
                     {globalRows.length === 0 ? (
-                      <tr><td colSpan={8} style={{ padding: '58px', textAlign: 'center', color: '#7a8fbb' }}>Sin resultados.</td></tr>
-                    ) : globalRows.map((r, idx) => (
-                      <tr key={`${r.estado}-${r.comprobante}-${idx}`} style={{ borderBottom: '1px solid #dde3f0' }}>
-                        <td style={{ padding: '11px 16px', fontSize: '12px', color: '#3d5278', whiteSpace: 'nowrap' }}>{r.empresa}</td>
-                        <td style={{ padding: '11px 16px', fontSize: '12px', fontFamily: 'monospace', color: '#3d5278', whiteSpace: 'nowrap' }}>{r.comprobante}</td>
-                        <td style={{ padding: '11px 16px', fontSize: '13px', fontWeight: 600, color: '#0d1b38' }}>{r.cliente}</td>
-                        <td style={{ padding: '11px 16px', fontSize: '12px', color: '#7a8fbb' }}>{r.ejecutivo}</td>
-                        <td style={{ padding: '11px 16px', fontSize: '12px', color: '#7a8fbb', whiteSpace: 'nowrap' }}>{fmtFecha(r.fecha)}</td>
-                        <td style={{ padding: '11px 16px', fontSize: '12px', fontWeight: 700, fontFamily: 'monospace', textAlign: 'right' }}>{fmt(r.monto)}</td>
-                        <td style={{ padding: '11px 16px' }}>
-                          <span style={{ background: r.estado === 'Cobrada' ? '#d1fae5' : '#fef3c7', color: r.estado === 'Cobrada' ? '#065f46' : '#92400e', padding: '3px 9px', borderRadius: '20px', fontSize: '11px', fontWeight: 700 }}>{r.estado}</span>
-                        </td>
-                        <td style={{ padding: '11px 16px' }}>
-                          <button onClick={() => abrirPdf({ comprobante: r.comprobante, nombre_cliente: r.cliente, ejecutivo: r.ejecutivo, fecha_emision: null, fecha_vencimiento: null, monto: r.monto, dias_mora: r.diasMora }, r.pdfDirecta)} style={{ background: '#f0f4ff', color: '#2554a0', border: 'none', borderRadius: '8px', padding: '5px 12px', fontWeight: 700, cursor: 'pointer' }}>Abrir PDF</button>
-                        </td>
-                      </tr>
-                    ))}
+                      <tr><td colSpan={9} style={{ padding: '58px', textAlign: 'center', color: '#7a8fbb' }}>Sin resultados.</td></tr>
+                    ) : globalRows.map((r, idx) => {
+                      const rowKey = `${r.estado}-${r.comprobante}-${idx}`
+                      const isExp = expandedGlobalRows.has(rowKey)
+                      const extra = extras.get(r.comprobante)
+                      return (
+                        <Fragment key={rowKey}>
+                          <tr style={{ borderBottom: isExp ? 'none' : '1px solid #dde3f0' }}>
+                            <td style={{ padding: '8px 4px 8px 6px' }}>
+                              <button
+                                onClick={() => setExpandedGlobalRows(prev => { const next = new Set(prev); if (next.has(rowKey)) next.delete(rowKey); else next.add(rowKey); return next })}
+                                style={{ width: '22px', height: '22px', border: '1px solid #dde3f0', borderRadius: '4px', background: isExp ? '#2554a0' : '#f1f5f9', color: isExp ? '#fff' : '#374151', fontSize: '14px', fontWeight: 700, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: 0, lineHeight: 1 }}
+                              >
+                                {isExp ? '−' : '+'}
+                              </button>
+                            </td>
+                            <td style={{ padding: '11px 16px', fontSize: '12px', color: '#3d5278', whiteSpace: 'nowrap' }}>{r.empresa}</td>
+                            <td style={{ padding: '11px 16px', fontSize: '12px', fontFamily: 'monospace', color: '#3d5278', whiteSpace: 'nowrap' }}>{r.comprobante}</td>
+                            <td style={{ padding: '11px 16px', fontSize: '13px', fontWeight: 600, color: '#0d1b38' }}>{r.cliente}</td>
+                            <td style={{ padding: '11px 16px', fontSize: '12px', color: '#7a8fbb' }}>{r.ejecutivo}</td>
+                            <td style={{ padding: '11px 16px', fontSize: '12px', color: '#7a8fbb', whiteSpace: 'nowrap' }}>{fmtFecha(r.fecha)}</td>
+                            <td style={{ padding: '11px 16px', fontSize: '12px', fontWeight: 700, fontFamily: 'monospace', textAlign: 'right' }}>{fmt(r.monto)}</td>
+                            <td style={{ padding: '11px 16px' }}>
+                              <span style={{ background: r.estado === 'Cobrada' ? '#d1fae5' : '#fef3c7', color: r.estado === 'Cobrada' ? '#065f46' : '#92400e', padding: '3px 9px', borderRadius: '20px', fontSize: '11px', fontWeight: 700 }}>{r.estado}</span>
+                            </td>
+                            <td style={{ padding: '11px 16px' }}>
+                              <button onClick={() => abrirPdf({ comprobante: r.comprobante, nombre_cliente: r.cliente, ejecutivo: r.ejecutivo, fecha_emision: null, fecha_vencimiento: null, monto: r.monto, dias_mora: r.diasMora }, r.pdfDirecta)} style={{ background: '#f0f4ff', color: '#2554a0', border: 'none', borderRadius: '8px', padding: '5px 12px', fontWeight: 700, cursor: 'pointer' }}>Abrir PDF</button>
+                            </td>
+                          </tr>
+                          {isExp && (
+                            <tr style={{ borderBottom: '1px solid #dde3f0' }}>
+                              <td colSpan={9} style={{ padding: 0 }}>
+                                <DescPanel comprobante={r.comprobante} extra={extra} adminMode={adminMode} onUpdate={handleUpdateExtra} />
+                              </td>
+                            </tr>
+                          )}
+                        </Fragment>
+                      )
+                    })}
                   </tbody>
                 </table>
               </div>
