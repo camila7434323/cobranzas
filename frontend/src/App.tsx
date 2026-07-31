@@ -1071,21 +1071,22 @@ function AppInterna({ session }: { session: Session }) {
                         >
                           <span>{item.vista === 'nueva' ? '+' : item.vista === 'historial' ? '○' : item.vista === 'clientes' ? '♧' : '▥'}</span>
                           <span style={{ flex: 1 }}>{item.label}</span>
-                          {item.count > 0 && (item.vista === 'todos' || item.vista === 'historial') && <span style={{ fontSize: '10px', padding: '1px 7px', borderRadius: '20px', background: item.vista === 'historial' ? 'rgba(5,150,105,0.25)' : 'rgba(220,38,38,0.3)', color: item.vista === 'historial' ? '#6ee7b7' : '#fca5a5', fontWeight: 700 }}>{item.count}</span>}
+                          {item.vista !== 'dashboard' && item.vista !== 'nueva' && <span style={{ fontSize: '10px', padding: '1px 7px', borderRadius: '20px', background: item.vista === 'historial' ? 'rgba(5,150,105,0.25)' : item.vista === 'clientes' ? 'rgba(255,255,255,0.08)' : 'rgba(220,38,38,0.3)', color: item.vista === 'historial' ? '#6ee7b7' : item.vista === 'clientes' ? 'rgba(255,255,255,0.45)' : '#fca5a5', fontWeight: 700 }}>{item.count}</span>}
                         </div>
                       )
                     })}
                     {key === 'sa' && (
                       <div style={{ padding: '10px 0 0' }}>
                         <div style={{ fontSize: '9px', fontWeight: 700, letterSpacing: '1.6px', textTransform: 'uppercase', color: 'rgba(255,255,255,0.22)', padding: '0 8px', marginBottom: '6px' }}>Por ejecutivo</div>
-                        {ejecutivos.map(exec => {
-                          const ec = getExecColor(exec)
-                          const count     = data.filter(r => r.ejecutivo === exec).length
-                          const moraCount = data.filter(r => r.ejecutivo === exec && r.dias_mora > 0).length
+                        {[...ejecutivos, ...(data.some(r => esSinAsignar(r.ejecutivo)) ? ['Sin asignar'] : [])].map(exec => {
+                          const sinAsignar = exec === 'Sin asignar'
+                          const ec = sinAsignar ? { bg: '#f8fafc', color: '#475569', initials: 'Sa' } : getExecColor(exec)
+                          const count     = data.filter(r => sinAsignar ? esSinAsignar(r.ejecutivo) : r.ejecutivo === exec).length
+                          const moraCount = data.filter(r => (sinAsignar ? esSinAsignar(r.ejecutivo) : r.ejecutivo === exec) && r.dias_mora > 0).length
                           const isActive  = sociedadActiva === 'sa' && ejecutivoSeleccionado === exec
                           return (
                             <div key={`sa-exec-${exec}`} onClick={() => { setSociedadActiva('sa'); setEjecutivoSeleccionado(exec); setVista('todos'); setFiltroClienteTabla(''); setFiltroEstadoTabla(''); setFiltroMoraRange(''); setSortCol(null); setSortDir('asc'); setExpandedRows(new Set()) }} style={{ display: 'flex', alignItems: 'center', gap: '9px', padding: '7px 10px', borderRadius: '9px', cursor: 'pointer', background: isActive ? 'rgba(255,255,255,0.1)' : 'transparent', marginBottom: '2px', transition: 'background 0.15s' }}>
-                              <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: ec.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: 700, color: '#fff', flexShrink: 0, boxShadow: '0 2px 8px rgba(0,0,0,0.3)' }}>{ec.initials}</div>
+                              <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: ec.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: 700, color: ec.color, flexShrink: 0, boxShadow: '0 2px 8px rgba(0,0,0,0.3)' }}>{ec.initials}</div>
                               <span style={{ color: isActive ? '#fff' : 'rgba(255,255,255,0.55)', fontSize: '12px', flex: 1, fontWeight: isActive ? 600 : 400, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{exec}</span>
                               {moraCount > 0 && <div style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#f87171', flexShrink: 0 }} />}
                               <span style={{ fontSize: '10px', fontWeight: 700, padding: '2px 7px', borderRadius: '20px', background: 'rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.3)' }}>{count}</span>
