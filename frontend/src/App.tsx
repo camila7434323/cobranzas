@@ -1145,8 +1145,6 @@ function AppInterna({ session }: { session: Session }) {
           })}
         </div>
 
-        <div style={{ flex: 1 }} />
-
         {/* footer */}
         <div style={{ padding: '14px 20px', borderTop: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
