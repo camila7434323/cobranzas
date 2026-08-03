@@ -1793,7 +1793,7 @@ function AppInterna({ session }: { session: Session }) {
                     const cmp = typeof av === 'number' ? av - bv : String(av ?? '').localeCompare(String(bv ?? ''))
                     return sortDir === 'asc' ? cmp : -cmp
                   })
-                : esPanelEjecutivo ? [...vencidas, ...proximasTabla, ...sinVencer] : [...sinVencer, ...vencidas]
+                : [...vencidas, ...proximasTabla, ...sinVencer]
 
               const COLS = [
                 { key: '',                  label: '',            sortable: false },
@@ -1858,7 +1858,7 @@ function AppInterna({ session }: { session: Session }) {
                         <tbody>
                           {ordenados.map((r, idx) => {
                             const badge = moraBadge(r.dias_mora)
-                            const showSep = !esPanelEjecutivo && !sortCol && vencidas.length > 0 && sinVencer.length > 0 && idx === sinVencer.length
+                            const showSep = !esPanelEjecutivo && !sortCol && vencidas.length > 0 && sinVencer.length > 0 && idx === vencidas.length
                             const showRevision = esPanelEjecutivo && !sortCol && vencidas.length > 0 && idx === 0
                             const showProximas = esPanelEjecutivo && !sortCol && proximasTabla.length > 0 && idx === vencidas.length
                             const showSinVencer = esPanelEjecutivo && !sortCol && sinVencer.length > 0 && idx === vencidas.length + proximasTabla.length
@@ -1869,9 +1869,9 @@ function AppInterna({ session }: { session: Session }) {
                             return (
                               <Fragment key={rowKey}>
                                 {/* separator — always in DOM, hidden via display to avoid insertBefore */}
-                                <tr style={{ display: showSep ? '' : 'none', background: '#fee2e2' }}>
-                                  <td colSpan={adminMode ? 10 : 9} style={{ padding: '8px 16px', fontSize: '12px', fontWeight: 700, color: '#dc2626' }}>
-                                    ⚠ Vencidas — {vencidas.length} {vencidas.length === 1 ? 'factura' : 'facturas'}
+                                <tr style={{ display: showSep ? '' : 'none', background: '#d1fae5' }}>
+                                  <td colSpan={adminMode ? 10 : 9} style={{ padding: '8px 16px', fontSize: '12px', fontWeight: 700, color: '#065f46' }}>
+                                    Al día — {sinVencer.length} {sinVencer.length === 1 ? 'factura' : 'facturas'}
                                   </td>
                                 </tr>
                                 <tr id={showRevision ? 'section-revision' : undefined} style={{ display: showRevision ? '' : 'none', background: '#fee2e2' }}>
