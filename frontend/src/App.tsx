@@ -183,6 +183,7 @@ function AppInterna({ session }: { session: Session }) {
   const [sidebarAbierto, setSidebarAbierto] = useState(true)
   const [modalComprobante, setModalComprobante] = useState<any | null>(null)
   const [linkCopiado, setLinkCopiado] = useState(false)
+  const [mostrarTodosClientesDash, setMostrarTodosClientesDash] = useState(false)
   const [pdfNoEncontrado, setPdfNoEncontrado] = useState('')
   const [adminMode, setAdminMode]             = useState(false)
   const [showAdminPrompt, setShowAdminPrompt] = useState(false)
@@ -1410,7 +1411,7 @@ function AppInterna({ session }: { session: Session }) {
                     <span style={{ fontSize: '11px', color: '#7a8fbb' }}>clic para ver facturas</span>
                   </div>
                   <div style={{ padding: '12px 20px' }}>
-                    {clientDashList.slice(0, 10).map((c, i) => {
+                    {(mostrarTodosClientesDash ? clientDashList : clientDashList.slice(0, 10)).map((c, i) => {
                       const bc = DASH_BAR_COLORS[i % DASH_BAR_COLORS.length]
                       return (
                         <div key={c.name} style={{ marginBottom: '10px' }}>
@@ -1429,6 +1430,16 @@ function AppInterna({ session }: { session: Session }) {
                       )
                     })}
                     {clientDashList.length === 0 && <div style={{ color: '#7a8fbb', fontSize: '13px', padding: '20px 0', textAlign: 'center' }}>Sin clientes con mora</div>}
+                    {clientDashList.length > 10 && (
+                      <button
+                        onClick={() => setMostrarTodosClientesDash(v => !v)}
+                        style={{ width: '100%', marginTop: '4px', padding: '8px', fontSize: '12px', fontWeight: 700, color: '#1d4170', background: '#f8faff', border: '1px dashed #c7d3ea', borderRadius: '8px', cursor: 'pointer' }}
+                      >
+                        {mostrarTodosClientesDash
+                          ? '▲ Ver menos'
+                          : `▼ Ver ${clientDashList.length - 10} clientes más (${fmt(clientDashList.slice(10).reduce((s, c) => s + c.monto, 0))})`}
+                      </button>
+                    )}
                   </div>
                 </div>
                 <div style={{ background: '#fff', border: '1px solid #dde3f0', borderRadius: '12px', boxShadow: '0 2px 8px rgba(10,22,40,0.07)', overflow: 'hidden' }}>
