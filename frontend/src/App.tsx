@@ -228,7 +228,6 @@ function AppInterna({ session }: { session: Session }) {
   // filtros – tabla
   const [filtroClienteTabla, setFiltroClienteTabla] = useState('')
   const [filtroEstadoTabla, setFiltroEstadoTabla] = useState('')
-  const [showAlerta, setShowAlerta] = useState(true)
   useEffect(() => { setShowAlerta(true) }, [vista, filtroClienteTabla])
 
   // filtros – historial
@@ -1689,24 +1688,6 @@ function AppInterna({ session }: { session: Session }) {
         /* ── TABLA ────────────────────────────────────────────────────── */
         ) : (
           <>
-            {/* banner informativo */}
-            {showAlerta && (() => {
-              const moraCount    = filtrados.filter(r => r.dias_mora > 0).length
-              const criticaCount = filtrados.filter(r => r.dias_mora > 60).length
-              const proximasCount = filtrados.filter(esProximaAVencer).length
-              if (moraCount === 0 && proximasCount === 0) return null
-              return (
-                <div style={{ background: '#fffbeb', border: '1px solid #fcd34d', borderRadius: '8px', padding: '10px 16px', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <span style={{ fontSize: '15px', flexShrink: 0 }}>⚠</span>
-                  <div style={{ flex: 1, fontSize: '13px', color: '#92400e', fontWeight: 500, lineHeight: 1.5 }}>
-                    {moraCount > 0 && <span><strong>{moraCount}</strong> {moraCount === 1 ? 'factura' : 'facturas'} con mora activa</span>}
-                    {criticaCount > 0 && <span> · <strong>{criticaCount}</strong> en estado crítico (+60d)</span>}
-                    {proximasCount > 0 && <span> · <strong>{proximasCount}</strong> próximas a vencer (7d)</span>}
-                  </div>
-                  <button onClick={() => setShowAlerta(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#92400e', fontSize: '18px', lineHeight: 1, padding: '0 2px', flexShrink: 0 }}>×</button>
-                </div>
-              )
-            })()}
             {esPanelEjecutivo && (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: '14px', marginBottom: '24px' }}>
                 {[
