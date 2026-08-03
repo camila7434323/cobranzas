@@ -13,6 +13,7 @@ import type { Extra } from './hooks/useExtras'
 import { useFacturasManuales } from './hooks/useFacturasManuales'
 import { usePdfsStorage } from './hooks/usePdfsStorage'
 import { CONDICION_OPTS, SOCIEDADES, type SociedadKey, type ManualFactura } from './types/sociedades'
+import { DASH_BAR_COLORS, EXEC_PIE_COLORS, svgPie } from './lib/dashboardUtils'
 
 function DescPanel({ comprobante, extra, adminMode, onUpdate, condicionActual = '' }: {
   comprobante: string
@@ -326,31 +327,6 @@ function AppInterna({ session }: { session: Session }) {
   const moraPromedio     = vencidasArr.length > 0
     ? Math.round(vencidasArr.reduce((s, r) => s + r.dias_mora, 0) / vencidasArr.length) : 0
 
-  const DASH_BAR_COLORS = ['#2554a0','#dc2626','#059669','#d97706','#7c3aed','#0891b2','#9d174d','#65a30d','#ea580c','#0f766e']
-
-  function svgPie(items: { value: number; color: string }[], size = 160) {
-    const total = items.reduce((s, d) => s + d.value, 0)
-    if (total === 0) return null
-    const r = size / 2; const cx = r; const cy = r
-    const toXY = (angle: number) => ({
-      x: cx + r * Math.cos((angle - 90) * Math.PI / 180),
-      y: cy + r * Math.sin((angle - 90) * Math.PI / 180),
-    })
-    let cum = 0
-    return (
-      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-        {items.map((d, i) => {
-          const start = (cum / total) * 360
-          cum += d.value
-          const end = (cum / total) * 360
-          const s = toXY(start); const e = toXY(end < 360 ? end : 359.99)
-          const large = end - start > 180 ? 1 : 0
-          return <path key={i} d={`M${cx} ${cy} L${s.x} ${s.y} A${r} ${r} 0 ${large} 1 ${e.x} ${e.y}Z`} fill={d.color} />
-        })}
-      </svg>
-    )
-  }
-
   const clientDashMap = vencidasArr.reduce<Map<string, {monto: number; facturas: number; moraSum: number}>>((acc, r) => {
     const cur = acc.get(r.nombre_cliente) || {monto: 0, facturas: 0, moraSum: 0}
     cur.monto += r.monto; cur.facturas++; cur.moraSum += r.dias_mora
@@ -374,7 +350,6 @@ function AppInterna({ session }: { session: Session }) {
     {label: '+30d',   color: '#7c3aed', bg: '#ede9fe', items: vencidasArr.filter(r => r.dias_mora > 30)},
   ]
 
-  const EXEC_PIE_COLORS = ['#1d4170','#0f766e','#7c3aed','#b45309','#0369a1','#15803d','#9f1239','#1e3a5f','#6d28d9','#065f46']
   const execPieMap = vencidasArr.reduce<Map<string, number>>((acc, r) => {
     const k = r.ejecutivo || 'Sin asignar'
     acc.set(k, (acc.get(k) || 0) + r.monto); return acc
@@ -1336,6 +1311,7 @@ function AppInterna({ session }: { session: Session }) {
             onDeshacerCobro={deshacerCobroManual}
             onReasignarEjecutivo={(cliente, nuevo) => reasignarEjecutivoManual(sociedadActiva, cliente, nuevo)}
             onAbrirPdf={f => abrirPdf({ comprobante: f.comprobante, nombre_cliente: f.cliente, ejecutivo: f.ejecutivo, fecha_emision: f.fecha_emision, fecha_vencimiento: f.fecha_vencimiento, monto: f.monto, dias_mora: calcularDiasMora(f.fecha_vencimiento) }, f.pdf_base64 || f.pdf_url || undefined)}
+            onVerFacturasCliente={cliente => { setBusqueda(cliente); setVista('todos') }}
           />
         ) : esDashboard ? (
           <>
