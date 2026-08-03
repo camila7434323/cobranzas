@@ -12,6 +12,7 @@ import { useExtras } from './hooks/useExtras'
 import type { Extra } from './hooks/useExtras'
 import { useFacturasManuales } from './hooks/useFacturasManuales'
 import { usePdfsStorage } from './hooks/usePdfsStorage'
+import { useUltimoReporte } from './hooks/useUltimoReporte'
 import { CONDICION_OPTS, SOCIEDADES, type SociedadKey, type ManualFactura } from './types/sociedades'
 import { DASH_BAR_COLORS, EXEC_PIE_COLORS, svgPie } from './lib/dashboardUtils'
 
@@ -177,6 +178,7 @@ function AppInterna({ session }: { session: Session }) {
     deshacerCobro: deshacerCobroManualDb, reasignarEjecutivo: reasignarEjecutivoManualDb,
   } = useFacturasManuales()
   const { buscarPdf } = usePdfsStorage()
+  const { fecha: fechaUltimoReporte } = useUltimoReporte()
   const [editandoManual, setEditandoManual] = useState<ManualFactura | null>(null)
   const [tableKey] = useState(0)
   const [busqueda, setBusqueda] = useState('')
@@ -371,6 +373,20 @@ function AppInterna({ session }: { session: Session }) {
 
   // ── helpers ───────────────────────────────────────────────────────────────
   const fmt = (n: number) => '$' + Math.round(n).toLocaleString('es-AR')
+
+  const fmtUltimaActualizacion = (fechaIso: string | null) => {
+    if (!fechaIso) return 'Sin actualizaciones aún'
+    const iso = /[zZ]|[+-]\d{2}:?\d{2}$/.test(fechaIso) ? fechaIso : fechaIso + 'Z'
+    const d = new Date(iso)
+    if (isNaN(d.getTime())) return 'Sin actualizaciones aún'
+    const hoy = new Date()
+    const esHoy = d.getFullYear() === hoy.getFullYear() && d.getMonth() === hoy.getMonth() && d.getDate() === hoy.getDate()
+    const hora = d.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })
+    if (esHoy) return `Actualizado hoy a las ${hora}`
+    const dia = String(d.getDate()).padStart(2, '0')
+    const mes = String(d.getMonth() + 1).padStart(2, '0')
+    return `Actualizado el ${dia}/${mes} a las ${hora}`
+  }
 
   const fmtFecha = (fecha: string) => {
     if (!fecha) return '-'
@@ -1123,7 +1139,7 @@ function AppInterna({ session }: { session: Session }) {
         <div style={{ padding: '14px 20px', borderTop: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
             <div style={{ width: '7px', height: '7px', borderRadius: '50%', background: '#34d399', boxShadow: '0 0 6px #34d399' }} />
-            <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.25)' }}>Período hasta 30/03/2026</span>
+            <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.25)' }}>{fmtUltimaActualizacion(fechaUltimoReporte)}</span>
           </div>
           <button
             onClick={() => supabase.auth.signOut()}
