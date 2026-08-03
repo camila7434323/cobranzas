@@ -48,7 +48,8 @@ function variantesCodigo(s: string): string[] {
 
 function codigoDesdeNombreArchivo(nombre: string): string {
   const limpio = normalizarCodigo(nombre)
-  const match = limpio.match(/^(FCM?|NCM?|NDM?|CG|CIB|CR|RC|RS)[A-Z]?\d{4,5}-\d+/)
+  // sin ^: el código puede no estar al inicio del nombre (prefijos de fecha, "COPIA-", etc.)
+  const match = limpio.match(/(FCM?|NCM?|NDM?|CG|CIB|CR|RC|RS)[A-Z]?\d{4,5}-\d+/)
   return match?.[0] || limpio
 }
 
