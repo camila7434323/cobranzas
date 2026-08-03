@@ -1144,7 +1144,7 @@ function AppInterna({ session }: { session: Session }) {
         )}
 
         {pdfNoEncontrado && (
-          <div style={{ background: '#fef3c7', border: '1px solid #fcd34d', borderRadius: '8px', padding: '10px 16px', marginBottom: '14px', fontSize: '13px', color: '#92400e', fontWeight: 500 }}>
+          <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', zIndex: 1002, background: '#fef3c7', border: '1px solid #fcd34d', borderRadius: '10px', padding: '16px 24px', fontSize: '14px', color: '#92400e', fontWeight: 500, boxShadow: '0 10px 30px rgba(0,0,0,0.25)' }}>
             ⚠ Factura <strong>{pdfNoEncontrado}</strong> no subida a la base de datos.
           </div>
         )}
