@@ -228,7 +228,6 @@ function AppInterna({ session }: { session: Session }) {
   // filtros – tabla
   const [filtroClienteTabla, setFiltroClienteTabla] = useState('')
   const [filtroEstadoTabla, setFiltroEstadoTabla] = useState('')
-  useEffect(() => { setShowAlerta(true) }, [vista, filtroClienteTabla])
 
   // filtros – historial
   const [filtroEjecutivoHistorial, setFiltroEjecutivoHistorial] = useState('')
