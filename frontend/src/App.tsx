@@ -1710,23 +1710,19 @@ function AppInterna({ session }: { session: Session }) {
             {esPanelEjecutivo && (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: '14px', marginBottom: '24px' }}>
                 {[
-                  { label: 'Tu cartera total', value: fmt(carteraTotal), sub: `${dataSel.length} comprobantes`, color: '#2554a0', id: '' },
-                  { label: 'Revisión urgente', value: fmt(totalVencido), sub: `${vencidasArr.length} facturas en mora`, color: '#dc2626', id: 'section-revision' },
-                  { label: 'Próximas a vencer', value: String(proxAVencer.length), sub: 'vencen en 7 días', color: '#d97706', id: 'section-proximas' },
-                  { label: 'Al día', value: String(sinVencerArr.length), sub: 'comprobantes sin vencer', color: '#059669', id: 'section-sinvencer' },
+                  { label: 'Tu cartera total', value: fmt(carteraTotal), sub: `${dataSel.length} comprobantes`, color: '#2554a0' },
+                  { label: 'Revisión urgente', value: fmt(totalVencido), sub: `${vencidasArr.length} facturas en mora`, color: '#dc2626' },
+                  { label: 'Próximas a vencer', value: String(proxAVencer.length), sub: 'vencen en 7 días', color: '#d97706' },
+                  { label: 'Al día', value: String(sinVencerArr.length), sub: 'comprobantes sin vencer', color: '#059669' },
                 ].map(card => (
                   <div
                     key={card.label}
-                    onClick={() => card.id && document.getElementById(card.id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-                    style={{ background: '#fff', border: '1px solid #dde3f0', borderTop: `3px solid ${card.color}`, borderRadius: '10px', padding: '18px 20px', boxShadow: '0 1px 3px rgba(10,22,40,0.08)', position: 'relative', overflow: 'hidden', cursor: card.id ? 'pointer' : 'default' }}
+                    style={{ background: '#fff', border: '1px solid #dde3f0', borderTop: `3px solid ${card.color}`, borderRadius: '10px', padding: '18px 20px', boxShadow: '0 1px 3px rgba(10,22,40,0.08)', position: 'relative', overflow: 'hidden' }}
                   >
                     <div style={{ position: 'absolute', top: 0, right: 0, width: '70px', height: '70px', borderRadius: '0 10px 0 70px', background: card.color, opacity: 0.06 }} />
                     <div style={{ fontSize: '10px', fontWeight: 700, color: '#7a8fbb', textTransform: 'uppercase', letterSpacing: '0.9px', marginBottom: '8px' }}>{card.label}</div>
                     <div style={{ fontSize: '22px', fontWeight: 800, color: card.color, fontFamily: 'monospace', lineHeight: 1, marginBottom: '6px' }}>{card.value}</div>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', fontSize: '11px', color: '#7a8fbb' }}>
-                      <span>{card.sub}</span>
-                      {card.id && <span style={{ color: card.color, fontWeight: 700, textDecoration: 'underline', textUnderlineOffset: '2px' }}>Ver →</span>}
-                    </div>
+                    <div style={{ fontSize: '11px', color: '#7a8fbb' }}>{card.sub}</div>
                   </div>
                 ))}
               </div>
