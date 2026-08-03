@@ -1540,7 +1540,7 @@ function AppInterna({ session }: { session: Session }) {
                   <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                     <thead>
                       <tr style={{ background: '#f8faff', borderBottom: '1px solid #dde3f0' }}>
-                        {[...['Comprobante', 'Cliente', 'Ejecutivo', 'Fecha cobro', 'Monto', 'Estado', 'PDF'], ...(adminMode ? [''] : [])].map((h, i) => (
+                        {['', ...['Comprobante', 'Cliente', 'Ejecutivo', 'Fecha cobro', 'Monto', 'Estado', 'PDF'], ...(adminMode ? [''] : [])].map((h, i) => (
                           <th key={h || `acc-${i}`} style={{ padding: '10px 16px', textAlign: 'left', fontSize: '10px', fontWeight: 600, color: '#7a8fbb', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>{h}</th>
                         ))}
                       </tr>
@@ -1549,11 +1549,23 @@ function AppInterna({ session }: { session: Session }) {
                       {historialFiltrado.map((r) => {
                         const ec = getExecColor(r.ejecutivo)
                         const fecha = r.fecha_cobro ? r.fecha_cobro.slice(0, 10) : '-'
+                        const rowKey = `hist-${r.comprobante_id || r.comprobante_numero}`
+                        const isExp = expandedRows.has(rowKey)
+                        const extra = extras.get(r.comprobante_numero)
                         return (
-                          <tr key={r.comprobante_id ? `hist-${r.comprobante_id}` : `${r.comprobante_numero}-${r.cliente}`}
-                            style={{ borderBottom: '1px solid #dde3f0' }}
+                          <Fragment key={rowKey}>
+                          <tr
+                            style={{ borderBottom: isExp ? 'none' : '1px solid #dde3f0' }}
                             onMouseEnter={e => (e.currentTarget.style.background = '#f8faff')}
                             onMouseLeave={e => (e.currentTarget.style.background = '')}>
+                            <td style={{ padding: '8px 4px 8px 12px', width: '32px' }}>
+                              <button
+                                onClick={() => setExpandedRows(prev => { const next = new Set(prev); if (next.has(rowKey)) next.delete(rowKey); else next.add(rowKey); return next })}
+                                style={{ width: '22px', height: '22px', border: '1px solid #dde3f0', borderRadius: '4px', background: isExp ? '#2554a0' : '#f1f5f9', color: isExp ? '#fff' : '#374151', fontSize: '14px', fontWeight: 700, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: 0, lineHeight: 1 }}
+                              >
+                                {isExp ? '−' : '+'}
+                              </button>
+                            </td>
                             <td style={{ padding: '12px 16px', fontSize: '12px', fontFamily: 'monospace', color: '#3d5278', whiteSpace: 'nowrap' }}>{r.comprobante_numero}</td>
                             <td style={{ padding: '12px 16px', fontSize: '13px', fontWeight: 600, color: '#0d1b38', maxWidth: '180px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.cliente}</td>
                             <td style={{ padding: '12px 16px' }}>
@@ -1580,6 +1592,14 @@ function AppInterna({ session }: { session: Session }) {
                               </td>
                             )}
                           </tr>
+                          {isExp && (
+                            <tr style={{ borderBottom: '1px solid #dde3f0' }}>
+                              <td colSpan={adminMode ? 9 : 8} style={{ padding: 0 }}>
+                                <DescPanel comprobante={r.comprobante_numero} extra={extra} adminMode={adminMode} onUpdate={handleUpdateExtra} />
+                              </td>
+                            </tr>
+                          )}
+                          </Fragment>
                         )
                       })}
                     </tbody>
