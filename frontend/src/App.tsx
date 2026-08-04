@@ -434,9 +434,10 @@ function AppInterna({ session }: { session: Session }) {
 
   const moraBadge = (dias: number) => {
     if (dias <= 0)  return { label: 'Sin vencer', color: '#059669', bg: '#d1fae5' }
-    if (dias <= 30) return { label: `${dias}d`,   color: '#d97706', bg: '#fef3c7' }
-    if (dias <= 60) return { label: `${dias}d`,   color: '#ea580c', bg: '#ffedd5' }
-    return           { label: `🔴 ${dias}d`,      color: '#dc2626', bg: '#fee2e2' }
+    if (dias <= 7)  return { label: `${dias}d`,   color: '#854d0e', bg: '#fef9c3' }
+    if (dias <= 15) return { label: `${dias}d`,   color: '#9a3412', bg: '#ffedd5' }
+    if (dias <= 30) return { label: `${dias}d`,   color: '#7f1d1d', bg: '#fee2e2' }
+    return           { label: `🔴 ${dias}d`,      color: '#ffffff', bg: '#dc2626' }
   }
 
   const abrirPdf = (row: any, urlDirecta?: string) => {
