@@ -56,6 +56,22 @@ function variantesComprobante(comp: string) {
   return Array.from(variantes)
 }
 
+function calcularVencimientoPorCondicion(fechaEmision: string | null, condicion: string): string | null {
+  if (!fechaEmision || !/^\d{4}-\d{2}-\d{2}$/.test(fechaEmision) || !condicion) return null
+  const diasMatch = condicion.match(/(\d+)/)
+  const dias = diasMatch ? parseInt(diasMatch[1], 10) : /^contado$/i.test(condicion.trim()) ? 0 : 30
+  const fecha = new Date(`${fechaEmision}T00:00:00`)
+  fecha.setDate(fecha.getDate() + dias)
+  return `${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, '0')}-${String(fecha.getDate()).padStart(2, '0')}`
+}
+
+function calcularDiasMoraDesde(fechaVencimiento: string | null): number {
+  if (!fechaVencimiento) return 0
+  const hoy = new Date(); hoy.setHours(0, 0, 0, 0)
+  const vencimiento = new Date(`${fechaVencimiento}T00:00:00`)
+  return Math.max(0, Math.floor((hoy.getTime() - vencimiento.getTime()) / 86400000))
+}
+
 function mergeTexto(actual: string, nuevo: string) {
   const limpio = String(nuevo || '').trim()
   if (!limpio) return actual || ''
@@ -565,11 +581,34 @@ async function sincronizarComprobantes(
 
   const ops: PromiseLike<any>[] = []
 
-  const comprobantesActivos = comprobantes.map(c => ({
-    ...c,
-    estado: 'pendiente' as const,
-    updated_at: ahora
-  }))
+  // No pisar la condición de pago si fue editada manualmente antes de este XML
+  const numerosNuevosArr = Array.from(numerosNuevos)
+  const overrideMap = new Map<string, string>()
+  for (let i = 0; i < numerosNuevosArr.length; i += 500) {
+    const { data: extrasConOverride } = await supabase
+      .from('comprobante_extras')
+      .select('comprobante, condicion_override')
+      .in('comprobante', numerosNuevosArr.slice(i, i + 500))
+    for (const e of extrasConOverride || []) {
+      if (e.condicion_override) overrideMap.set(e.comprobante, e.condicion_override)
+    }
+  }
+
+  const comprobantesActivos = comprobantes.map(c => {
+    const override = overrideMap.get(c.comprobante)
+    if (!override || override === c.condicion) {
+      return { ...c, estado: 'pendiente' as const, updated_at: ahora }
+    }
+    const fechaVencimiento = calcularVencimientoPorCondicion(c.fecha_emision, override) || c.fecha_vencimiento
+    return {
+      ...c,
+      condicion: override,
+      fecha_vencimiento: fechaVencimiento,
+      dias_mora: calcularDiasMoraDesde(fechaVencimiento),
+      estado: 'pendiente' as const,
+      updated_at: ahora
+    }
+  })
 
   if (comprobantesActivos.length > 0) {
     for (let i = 0; i < comprobantesActivos.length; i += 500) {
