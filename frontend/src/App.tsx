@@ -263,10 +263,13 @@ function AppInterna({ session }: { session: Session }) {
     if (filtroClienteTabla && r.nombre_cliente !== filtroClienteTabla) return false
     if (busqueda) {
       const q = busqueda.toLowerCase()
+      const ex = extras.get(r.comprobante)
       return (
         r.nombre_cliente?.toLowerCase().includes(q) ||
         r.comprobante?.toLowerCase().includes(q) ||
-        r.ejecutivo?.toLowerCase().includes(q)
+        r.ejecutivo?.toLowerCase().includes(q) ||
+        [ex?.descripcion, ex?.centro_costo, ex?.tipo_servicio, ex?.oc_hes_pedido, ex?.colaborador, ex?.otros_conceptos, ex?.periodo, ex?.nota, ex?.condicion_override]
+          .some(v => v?.toLowerCase().includes(q))
       )
     }
     return true
@@ -664,6 +667,12 @@ function AppInterna({ session }: { session: Session }) {
   const sociedadInfo = SOCIEDADES[sociedadActiva]
   const esSociedadManual = sociedadInfo.manual
   const manualSociedadRows = sociedadActiva === 'sa' ? [] : manualFacturas.filter(r => r.sociedad === sociedadActiva)
+  const camposExtra = (ex: Extra | undefined) => ex
+    ? [ex.descripcion, ex.centro_costo, ex.tipo_servicio, ex.oc_hes_pedido, ex.colaborador, ex.otros_conceptos, ex.periodo, ex.nota, ex.condicion_override]
+    : []
+  const camposManual = (r: ManualFactura) =>
+    [r.descripcion, r.unidad, r.oc_hes_pedido, r.colaborador, r.otros_conceptos, r.periodo, r.condicion]
+
   const globalRowsSinFiltrar = [
     ...data.map(r => ({
       empresa: SOCIEDADES.sa.nombre,
@@ -675,6 +684,7 @@ function AppInterna({ session }: { session: Session }) {
       diasMora: r.dias_mora || 0,
       estado: 'Pendiente' as const,
       pdfDirecta: '',
+      buscable: [r.comprobante, r.nombre_cliente, r.ejecutivo, ...camposExtra(extras.get(r.comprobante))].filter(Boolean).join(' ').toLowerCase(),
     })),
     ...historial.map(r => ({
       empresa: SOCIEDADES.sa.nombre,
@@ -686,6 +696,7 @@ function AppInterna({ session }: { session: Session }) {
       diasMora: 0,
       estado: 'Cobrada' as const,
       pdfDirecta: '',
+      buscable: [r.comprobante_numero, r.cliente, r.ejecutivo, ...camposExtra(extras.get(r.comprobante_numero))].filter(Boolean).join(' ').toLowerCase(),
     })),
     ...manualFacturas.map(r => ({
       empresa: SOCIEDADES[r.sociedad].nombre,
@@ -697,6 +708,7 @@ function AppInterna({ session }: { session: Session }) {
       diasMora: calcularDiasMora(r.fecha_vencimiento || null),
       estado: 'Pendiente' as const,
       pdfDirecta: r.pdf_base64 || r.pdf_url || '',
+      buscable: [r.comprobante, r.cliente, r.ejecutivo, ...camposManual(r)].filter(Boolean).join(' ').toLowerCase(),
     })),
     ...(['llc', 'sl'] as const).flatMap(key => manualHistorial[key].map(r => ({
       empresa: SOCIEDADES[key].nombre,
@@ -708,6 +720,7 @@ function AppInterna({ session }: { session: Session }) {
       diasMora: 0,
       estado: 'Cobrada' as const,
       pdfDirecta: r.pdf_base64 || r.pdf_url || '',
+      buscable: [r.comprobante, r.cliente, r.ejecutivo, ...camposManual(r)].filter(Boolean).join(' ').toLowerCase(),
     }))),
   ]
 
@@ -717,7 +730,7 @@ function AppInterna({ session }: { session: Session }) {
   const globalRows = globalRowsSinFiltrar.filter(r => {
     if (busqueda) {
       const q = busqueda.toLowerCase()
-      if (!r.comprobante?.toLowerCase().includes(q) && !r.cliente?.toLowerCase().includes(q) && !r.empresa?.toLowerCase().includes(q)) return false
+      if (!r.buscable.includes(q) && !r.empresa?.toLowerCase().includes(q)) return false
     }
     if (globalFiltroEjecutivo && r.ejecutivo !== globalFiltroEjecutivo) return false
     if (globalFiltroCliente   && r.cliente   !== globalFiltroCliente)  return false

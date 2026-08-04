@@ -50,7 +50,8 @@ export function ManualSociedadView({
 
   const q = busqueda.toLowerCase()
   const facturasFiltradas = facturas.filter(r =>
-    !q || r.comprobante.toLowerCase().includes(q) || r.cliente.toLowerCase().includes(q)
+    !q || [r.comprobante, r.cliente, r.ejecutivo, r.descripcion, r.unidad, r.oc_hes_pedido, r.colaborador, r.otros_conceptos, r.periodo, r.condicion]
+      .some(v => v?.toLowerCase().includes(q))
   )
 
   if (vista === 'nueva') {
