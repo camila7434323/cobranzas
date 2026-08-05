@@ -569,7 +569,11 @@ function AppInterna({ session }: { session: Session }) {
   }
 
   // ── da formato de tabla a una hoja (encabezado, bandas, filtro, bordes) ────
-  const estilizarComoTabla = (ws: XLSX.WorkSheet, rows: object[]) => {
+  const estilizarComoTabla = (
+    ws: XLSX.WorkSheet,
+    rows: object[],
+    colorFn?: (header: string, val: any) => { bg?: string; fg?: string; bold?: boolean } | null
+  ) => {
     if (rows.length === 0) return
     const headers = Object.keys(rows[0])
     const thinBorder = { style: 'thin', color: { rgb: 'DDE3F0' } }
@@ -583,13 +587,14 @@ function AppInterna({ session }: { session: Session }) {
         border: { top: thinBorder, bottom: thinBorder, left: thinBorder, right: thinBorder },
       }
     })
-    rows.forEach((_, ri) => {
-      headers.forEach((_, ci) => {
+    rows.forEach((row, ri) => {
+      headers.forEach((h, ci) => {
         const cell = XLSX.utils.encode_cell({ r: ri + 1, c: ci })
         if (!ws[cell]) return
+        const custom = colorFn ? colorFn(h, (row as any)[h]) : null
         ws[cell].s = {
-          fill: { patternType: 'solid', fgColor: { rgb: ri % 2 ? 'F8FAFF' : 'FFFFFF' } },
-          font: { color: { rgb: '0F172A' }, sz: 10 },
+          fill: { patternType: 'solid', fgColor: { rgb: custom?.bg || (ri % 2 ? 'F8FAFF' : 'FFFFFF') } },
+          font: { color: { rgb: custom?.fg || '0F172A' }, bold: !!custom?.bold, sz: 10 },
           border: { top: thinBorder, bottom: thinBorder, left: thinBorder, right: thinBorder },
         }
       })
@@ -598,6 +603,22 @@ function AppInterna({ session }: { session: Session }) {
       wch: Math.min(40, Math.max(10, h.length, ...rows.map(r => String((r as any)[h] ?? '').length)) + 2),
     }))
     ws['!autofilter'] = { ref: XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: rows.length, c: headers.length - 1 } }) }
+  }
+
+  const moraEstadoColores: Record<string, { bg: string; fg: string; bold?: boolean }> = {
+    'Sin vencer':        { bg: 'D1FAE5', fg: '065F46' },
+    'Reciente vencida':  { bg: 'FEF9C3', fg: '854D0E' },
+    'Atención':          { bg: 'FFEDD5', fg: '9A3412' },
+    'Crítica':           { bg: 'FEE2E2', fg: '7F1D1D' },
+    'Urgente':           { bg: 'DC2626', fg: 'FFFFFF', bold: true },
+  }
+  const estadoMora = (dias: number) =>
+    dias <= 0 ? 'Sin vencer' : dias <= 7 ? 'Reciente vencida' : dias <= 15 ? 'Atención' : dias <= 30 ? 'Crítica' : 'Urgente'
+  const colorMoraFn = (header: string, val: any) => {
+    if (header === 'Estado' && moraEstadoColores[val]) return moraEstadoColores[val]
+    if (header === 'Mora (días)' && typeof val === 'number') return moraEstadoColores[estadoMora(val)] || null
+    if (header === 'Monto') return { bold: true }
+    return null
   }
 
   // ── exportar xlsx (solo filas visibles) ───────────────────────────────────
@@ -632,27 +653,30 @@ function AppInterna({ session }: { session: Session }) {
       rows  = filtrados.map(r => {
         const ex = extras.get(r.comprobante)
         return {
-          'Comprobante':   r.comprobante,
-          'Cliente':       r.nombre_cliente,
-          'Ejecutivo':     r.ejecutivo || 'Sin asignar',
-          'Condición':     ex?.condicion_override || r.condicion || '',
-          'Vencimiento':   r.fecha_vencimiento,
-          'Monto':         r.monto,
-          'Días mora':     r.dias_mora,
-          'Descripción':   ex?.descripcion || '',
-          'Centro costo':  ex?.centro_costo || '',
-          'Tipo servicio': ex?.tipo_servicio || '',
-          'OC/HES':        ex?.oc_hes_pedido || '',
-          'Colaborador':   ex?.colaborador || '',
-          'Período':       ex?.periodo || '',
-          'Nota':          ex?.nota || '',
+          'Comprobante':                  r.comprobante,
+          'Cliente':                      r.nombre_cliente,
+          'Ejecutivo':                    r.ejecutivo || 'Sin asignar',
+          'Emisión':                      fmtFecha(r.fecha_emision),
+          'Condición':                    ex?.condicion_override || r.condicion || '',
+          'Vencimiento':                  fmtFecha(r.fecha_vencimiento),
+          'Monto':                        r.monto,
+          'Mora (días)':                  r.dias_mora,
+          'Estado':                       estadoMora(r.dias_mora),
+          'Descripción':                  ex?.descripcion || '',
+          'Centro de costo':              ex?.centro_costo || '',
+          'Tipo de servicio':             ex?.tipo_servicio || '',
+          'OC / HES / N° Pedido':         ex?.oc_hes_pedido || '',
+          'Período':                      ex?.periodo || '',
+          'Colaborador':                  ex?.colaborador || '',
+          'Otros conceptos / Proyectos':  ex?.otros_conceptos || '',
+          'Nota':                         ex?.nota || '',
         }
       })
       sheet = 'Comprobantes'; file = `comprobantes_${hoy}.xlsx`
     }
 
     const ws = XLSX.utils.json_to_sheet(rows)
-    estilizarComoTabla(ws, rows)
+    estilizarComoTabla(ws, rows, vista === 'historial' || vista === 'clientes' ? undefined : colorMoraFn)
     const wb = XLSX.utils.book_new()
     XLSX.utils.book_append_sheet(wb, ws, sheet)
     XLSX.writeFile(wb, file)
@@ -755,7 +779,7 @@ function AppInterna({ session }: { session: Session }) {
       'Mora (días)': r.diasMora,
     }))
     const ws = XLSX.utils.json_to_sheet(rows)
-    estilizarComoTabla(ws, rows)
+    estilizarComoTabla(ws, rows, colorMoraFn)
     const wb = XLSX.utils.book_new()
     XLSX.utils.book_append_sheet(wb, ws, 'Consolidado')
     XLSX.writeFile(wb, `consolidado_${hoy}.xlsx`)
@@ -841,30 +865,27 @@ function AppInterna({ session }: { session: Session }) {
     XLSX.utils.book_append_sheet(wb, wsDist, 'Distribución mora')
 
     // Hoja 5 — Detalle facturas vencidas
-    const detHeaders = ['Comprobante', 'Cliente', 'Ejecutivo', 'Emisión', 'Vencimiento', 'Condición', 'Monto', 'Días mora', 'Estado']
+    const detHeaders = [
+      'Comprobante', 'Cliente', 'Ejecutivo', 'Emisión', 'Condición', 'Vencimiento', 'Monto', 'Mora (días)', 'Estado',
+      'Descripción', 'Centro de costo', 'Tipo de servicio', 'OC / HES / N° Pedido', 'Período', 'Colaborador', 'Otros conceptos / Proyectos', 'Nota',
+    ]
     const detRows = vencidasArr.map(r => {
-      const estado = r.dias_mora <= 7 ? 'Reciente vencida' : r.dias_mora <= 15 ? 'Atención' : r.dias_mora <= 30 ? 'Crítica' : 'Urgente'
+      const ex = extras.get(r.comprobante)
       return [
-        r.comprobante, r.nombre_cliente, r.ejecutivo || 'Sin asignar', fmtFecha(r.fecha_emision), fmtFecha(r.fecha_vencimiento),
-        extras.get(r.comprobante)?.condicion_override || r.condicion || '', r.monto, r.dias_mora, estado,
+        r.comprobante, r.nombre_cliente, r.ejecutivo || 'Sin asignar', fmtFecha(r.fecha_emision),
+        ex?.condicion_override || r.condicion || '', fmtFecha(r.fecha_vencimiento), r.monto, r.dias_mora, estadoMora(r.dias_mora),
+        ex?.descripcion || '', ex?.centro_costo || '', ex?.tipo_servicio || '', ex?.oc_hes_pedido || '',
+        ex?.periodo || '', ex?.colaborador || '', ex?.otros_conceptos || '', ex?.nota || '',
       ]
     })
-    const estadoColores: Record<string, ColorInfo> = {
-      'Reciente vencida': { bg: 'FEF9C3', fg: '854D0E' },
-      'Atención':         { bg: 'FFEDD5', fg: '9A3412' },
-      'Crítica':          { bg: 'FEE2E2', fg: '7F1D1D' },
-      'Urgente':          { bg: 'DC2626', fg: 'FFFFFF', bold: true },
-    }
     const wsDetalle = XLSX.utils.aoa_to_sheet([detHeaders, ...detRows])
-    wsDetalle['!cols'] = [{ wch: 22 }, { wch: 30 }, { wch: 20 }, { wch: 12 }, { wch: 12 }, { wch: 16 }, { wch: 15 }, { wch: 12 }, { wch: 16 }]
+    wsDetalle['!cols'] = [
+      { wch: 22 }, { wch: 30 }, { wch: 20 }, { wch: 12 }, { wch: 16 }, { wch: 12 }, { wch: 15 }, { wch: 12 }, { wch: 16 },
+      { wch: 40 }, { wch: 20 }, { wch: 20 }, { wch: 20 }, { wch: 14 }, { wch: 20 }, { wch: 24 }, { wch: 24 },
+    ]
     styleSheet(wsDetalle, detHeaders, detRows, (col, val) => {
-      if (col === 'Estado') return estadoColores[val] || null
-      if (col === 'Días mora' && typeof val === 'number') {
-        if (val <= 7) return { bg: 'FEF9C3', fg: '854D0E' }
-        if (val <= 15) return { bg: 'FFEDD5', fg: '9A3412' }
-        if (val <= 30) return { bg: 'FEE2E2', fg: '7F1D1D' }
-        return { bg: 'DC2626', fg: 'FFFFFF', bold: true }
-      }
+      if (col === 'Estado') return moraEstadoColores[val] || null
+      if (col === 'Mora (días)' && typeof val === 'number') return moraEstadoColores[estadoMora(val)] || null
       if (col === 'Monto') return { bold: true }
       return null
     })
