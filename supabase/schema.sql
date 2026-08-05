@@ -153,3 +153,67 @@ drop policy if exists "Lectura publica facturas-pdf" on storage.objects;
 create policy "Lectura publica facturas-pdf"
 on storage.objects for select
 using (bucket_id = 'facturas-pdf');
+
+-- ── Módulo Facturación ───────────────────────────────────────────────────
+
+create table if not exists public.facturacion_reportes (
+  id uuid primary key default gen_random_uuid(),
+  nombre_archivo text not null,
+  subido_por text not null default 'sistema',
+  filas_importadas integer not null default 0,
+  fecha_subida timestamptz not null default now()
+);
+
+create table if not exists public.facturacion_lineas (
+  id uuid primary key default gen_random_uuid(),
+  empresa text not null,
+  cliente text not null,
+  cuit text not null default '',
+  ejecutivo text not null default '',
+  legajo text not null default '',
+  colaborador text not null default '',
+  otros_conceptos text not null default '',
+  periodo date,
+  oc text not null default '',
+  leyenda text not null default '',
+  moneda text not null default 'ARS',
+  cantidad numeric(14, 2) not null default 0,
+  precio_unitario numeric(14, 2) not null default 0,
+  total_neto numeric(14, 2) not null default 0,
+  fecha_factura date,
+  n_factura text not null default '',
+  cond_venta text not null default '',
+  articulo_codigo text not null default '',
+  articulo_descripcion text not null default '',
+  cc_descripcion text not null default '',
+  reporte_id uuid references public.facturacion_reportes(id) on delete set null,
+  creado_el timestamptz not null default now()
+);
+
+create index if not exists facturacion_lineas_empresa_idx  on public.facturacion_lineas (empresa);
+create index if not exists facturacion_lineas_cliente_idx  on public.facturacion_lineas (cliente);
+create index if not exists facturacion_lineas_periodo_idx  on public.facturacion_lineas (periodo);
+create index if not exists facturacion_lineas_nfactura_idx on public.facturacion_lineas (n_factura);
+
+alter table public.facturacion_reportes enable row level security;
+alter table public.facturacion_lineas   enable row level security;
+
+drop policy if exists "Lectura publica facturacion_reportes" on public.facturacion_reportes;
+create policy "Lectura publica facturacion_reportes"
+on public.facturacion_reportes for select
+using (true);
+
+drop policy if exists "Escritura autenticada facturacion_reportes" on public.facturacion_reportes;
+create policy "Escritura autenticada facturacion_reportes"
+on public.facturacion_reportes for all
+using (auth.role() = 'authenticated');
+
+drop policy if exists "Lectura publica facturacion_lineas" on public.facturacion_lineas;
+create policy "Lectura publica facturacion_lineas"
+on public.facturacion_lineas for select
+using (true);
+
+drop policy if exists "Escritura autenticada facturacion_lineas" on public.facturacion_lineas;
+create policy "Escritura autenticada facturacion_lineas"
+on public.facturacion_lineas for all
+using (auth.role() = 'authenticated');

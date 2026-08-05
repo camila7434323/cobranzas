@@ -5,6 +5,8 @@ import { useHistorial } from './hooks/useHistorial'
 import { SubirReporte } from './components/SubirReporte'
 import { ManualSociedadView } from './components/ManualSociedadView'
 import { Login } from './components/Login'
+import { ModuloSelector } from './components/ModuloSelector'
+import { FacturacionApp } from './facturacion/FacturacionApp'
 import { EJECUTIVOS, CONDICIONES_CLIENTE } from './data/ejecutivos'
 import { supabase } from './lib/supabase'
 import type { Session } from '@supabase/supabase-js'
@@ -151,6 +153,9 @@ const BTN_LIMPIAR: React.CSSProperties = {
 
 function App() {
   const [session, setSession] = useState<Session | null | undefined>(undefined)
+  const [modulo, setModulo] = useState<'cobranzas' | 'facturacion' | null>(
+    () => (localStorage.getItem('asap_modulo') as 'cobranzas' | 'facturacion' | null) || null
+  )
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setSession(data.session))
@@ -158,13 +163,25 @@ function App() {
     return () => subscription.unsubscribe()
   }, [])
 
-  if (session === undefined) return null
-  if (!session) return <Login />
+  const elegirModulo = (m: 'cobranzas' | 'facturacion') => {
+    localStorage.setItem('asap_modulo', m)
+    setModulo(m)
+  }
+  const cambiarModulo = () => {
+    localStorage.removeItem('asap_modulo')
+    setModulo(null)
+  }
 
-  return <AppInterna session={session} />
+  if (session === undefined) return null
+  if (!modulo) return <ModuloSelector onSelect={elegirModulo} />
+  if (!session) return <Login modulo={modulo} onVolver={cambiarModulo} />
+
+  return modulo === 'facturacion'
+    ? <FacturacionApp session={session} onCambiarModulo={cambiarModulo} />
+    : <AppInterna session={session} onCambiarModulo={cambiarModulo} />
 }
 
-function AppInterna({ session }: { session: Session }) {
+function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarModulo: () => void }) {
   const { data, loading, error: errorComprobantes, refetch, asignarEjecutivo, updateEjecutivoLocal, actualizarComprobante, marcarCobrado, deshacerCobro } = useComprobantes()
   const { data: historial, loading: loadingHistorial, error: errorHistorial, refetch: refetchHistorial } = useHistorial()
   const { extras, updateExtra, batchUpsert } = useExtras()
@@ -1176,12 +1193,21 @@ function AppInterna({ session }: { session: Session }) {
             <div style={{ width: '7px', height: '7px', borderRadius: '50%', background: '#34d399', boxShadow: '0 0 6px #34d399' }} />
             <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.25)' }}>{fmtUltimaActualizacion(fechaUltimoReporte)}</span>
           </div>
-          <button
-            onClick={() => supabase.auth.signOut()}
-            style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer', fontSize: '11px', color: 'rgba(255,255,255,0.4)', padding: '4px 10px', borderRadius: '6px', fontWeight: 600 }}
-          >
-            Salir
-          </button>
+          <div style={{ display: 'flex', gap: '6px' }}>
+            <button
+              onClick={onCambiarModulo}
+              title="Cambiar de app"
+              style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer', fontSize: '11px', color: 'rgba(255,255,255,0.4)', padding: '4px 10px', borderRadius: '6px', fontWeight: 600 }}
+            >
+              ⇄
+            </button>
+            <button
+              onClick={() => supabase.auth.signOut()}
+              style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer', fontSize: '11px', color: 'rgba(255,255,255,0.4)', padding: '4px 10px', borderRadius: '6px', fontWeight: 600 }}
+            >
+              Salir
+            </button>
+          </div>
         </div>
       </aside>
 

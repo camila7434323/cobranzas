@@ -1,7 +1,15 @@
 import { useState } from 'react'
 import { supabase } from '../lib/supabase'
 
-export function Login() {
+type Modulo = 'cobranzas' | 'facturacion'
+
+const MODULO_INFO: Record<Modulo, { inicial: string; nombre: string }> = {
+  cobranzas: { inicial: 'C', nombre: 'Cobranzas' },
+  facturacion: { inicial: 'F', nombre: 'Facturación' },
+}
+
+export function Login({ modulo = 'cobranzas', onVolver }: { modulo?: Modulo; onVolver?: () => void }) {
+  const info = MODULO_INFO[modulo]
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [cargando, setCargando] = useState(false)
@@ -30,10 +38,10 @@ export function Login() {
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '32px' }}>
           <div style={{ width: '40px', height: '40px', background: '#2554a0', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <span style={{ color: '#fff', fontSize: '18px', fontWeight: 800 }}>C</span>
+            <span style={{ color: '#fff', fontSize: '18px', fontWeight: 800 }}>{info.inicial}</span>
           </div>
           <div>
-            <div style={{ fontWeight: 700, fontSize: '17px', color: '#0d1b38' }}>Cobranzas</div>
+            <div style={{ fontWeight: 700, fontSize: '17px', color: '#0d1b38' }}>{info.nombre}</div>
             <div style={{ fontSize: '11px', color: '#7a8fbb', textTransform: 'uppercase', letterSpacing: '1px' }}>ASAP Consulting</div>
           </div>
         </div>
@@ -101,6 +109,15 @@ export function Login() {
             {cargando ? 'Ingresando...' : 'Ingresar'}
           </button>
         </form>
+
+        {onVolver && (
+          <div
+            onClick={onVolver}
+            style={{ marginTop: '18px', textAlign: 'center', fontSize: '12px', color: '#7a8fbb', cursor: 'pointer', fontWeight: 600 }}
+          >
+            ← Cambiar de app
+          </div>
+        )}
       </div>
     </div>
   )
