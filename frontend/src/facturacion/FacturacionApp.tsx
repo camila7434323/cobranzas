@@ -90,8 +90,8 @@ export function FacturacionApp({ session, onCambiarModulo }: { session: Session;
   }
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '240px 1fr', minHeight: '100vh', background: '#eff8fd', color: '#0d1b38', fontFamily: 'Inter, sans-serif' }}>
-      <aside style={{ background: '#0c2436', display: 'flex', flexDirection: 'column', boxShadow: '2px 0 12px rgba(10,22,40,0.18)' }}>
+    <div style={{ display: 'grid', gridTemplateColumns: '240px 1fr', height: '100vh', background: '#eff8fd', color: '#0d1b38', fontFamily: 'Inter, sans-serif', overflow: 'hidden' }}>
+      <aside style={{ background: '#0c2436', display: 'flex', flexDirection: 'column', boxShadow: '2px 0 12px rgba(10,22,40,0.18)', overflowY: 'auto' }}>
         <div style={{ padding: '22px 20px 16px', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '3px' }}>
             <div style={{ width: '32px', height: '32px', background: '#0ea5e9', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 800 }}>F</div>
@@ -125,8 +125,8 @@ export function FacturacionApp({ session, onCambiarModulo }: { session: Session;
         </div>
       </aside>
 
-      <section style={{ minWidth: 0 }}>
-        <header style={{ height: '54px', background: '#fff', borderBottom: '1px solid #d8ecf7', padding: '0 26px', display: 'flex', alignItems: 'center', gap: '14px', boxShadow: '0 1px 3px rgba(10,22,40,0.08)' }}>
+      <section style={{ minWidth: 0, display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
+        <header style={{ height: '54px', flexShrink: 0, background: '#fff', borderBottom: '1px solid #d8ecf7', padding: '0 26px', display: 'flex', alignItems: 'center', gap: '14px', boxShadow: '0 1px 3px rgba(10,22,40,0.08)' }}>
           <span style={{ fontSize: '17px', fontWeight: 800, color: '#0d1b38' }}>Facturación</span>
           <span style={{ fontSize: '12px', color: '#7a8fbb' }}>· {vista === 'dashboard' ? 'Panel de Ventas' : empresaActiva === 'all' ? 'Todas las compañías' : empresaActiva}</span>
           <div style={{ flex: 1 }} />
@@ -139,7 +139,7 @@ export function FacturacionApp({ session, onCambiarModulo }: { session: Session;
           />
         </header>
 
-        <main style={{ padding: '20px 26px 30px' }}>
+        <main style={{ padding: '20px 26px 30px', overflowY: 'auto', flex: 1, minHeight: 0 }}>
           <SubirFacturacionExcel insertarLote={insertarLote} />
           {error && <div style={{ color: '#dc2626', marginBottom: '14px', fontSize: '13px' }}>⚠ {error}</div>}
 
