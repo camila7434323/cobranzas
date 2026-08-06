@@ -1,4 +1,4 @@
-import { Fragment, useMemo, useState } from 'react'
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
 import { useFacturacionLineas, type FacturacionLinea } from './hooks/useFacturacionLineas'
@@ -50,6 +50,26 @@ const groupSum = (rows: FacturacionLinea[], key: (r: FacturacionLinea) => string
 }
 
 const flagCode = (moneda: string) => moneda === 'USD' ? 'us' : moneda === 'EUR' ? 'es' : 'ar'
+
+const EXEC_PALETTE = [
+  { bg: '#ddeafd', text: '#1d4170', bd: '#a8c4f5' },
+  { bg: '#d1fae5', text: '#065f46', bd: '#6ee7b7' },
+  { bg: '#fef3c7', text: '#92400e', bd: '#fcd34d' },
+  { bg: '#ede9fe', text: '#4c1d95', bd: '#c4b5fd' },
+  { bg: '#ccfbf1', text: '#0f766e', bd: '#5eead4' },
+  { bg: '#cffafe', text: '#155e75', bd: '#67e8f9' },
+  { bg: '#fce7f3', text: '#9d174d', bd: '#f9a8d4' },
+  { bg: '#e0e7ff', text: '#3730a3', bd: '#a5b4fc' },
+  { bg: '#dcfce7', text: '#166534', bd: '#86efac' },
+  { bg: '#ffedd5', text: '#9a3412', bd: '#fdba74' },
+]
+
+const execColor = (name: string) => {
+  let hash = 0
+  const str = name || '·'
+  for (let i = 0; i < str.length; i++) hash = str.charCodeAt(i) + ((hash << 5) - hash)
+  return EXEC_PALETTE[Math.abs(hash) % EXEC_PALETTE.length]
+}
 
 const exportCsv = (filename: string, rows: Array<Array<string | number>>) => {
   const csv = rows.map(row => row.map(v => `"${String(v).replace(/"/g, '""')}"`).join(';')).join('\n')
@@ -113,8 +133,6 @@ export function FacturacionApp({ session, onCambiarModulo }: { session: Session;
     const q = busqueda.toLowerCase()
     return [r.cliente, r.cuit, r.ejecutivo, r.n_factura, r.cc_descripcion, r.empresa].some(v => String(v || '').toLowerCase().includes(q))
   })
-  const monedaDetalle = groupSum(rowsEmpresa, monedaFila)[0]?.[0] || 'ARS'
-  const totalDetalle = filas.reduce((s, r) => s + r.total_neto, 0)
 
   const abrirDashboard = () => {
     setVista('dashboard')
@@ -197,7 +215,7 @@ export function FacturacionApp({ session, onCambiarModulo }: { session: Session;
               <div style={{ marginBottom: 16 }}>
                 <input value={busqueda} onChange={e => setBusqueda(e.target.value)} placeholder="Buscar por cliente, CUIT, ejecutivo o factura..." style={inputStyle} />
               </div>
-              <Detalle filas={filas} moneda={monedaDetalle} total={totalDetalle} />
+              <Detalle key={empresaActiva} filas={filas} empresaActiva={empresaActiva} />
             </>
           )}
         </main>
@@ -384,19 +402,211 @@ function ClientMonthTable({ rows, moneda }: { rows: FacturacionLinea[]; moneda: 
   )
 }
 
-function Detalle({ filas, moneda, total }: { filas: FacturacionLinea[]; moneda: string; total: number }) {
+type SortCol = 'cliente' | 'ejecutivo' | 'periodo' | 'fecha' | 'nfactura' | 'cc' | 'total'
+
+function Detalle({ filas, empresaActiva }: { filas: FacturacionLinea[]; empresaActiva: string }) {
+  const [openRows, setOpenRows] = useState<Set<string>>(new Set())
+  const [clientesSel, setClientesSel] = useState<string[]>([])
+  const [ejecutivosSel, setEjecutivosSel] = useState<string[]>([])
+  const [periodosSel, setPeriodosSel] = useState<string[]>([])
+  const [ccsSel, setCcsSel] = useState<string[]>([])
+  const [nFacturaText, setNFacturaText] = useState('')
+  const [sort, setSort] = useState<{ col: SortCol | null; dir: 'asc' | 'desc' }>({ col: null, dir: 'asc' })
+
+  const clientesOpts = useMemo(() => Array.from(new Set(filas.map(nombreCliente))).sort((a, b) => a.localeCompare(b)), [filas])
+  const ejecutivosOpts = useMemo(() => Array.from(new Set(filas.map(r => r.ejecutivo).filter(Boolean))).sort((a, b) => a.localeCompare(b)), [filas])
+  const periodosOpts = useMemo(() => Array.from(new Set(filas.map(periodoKey).filter(Boolean))).sort(), [filas])
+
+  const baseFiltered = useMemo(() => filas.filter(r => {
+    if (clientesSel.length && !clientesSel.includes(nombreCliente(r))) return false
+    if (ejecutivosSel.length && !ejecutivosSel.includes(r.ejecutivo || '')) return false
+    if (periodosSel.length && !periodosSel.includes(periodoKey(r))) return false
+    if (nFacturaText.trim() && !String(r.n_factura || '').toLowerCase().includes(nFacturaText.trim().toLowerCase())) return false
+    return true
+  }), [filas, clientesSel, ejecutivosSel, periodosSel, nFacturaText])
+
+  const ccsOpts = useMemo(() => Array.from(new Set(baseFiltered.map(nombreCc))).sort((a, b) => a.localeCompare(b)), [baseFiltered])
+  const ccFiltered = useMemo(() => baseFiltered.filter(r => !ccsSel.length || ccsSel.includes(nombreCc(r))), [baseFiltered, ccsSel])
+
+  const sorted = useMemo(() => {
+    if (!sort.col) return ccFiltered
+    const dir = sort.dir === 'asc' ? 1 : -1
+    const col = sort.col
+    return [...ccFiltered].sort((a, b) => {
+      switch (col) {
+        case 'cliente': return dir * nombreCliente(a).localeCompare(nombreCliente(b))
+        case 'ejecutivo': return dir * (a.ejecutivo || '').localeCompare(b.ejecutivo || '')
+        case 'periodo': return dir * periodoKey(a).localeCompare(periodoKey(b))
+        case 'fecha': return dir * String(a.fecha_factura || '').localeCompare(String(b.fecha_factura || ''))
+        case 'nfactura': return dir * String(a.n_factura || '').localeCompare(String(b.n_factura || ''))
+        case 'cc': return dir * nombreCc(a).localeCompare(nombreCc(b))
+        case 'total': return dir * (a.total_neto - b.total_neto)
+        default: return 0
+      }
+    })
+  }, [ccFiltered, sort])
+
+  const porMoneda = useMemo(() => {
+    const map = new Map<string, number>()
+    sorted.forEach(r => { const m = monedaFila(r); map.set(m, (map.get(m) || 0) + r.total_neto) })
+    return Array.from(map.entries()).sort((a, b) => a[0].localeCompare(b[0]))
+  }, [sorted])
+  const clientesCount = useMemo(() => new Set(sorted.map(nombreCliente)).size, [sorted])
+  const facturasCount = useMemo(() => new Set(sorted.map(r => r.n_factura).filter(Boolean)).size, [sorted])
+
+  const toggleRow = (id: string) => setOpenRows(o => { const n = new Set(o); if (n.has(id)) n.delete(id); else n.add(id); return n })
+  const setSortCol = (col: SortCol) => setSort(s => s.col === col ? { col, dir: s.dir === 'asc' ? 'desc' : 'asc' } : { col, dir: 'asc' })
+  const sortArrow = (col: SortCol) => sort.col === col ? (sort.dir === 'asc' ? ' ▲' : ' ▼') : ''
+  const clearFilters = () => { setClientesSel([]); setEjecutivosSel([]); setPeriodosSel([]); setCcsSel([]); setNFacturaText('') }
+
+  const kpiColors = ['#19a8e6', '#059669', '#d97706', '#7c3aed']
+
   return (
     <Card noPadding>
-      <CardHeader><strong>Detalle</strong><span style={{ color: '#7286bd' }}>{filas.length} líneas</span><span style={{ marginLeft: 'auto' }}>Total: <strong>{fmtMoney(total, moneda)}</strong></span></CardHeader>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12, padding: 14 }}>
+        {porMoneda.map(([m, v]) => <Kpi key={m} label={`Total facturado (${m})`} value={fmtMoney(v, m)} color={kpiColors[0]} />)}
+        <Kpi label="Clientes" value={String(clientesCount)} color={kpiColors[1]} />
+        <Kpi label="Facturas" value={String(facturasCount)} color={kpiColors[2]} />
+        <Kpi label="Líneas" value={String(sorted.length)} color={kpiColors[3]} />
+      </div>
+      <CardHeader>
+        <strong>Detalle de facturación</strong>
+        <span style={{ color: '#7286bd' }}>{sorted.length} línea{sorted.length === 1 ? '' : 's'}</span>
+        <span style={{ marginLeft: 'auto' }} />
+        <button style={excelBtn} onClick={() => exportCsv('facturacion_detalle.csv', [
+          ['Cliente', 'CUIT', 'Ejecutivo', 'Período', 'Fecha factura', 'N° Factura', 'CC Descripción', 'Moneda', 'Importe'],
+          ...sorted.map(r => [nombreCliente(r), r.cuit || '', r.ejecutivo || '', r.periodo ? mesLabel(periodoKey(r)) : '', fmtFecha(r.fecha_factura), r.n_factura || '', nombreCc(r), monedaFila(r), r.total_neto.toFixed(2)]),
+        ])}>↓ Excel</button>
+        <button style={clearBtn} onClick={clearFilters}>✕ Limpiar filtros</button>
+      </CardHeader>
       {filas.length === 0 ? <div style={emptyStyle}>Sin datos para esta selección.</div> : (
         <div style={{ overflowX: 'auto' }}>
           <table style={{ ...tableStyle, minWidth: 980 }}>
-            <thead><tr>{['Empresa','Cliente','Ejecutivo','Período','Fecha factura','N° Factura','CC Descripción','Monto'].map(h => <Th key={h} right={h === 'Monto'}>{h}</Th>)}</tr></thead>
-            <tbody>{filas.map(r => <tr key={r.id}><Td>{r.empresa || '-'}</Td><Td><strong>{r.cliente}</strong></Td><Td>{r.ejecutivo || '-'}</Td><Td>{fmtFecha(r.periodo)}</Td><Td>{fmtFecha(r.fecha_factura)}</Td><Td>{r.n_factura || '-'}</Td><Td>{r.cc_descripcion || '-'}</Td><Td right><strong>{fmtMoney(r.total_neto, monedaFila(r))}</strong></Td></tr>)}</tbody>
+            <thead>
+              <tr>
+                <Th></Th>
+                <Th onClick={() => setSortCol('cliente')}>Cliente{sortArrow('cliente')}</Th>
+                <Th onClick={() => setSortCol('ejecutivo')}>Ejecutivo{sortArrow('ejecutivo')}</Th>
+                <Th onClick={() => setSortCol('periodo')}>Período{sortArrow('periodo')}</Th>
+                <Th onClick={() => setSortCol('fecha')}>Fecha factura{sortArrow('fecha')}</Th>
+                <Th onClick={() => setSortCol('nfactura')}>N° Factura{sortArrow('nfactura')}</Th>
+                <Th onClick={() => setSortCol('cc')}>CC Descripción{sortArrow('cc')}</Th>
+                <Th right onClick={() => setSortCol('total')}>Importe{sortArrow('total')}</Th>
+                <Th>PDF</Th>
+              </tr>
+              <tr>
+                <Th></Th>
+                <Th><MultiSelect options={clientesOpts} selected={clientesSel} onChange={setClientesSel} placeholderAll="Todos" /></Th>
+                <Th><MultiSelect options={ejecutivosOpts} selected={ejecutivosSel} onChange={setEjecutivosSel} placeholderAll="Todos" /></Th>
+                <Th><MultiSelect options={periodosOpts} selected={periodosSel} onChange={setPeriodosSel} placeholderAll="Todos" formatLabel={mesLabel} /></Th>
+                <Th></Th>
+                <Th><input value={nFacturaText} onChange={e => setNFacturaText(e.target.value)} placeholder="Buscar..." style={filterInputStyle} /></Th>
+                <Th><MultiSelect options={ccsOpts} selected={ccsSel} onChange={setCcsSel} placeholderAll="Todos" /></Th>
+                <Th></Th>
+                <Th></Th>
+              </tr>
+            </thead>
+            <tbody>
+              {sorted.length === 0 ? (
+                <tr><td colSpan={9} style={{ textAlign: 'center', padding: 40, color: '#7286bd', fontSize: 13 }}>No se encontraron resultados con estos filtros</td></tr>
+              ) : sorted.map(r => {
+                const isOpen = openRows.has(r.id)
+                const ec = execColor(r.ejecutivo || '')
+                const moneda = monedaFila(r)
+                return (
+                  <Fragment key={r.id}>
+                    <tr onClick={() => toggleRow(r.id)} style={{ cursor: 'pointer' }}>
+                      <Td>{isOpen ? '⌄' : '›'}</Td>
+                      <Td>
+                        {empresaActiva === 'all' && <span className={`fi fi-${flagCode(moneda)}`} style={{ marginRight: 6, borderRadius: 2, verticalAlign: 'middle' }} />}
+                        <strong>{nombreCliente(r)}</strong>
+                        {r.cuit && <div style={{ fontSize: 10, color: '#7a8fbb', fontFamily: 'monospace', marginTop: 2 }}>{r.cuit}</div>}
+                      </Td>
+                      <Td>{r.ejecutivo ? <span style={{ fontSize: 10.5, fontWeight: 700, padding: '2px 8px', borderRadius: 20, background: ec.bg, color: ec.text, border: `1px solid ${ec.bd}`, whiteSpace: 'nowrap' }}>{r.ejecutivo}</span> : '-'}</Td>
+                      <Td>{r.periodo ? mesLabel(periodoKey(r)) : '-'}</Td>
+                      <Td>{fmtFecha(r.fecha_factura)}</Td>
+                      <Td>{r.n_factura || '-'}</Td>
+                      <Td>{nombreCc(r)}</Td>
+                      <Td right><strong>{fmtMoney(r.total_neto, moneda)}</strong></Td>
+                      <Td style={{ cursor: 'default' }} onClickCapture={e => e.stopPropagation()}><button style={pdfBtnStyle} disabled>PDF Factura</button></Td>
+                    </tr>
+                    {isOpen && (
+                      <tr style={{ background: '#f1fbff' }}>
+                        <td colSpan={9} style={{ padding: '12px 16px 14px 34px', borderBottom: '1px solid #d3eaf6' }}>
+                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px,1fr))', gap: '8px 20px' }}>
+                            <DetailItem label="Legajo" value={r.legajo} />
+                            <DetailItem label="Colaborador" value={r.colaborador} />
+                            <DetailItem label="Otros conceptos / proyecto" value={r.otros_conceptos} />
+                            <DetailItem label="Cond. de venta" value={r.cond_venta} />
+                            <DetailItem label="OC" value={r.oc} />
+                            <DetailItem label="Leyenda en factura" value={r.leyenda} />
+                            <DetailItem label="Artículo" value={[r.articulo_codigo, r.articulo_descripcion].filter(Boolean).join(' · ')} />
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </Fragment>
+                )
+              })}
+            </tbody>
           </table>
         </div>
       )}
     </Card>
+  )
+}
+
+function DetailItem({ label, value }: { label: string; value?: string | null }) {
+  return (
+    <div style={{ fontSize: 11.5 }}>
+      <div style={{ color: '#7286bd', textTransform: 'uppercase', letterSpacing: 0.6, fontSize: 9.5, fontWeight: 700, marginBottom: 2 }}>{label}</div>
+      <div style={{ color: '#243d71' }}>{value || '-'}</div>
+    </div>
+  )
+}
+
+function MultiSelect({ options, selected, onChange, placeholderAll, formatLabel }: { options: string[]; selected: string[]; onChange: (v: string[]) => void; placeholderAll: string; formatLabel?: (v: string) => string }) {
+  const [open, setOpen] = useState(false)
+  const [search, setSearch] = useState('')
+  const ref = useRef<HTMLDivElement>(null)
+  const fmt = formatLabel || ((v: string) => v)
+
+  useEffect(() => {
+    if (!open) return
+    const close = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false) }
+    document.addEventListener('mousedown', close)
+    return () => document.removeEventListener('mousedown', close)
+  }, [open])
+
+  let label = placeholderAll
+  if (selected.length === 1) { const l = fmt(selected[0]); label = l.length > 16 ? l.slice(0, 15) + '…' : l }
+  else if (selected.length > 1) label = `${selected.length} seleccionados`
+
+  const visible = search ? options.filter(o => fmt(o).toLowerCase().includes(search.toLowerCase())) : options
+  const toggle = (opt: string) => onChange(selected.includes(opt) ? selected.filter(v => v !== opt) : [...selected, opt])
+
+  return (
+    <div ref={ref} style={{ position: 'relative' }}>
+      <button type="button" onClick={() => setOpen(o => !o)} style={mselBtn}>
+        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{label}</span>
+        <span style={{ fontSize: 8, color: '#7286bd' }}>▾</span>
+      </button>
+      {open && (
+        <div style={mselPanel}>
+          {options.length > 8 && <input autoFocus value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar..." style={mselSearch} />}
+          <div style={mselActions}>
+            <span onClick={() => onChange(options)}>Todos</span>
+            <span onClick={() => onChange([])}>Limpiar</span>
+          </div>
+          {visible.length === 0 ? <div style={{ padding: 6, fontSize: 11, color: '#7286bd' }}>Sin resultados</div> : visible.map(opt => (
+            <label key={opt} style={mselOption}>
+              <input type="checkbox" checked={selected.includes(opt)} onChange={() => toggle(opt)} />
+              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{fmt(opt)}</span>
+            </label>
+          ))}
+        </div>
+      )}
+    </div>
   )
 }
 
@@ -420,8 +630,8 @@ function CardTitle({ title, badge }: { title: string; badge?: string }) {
   return <div style={{ display: 'flex', alignItems: 'center', gap: 9, fontSize: 15, fontWeight: 800 }}>{title}{badge && <span style={{ background: '#e8f8ff', color: '#087fa8', border: '1px solid #c6e5f4', borderRadius: 999, padding: '2px 8px', fontSize: 10, fontWeight: 800 }}>{badge}</span>}</div>
 }
 
-function Kpi({ label, value }: { label: string; value: string }) {
-  return <div style={{ background: '#fff', border: '1px solid #cbe5f3', borderTop: '3px solid #19a8e6', borderRadius: 8, padding: '13px 16px', boxShadow: '0 1px 4px rgba(14,74,103,.1)' }}><div style={{ color: '#7286bd', fontSize: 10.5, fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1 }}>{label}</div><div style={{ color: '#087fa8', marginTop: 7, fontFamily: 'monospace', fontSize: 17, fontWeight: 800 }}>{value}</div></div>
+function Kpi({ label, value, color = '#19a8e6' }: { label: string; value: string; color?: string }) {
+  return <div style={{ background: '#fff', border: '1px solid #cbe5f3', borderTop: `3px solid ${color}`, borderRadius: 8, padding: '13px 16px', boxShadow: '0 1px 4px rgba(14,74,103,.1)' }}><div style={{ color: '#7286bd', fontSize: 10.5, fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1 }}>{label}</div><div style={{ color: '#087fa8', marginTop: 7, fontFamily: 'monospace', fontSize: 17, fontWeight: 800 }}>{value}</div></div>
 }
 
 function SideTitle({ children }: { children: React.ReactNode }) {
@@ -432,12 +642,12 @@ function Insight({ children, color, bg }: { children: React.ReactNode; color: st
   return <div style={{ background: bg, border: `1px solid ${color}`, color: '#0b4b5d', borderRadius: 8, padding: '10px 12px', fontSize: 13, lineHeight: 1.45 }}>{children}</div>
 }
 
-function Th({ children, right = false }: { children: React.ReactNode; right?: boolean }) {
-  return <th style={{ padding: '8px 10px', color: '#7286bd', fontSize: 10.5, textTransform: 'uppercase', letterSpacing: 0.8, textAlign: right ? 'right' : 'left', borderBottom: '1px solid #d3eaf6' }}>{children}</th>
+function Th({ children, right = false, onClick }: { children: React.ReactNode; right?: boolean; onClick?: () => void }) {
+  return <th onClick={onClick} style={{ padding: '8px 10px', color: '#7286bd', fontSize: 10.5, textTransform: 'uppercase', letterSpacing: 0.8, textAlign: right ? 'right' : 'left', borderBottom: '1px solid #d3eaf6', cursor: onClick ? 'pointer' : 'default', userSelect: 'none' }}>{children}</th>
 }
 
-function Td({ children, right = false, style = {} }: { children: React.ReactNode; right?: boolean; style?: React.CSSProperties }) {
-  return <td style={{ padding: '8px 10px', color: '#243d71', fontSize: 13, textAlign: right ? 'right' : 'left', borderBottom: '1px solid #d3eaf6', ...style }}>{children}</td>
+function Td({ children, right = false, style = {}, onClickCapture }: { children: React.ReactNode; right?: boolean; style?: React.CSSProperties; onClickCapture?: (e: React.MouseEvent) => void }) {
+  return <td onClickCapture={onClickCapture} style={{ padding: '8px 10px', color: '#243d71', fontSize: 13, textAlign: right ? 'right' : 'left', borderBottom: '1px solid #d3eaf6', ...style }}>{children}</td>
 }
 
 function pieSlice(cx: number, cy: number, r: number, start: number, end: number) {
@@ -462,3 +672,11 @@ const emptyStyle: React.CSSProperties = { background: '#fff', border: '1.5px das
 const tableStyle: React.CSSProperties = { width: '100%', borderCollapse: 'collapse' }
 const notice: React.CSSProperties = { border: '1px solid #c6e5f4', background: '#f5fcff', borderRadius: 8, padding: 12, color: '#243d71', lineHeight: 1.4, fontSize: 13 }
 const excelBtn: React.CSSProperties = { marginLeft: 'auto', border: '1px solid #c6e5f4', background: '#fff', color: '#087fa8', borderRadius: 8, padding: '7px 12px', fontSize: 12, fontWeight: 800, cursor: 'pointer' }
+const clearBtn: React.CSSProperties = { border: '1px solid #c6e5f4', background: '#fff', color: '#7286bd', borderRadius: 8, padding: '7px 12px', fontSize: 12, fontWeight: 800, cursor: 'pointer' }
+const filterInputStyle: React.CSSProperties = { width: '100%', border: '1px solid #bfe1f3', borderRadius: 6, padding: '4px 6px', fontSize: 11, background: '#f7fcff', color: '#0d1b38', outline: 'none' }
+const pdfBtnStyle: React.CSSProperties = { fontSize: 10.5, fontWeight: 700, padding: '4px 9px', borderRadius: 6, border: '1px solid #d3eaf6', background: '#f7fcff', color: '#a0b0d0', cursor: 'default', whiteSpace: 'nowrap' }
+const mselBtn: React.CSSProperties = { border: '1px solid #bfe1f3', borderRadius: 6, padding: '4px 8px', fontSize: 11, background: '#f7fcff', color: '#0d1b38', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5, width: '100%', minWidth: 90, justifyContent: 'space-between' }
+const mselPanel: React.CSSProperties = { position: 'absolute', top: 'calc(100% + 4px)', left: 0, background: '#fff', border: '1px solid #b7dcf0', borderRadius: 8, boxShadow: '0 6px 24px rgba(10,22,40,0.14)', zIndex: 50, maxHeight: 260, overflowY: 'auto', minWidth: 220, padding: 6 }
+const mselSearch: React.CSSProperties = { width: '100%', border: '1px solid #d3eaf6', borderRadius: 6, padding: '5px 8px', fontSize: 11.5, color: '#0d1b38', background: '#f7fcff', outline: 'none', marginBottom: 6 }
+const mselActions: React.CSSProperties = { display: 'flex', justifyContent: 'space-between', padding: '2px 6px 6px', borderBottom: '1px solid #d3eaf6', marginBottom: 4, fontSize: 10.5, color: '#19a8e6', fontWeight: 700, cursor: 'pointer' }
+const mselOption: React.CSSProperties = { display: 'flex', alignItems: 'center', gap: 6, padding: '4px 6px', fontSize: 12, cursor: 'pointer', borderRadius: 5, color: '#3d5278' }
