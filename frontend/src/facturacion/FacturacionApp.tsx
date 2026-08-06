@@ -129,14 +129,14 @@ export function FacturacionApp({ session, onCambiarModulo }: { session: Session;
   }
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '296px 1fr', minHeight: '100vh', background: '#eaf7fd', color: '#0d1b38', fontFamily: 'Inter, sans-serif' }}>
+    <div style={{ display: 'grid', gridTemplateColumns: '280px 1fr', minHeight: '100vh', background: '#eaf7fd', color: '#0d1b38', fontFamily: 'Inter, sans-serif', fontSize: 13 }}>
       <aside className="scroll-sin-barra" style={{ background: '#0c2a3d', display: 'flex', flexDirection: 'column', position: 'sticky', top: 0, height: '100vh', overflowY: 'auto', boxShadow: '2px 0 14px rgba(10,22,40,0.2)' }}>
-        <div style={{ padding: '24px 20px 18px', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+        <div style={{ padding: '20px 18px 16px', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <div style={{ width: 38, height: 38, background: '#14a9e1', borderRadius: 10, display: 'grid', placeItems: 'center', color: '#fff', fontWeight: 900 }}>F</div>
+            <div style={{ width: 34, height: 34, background: '#14a9e1', borderRadius: 9, display: 'grid', placeItems: 'center', color: '#fff', fontWeight: 800 }}>F</div>
             <div>
-              <div style={{ color: '#fff', fontSize: 18, fontWeight: 900 }}>Facturación</div>
-              <div style={{ color: 'rgba(255,255,255,.35)', fontSize: 11, fontWeight: 800, letterSpacing: 2, textTransform: 'uppercase', marginTop: 5 }}>ASAP Consulting</div>
+              <div style={{ color: '#fff', fontSize: 16, fontWeight: 800 }}>Facturación</div>
+              <div style={{ color: 'rgba(255,255,255,.35)', fontSize: 10, fontWeight: 700, letterSpacing: 1.6, textTransform: 'uppercase', marginTop: 4 }}>ASAP Consulting</div>
             </div>
           </div>
         </div>
@@ -162,14 +162,14 @@ export function FacturacionApp({ session, onCambiarModulo }: { session: Session;
       </aside>
 
       <section style={{ minWidth: 0 }}>
-        <header style={{ height: 66, background: '#fff', borderBottom: '1px solid #d3eaf6', padding: '0 32px', display: 'flex', alignItems: 'center', gap: 14, boxShadow: '0 1px 5px rgba(10,22,40,0.08)' }}>
-          <span style={{ fontSize: 23, fontWeight: 900 }}>Facturación</span>
-          <span style={{ color: '#7286bd', fontSize: 15 }}>· {empresaActiva === 'all' ? 'Todas las compañías' : empresaActiva}</span>
+        <header style={{ height: 58, background: '#fff', borderBottom: '1px solid #d3eaf6', padding: '0 28px', display: 'flex', alignItems: 'center', gap: 12, boxShadow: '0 1px 5px rgba(10,22,40,0.08)' }}>
+          <span style={{ fontSize: 20, fontWeight: 800 }}>Facturación</span>
+          <span style={{ color: '#7286bd', fontSize: 13 }}>· {empresaActiva === 'all' ? 'Todas las compañías' : empresaActiva}</span>
           <div style={{ flex: 1 }} />
           <span style={{ fontSize: 12, color: '#7a8fbb' }}>{session.user.email}</span>
         </header>
 
-        <main style={{ padding: '24px 32px 38px', maxWidth: 1120 }}>
+        <main style={{ padding: '22px 28px 36px', maxWidth: 1080 }}>
           {error && <div style={{ color: '#dc2626', marginBottom: 14, fontSize: 13 }}>⚠ {error}</div>}
           {loading ? <div style={emptyStyle}>Cargando facturación...</div> : data.length === 0 ? <div style={emptyStyle}>Sin datos aún. Cargá el Excel para empezar.</div> : vista === 'dashboard' ? (
             <PanelVentas
@@ -257,9 +257,9 @@ function PanelVentas(props: {
         {props.modo === 'cc' && <select value={props.filtroCc} onChange={e => props.setFiltroCc(e.target.value)} style={selectStyle}><option value="">Elegí uno o más CC</option>{props.centrosCosto.map(c => <option key={c}>{c}</option>)}</select>}
       </div>
 
-      <div style={{ color: '#7286bd', fontSize: 14 }}>▦ Análisis hasta <strong>{ultimoMes ? mesLabel(ultimoMes) : 'el último período cargado'}</strong> — se excluye el mes en curso por estar incompleto.</div>
+      <div style={{ color: '#7286bd', fontSize: 13 }}>▦ Análisis hasta <strong>{ultimoMes ? mesLabel(ultimoMes) : 'el último período cargado'}</strong> — se excluye el mes en curso por estar incompleto.</div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 16 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))', gap: 14 }}>
         {monedas.map(m => <Kpi key={m} label={`Facturación del ${props.anio === 'all' ? 'período' : props.anio} (${m})`} value={fmtMoney(props.rows.filter(r => monedaFila(r) === m).reduce((s, r) => s + r.total_neto, 0), m)} />)}
       </div>
 
@@ -272,7 +272,7 @@ function MonedaSection({ rows, moneda }: { rows: FacturacionLinea[]; moneda: str
   const clientes = groupSum(rows, nombreCliente)
   const total = clientes.reduce((s, [, v]) => s + v, 0)
   return (
-    <div style={{ display: 'grid', gap: 20, marginTop: 4 }}>
+      <div style={{ display: 'grid', gap: 16, marginTop: 2 }}>
       <LineCard rows={rows} moneda={moneda} />
       <ClientConcentration rows={rows} moneda={moneda} clientes={clientes} total={total} />
       <PieCard clientes={clientes} total={total} />
@@ -298,7 +298,7 @@ function LineCard({ rows, moneda }: { rows: FacturacionLinea[]; moneda: string }
   return (
     <Card>
       <CardTitle title="Evolución mensual" badge={moneda} />
-      <svg viewBox="0 0 940 285" style={{ width: '100%', height: 285, display: 'block' }}>
+      <svg viewBox="0 0 940 265" style={{ width: '100%', height: 265, display: 'block' }}>
         {[0, 1, 2, 3, 4].map(i => <line key={i} x1="60" x2="900" y1={230 - i * 45} y2={230 - i * 45} stroke="#d8ecf7" strokeDasharray="4 5" />)}
         {area && <path d={area} fill="#e5f6fd" />}
         {line && <path d={line} fill="none" stroke="#19a8e6" strokeWidth="3" />}
@@ -319,14 +319,14 @@ function ClientConcentration({ clientes, total, moneda }: { rows: FacturacionLin
   return (
     <Card noPadding>
       <CardHeader><CardTitle title="Concentración de clientes" badge={moneda} /><button style={excelBtn} onClick={() => exportCsv(`concentracion-clientes-${moneda}.csv`, [['#', 'Cliente', 'Facturación', '% del total'], ...clientes.map(([name, value], i) => [i + 1, name, value.toFixed(2), ((value / total) * 100).toFixed(1)])])}>↓ Excel</button></CardHeader>
-      <div style={{ padding: 16 }}>
+      <div style={{ padding: 14 }}>
         {main && <div style={notice}>🔎 <strong>{main[0]}</strong> es tu cliente principal: representa el <strong>{((main[1] / total) * 100).toFixed(1)}%</strong> de la facturación. Entre los 3 principales concentran el <strong>{((top3 / total) * 100).toFixed(1)}%</strong>.</div>}
       </div>
       <table style={tableStyle}>
         <thead><tr><Th>#</Th><Th>Cliente</Th><Th right>Facturación</Th><Th right>% del total</Th></tr></thead>
         <tbody>{top.map(([name, value], i) => <tr key={name}><Td>{i + 1}</Td><Td>{name}</Td><Td right>{fmtMoney(value, moneda)}</Td><Td right><strong>{((value / total) * 100).toFixed(1)}%</strong></Td></tr>)}</tbody>
       </table>
-      {clientes.length > 10 && <div style={{ textAlign: 'center', padding: 12, color: '#159fe2', fontWeight: 800, borderTop: '1px solid #d3eaf6' }}>▼ Ver los {clientes.length - 10} restantes</div>}
+      {clientes.length > 10 && <div style={{ textAlign: 'center', padding: 10, color: '#159fe2', fontWeight: 700, borderTop: '1px solid #d3eaf6' }}>▼ Ver los {clientes.length - 10} restantes</div>}
     </Card>
   )
 }
@@ -344,9 +344,9 @@ function PieCard({ clientes, total }: { clientes: [string, number][]; total: num
   })
   return (
     <Card noPadding>
-      <div style={{ padding: '18px 20px', fontSize: 17, fontWeight: 900, borderBottom: '1px solid #d3eaf6' }}>Distribución</div>
-      <div style={{ display: 'grid', gridTemplateColumns: '230px 1fr', gap: 26, alignItems: 'center', padding: 24 }}>
-        <svg viewBox="0 0 220 220" style={{ width: 220 }}>{segs.map(s => <path key={s.name} d={s.d} fill={s.color} />)}</svg>
+      <div style={{ padding: '14px 18px', fontSize: 15, fontWeight: 800, borderBottom: '1px solid #d3eaf6' }}>Distribución</div>
+      <div style={{ display: 'grid', gridTemplateColumns: '205px 1fr', gap: 22, alignItems: 'center', padding: 20 }}>
+        <svg viewBox="0 0 220 220" style={{ width: 200 }}>{segs.map(s => <path key={s.name} d={s.d} fill={s.color} />)}</svg>
         <div style={{ display: 'grid', gap: 8 }}>{segs.map(s => <div key={s.name} style={{ display: 'grid', gridTemplateColumns: '14px 1fr auto', gap: 8, alignItems: 'center' }}><span style={{ width: 12, height: 12, borderRadius: 3, background: s.color }} /><span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: '#243d71' }}>{s.name}</span><strong>{((s.value / total) * 100).toFixed(1)}%</strong></div>)}</div>
       </div>
     </Card>
@@ -360,7 +360,7 @@ function ClientMonthTable({ rows, moneda }: { rows: FacturacionLinea[]; moneda: 
   const sumFor = (client: string, month: string, cc?: string) => rows.filter(r => nombreCliente(r) === client && periodoKey(r) === month && (!cc || nombreCc(r) === cc)).reduce((s, r) => s + r.total_neto, 0)
   return (
     <Card noPadding>
-      <CardHeader><CardTitle title="Clientes x mes" badge={moneda} /><span style={{ color: '#7286bd' }}>clic en un cliente para ver el desglose por CC</span><button style={excelBtn} onClick={() => exportCsv(`clientes-por-mes-${moneda}.csv`, [['Cliente', ...months.map(mesCorto)], ...clients.map(([client]) => [client, ...months.map(m => sumFor(client, m).toFixed(2))])])}>↓ Excel</button></CardHeader>
+      <CardHeader><CardTitle title="Clientes x mes" badge={moneda} /><span style={{ color: '#7286bd', fontSize: 12 }}>clic en un cliente para ver el desglose por CC</span><button style={excelBtn} onClick={() => exportCsv(`clientes-por-mes-${moneda}.csv`, [['Cliente', ...months.map(mesCorto)], ...clients.map(([client]) => [client, ...months.map(m => sumFor(client, m).toFixed(2))])])}>↓ Excel</button></CardHeader>
       <div style={{ overflowX: 'auto' }}>
         <table style={{ ...tableStyle, minWidth: 680 }}>
           <thead><tr><Th>Cliente</Th>{months.map(m => <Th key={m} right>{mesCorto(m)}</Th>)}</tr></thead>
@@ -401,43 +401,43 @@ function Detalle({ filas, moneda, total }: { filas: FacturacionLinea[]; moneda: 
 }
 
 function Segmented({ children }: { children: React.ReactNode }) {
-  return <div style={{ display: 'inline-flex', border: '1px solid #c6e5f4', borderRadius: 9, overflow: 'hidden', background: '#f7fcff' }}>{children}</div>
+  return <div style={{ display: 'inline-flex', border: '1px solid #c6e5f4', borderRadius: 8, overflow: 'hidden', background: '#f7fcff' }}>{children}</div>
 }
 
 function Seg({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
-  return <button onClick={onClick} style={{ border: 0, borderRight: '1px solid #c6e5f4', background: active ? '#18a9e5' : 'transparent', color: active ? '#fff' : '#243d71', padding: '11px 18px', fontSize: 14, fontWeight: 900, cursor: 'pointer', minWidth: 78 }}>{children}</button>
+  return <button onClick={onClick} style={{ border: 0, borderRight: '1px solid #c6e5f4', background: active ? '#18a9e5' : 'transparent', color: active ? '#fff' : '#243d71', padding: '9px 14px', fontSize: 13, fontWeight: 700, cursor: 'pointer', minWidth: 72 }}>{children}</button>
 }
 
 function Card({ children, noPadding = false }: { children: React.ReactNode; noPadding?: boolean }) {
-  return <section style={{ background: '#fff', border: '1px solid #cbe5f3', borderRadius: 10, padding: noPadding ? 0 : 20, boxShadow: '0 2px 6px rgba(14,74,103,.12)', overflow: 'hidden' }}>{children}</section>
+  return <section style={{ background: '#fff', border: '1px solid #cbe5f3', borderRadius: 8, padding: noPadding ? 0 : 16, boxShadow: '0 1px 4px rgba(14,74,103,.1)', overflow: 'hidden' }}>{children}</section>
 }
 
 function CardHeader({ children }: { children: React.ReactNode }) {
-  return <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '16px 20px', borderBottom: '1px solid #d3eaf6', background: '#f6fcff' }}>{children}</div>
+  return <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 16px', borderBottom: '1px solid #d3eaf6', background: '#f6fcff' }}>{children}</div>
 }
 
 function CardTitle({ title, badge }: { title: string; badge?: string }) {
-  return <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 17, fontWeight: 900 }}>{title}{badge && <span style={{ background: '#e8f8ff', color: '#087fa8', border: '1px solid #c6e5f4', borderRadius: 999, padding: '3px 10px', fontSize: 11, fontWeight: 900 }}>{badge}</span>}</div>
+  return <div style={{ display: 'flex', alignItems: 'center', gap: 9, fontSize: 15, fontWeight: 800 }}>{title}{badge && <span style={{ background: '#e8f8ff', color: '#087fa8', border: '1px solid #c6e5f4', borderRadius: 999, padding: '2px 8px', fontSize: 10, fontWeight: 800 }}>{badge}</span>}</div>
 }
 
 function Kpi({ label, value }: { label: string; value: string }) {
-  return <div style={{ background: '#fff', border: '1px solid #cbe5f3', borderTop: '4px solid #19a8e6', borderRadius: 10, padding: '16px 20px', boxShadow: '0 2px 6px rgba(14,74,103,.12)' }}><div style={{ color: '#7286bd', fontSize: 12, fontWeight: 900, textTransform: 'uppercase', letterSpacing: 1.2 }}>{label}</div><div style={{ color: '#087fa8', marginTop: 8, fontFamily: 'monospace', fontSize: 20, fontWeight: 900 }}>{value}</div></div>
+  return <div style={{ background: '#fff', border: '1px solid #cbe5f3', borderTop: '3px solid #19a8e6', borderRadius: 8, padding: '13px 16px', boxShadow: '0 1px 4px rgba(14,74,103,.1)' }}><div style={{ color: '#7286bd', fontSize: 10.5, fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1 }}>{label}</div><div style={{ color: '#087fa8', marginTop: 7, fontFamily: 'monospace', fontSize: 17, fontWeight: 800 }}>{value}</div></div>
 }
 
 function SideTitle({ children }: { children: React.ReactNode }) {
-  return <div style={{ color: 'rgba(255,255,255,.36)', fontSize: 11, fontWeight: 900, letterSpacing: 1.8, textTransform: 'uppercase', padding: '18px 20px 8px' }}>{children}</div>
+  return <div style={{ color: 'rgba(255,255,255,.36)', fontSize: 10, fontWeight: 800, letterSpacing: 1.6, textTransform: 'uppercase', padding: '16px 18px 7px' }}>{children}</div>
 }
 
 function Insight({ children, color, bg }: { children: React.ReactNode; color: string; bg: string }) {
-  return <div style={{ background: bg, border: `1px solid ${color}`, color: '#0b4b5d', borderRadius: 8, padding: '12px 14px', fontSize: 15, lineHeight: 1.5 }}>{children}</div>
+  return <div style={{ background: bg, border: `1px solid ${color}`, color: '#0b4b5d', borderRadius: 8, padding: '10px 12px', fontSize: 13, lineHeight: 1.45 }}>{children}</div>
 }
 
 function Th({ children, right = false }: { children: React.ReactNode; right?: boolean }) {
-  return <th style={{ padding: '10px 12px', color: '#7286bd', fontSize: 12, textTransform: 'uppercase', letterSpacing: 1, textAlign: right ? 'right' : 'left', borderBottom: '1px solid #d3eaf6' }}>{children}</th>
+  return <th style={{ padding: '8px 10px', color: '#7286bd', fontSize: 10.5, textTransform: 'uppercase', letterSpacing: 0.8, textAlign: right ? 'right' : 'left', borderBottom: '1px solid #d3eaf6' }}>{children}</th>
 }
 
 function Td({ children, right = false, style = {} }: { children: React.ReactNode; right?: boolean; style?: React.CSSProperties }) {
-  return <td style={{ padding: '9px 12px', color: '#243d71', fontSize: 14, textAlign: right ? 'right' : 'left', borderBottom: '1px solid #d3eaf6', ...style }}>{children}</td>
+  return <td style={{ padding: '8px 10px', color: '#243d71', fontSize: 13, textAlign: right ? 'right' : 'left', borderBottom: '1px solid #d3eaf6', ...style }}>{children}</td>
 }
 
 function pieSlice(cx: number, cy: number, r: number, start: number, end: number) {
@@ -451,14 +451,14 @@ function pieSlice(cx: number, cy: number, r: number, start: number, end: number)
 }
 
 const navStyle = (active: boolean): React.CSSProperties => ({
-  display: 'flex', alignItems: 'center', gap: 10, width: 'calc(100% - 28px)', margin: '0 14px 7px', padding: '11px 14px', borderRadius: 9, border: 'none', background: active ? '#18a9e5' : 'transparent', color: active ? '#fff' : 'rgba(255,255,255,.66)', cursor: 'pointer', fontSize: 15, fontWeight: active ? 900 : 700, textAlign: 'left'
+  display: 'flex', alignItems: 'center', gap: 9, width: 'calc(100% - 24px)', margin: '0 12px 6px', padding: '9px 12px', borderRadius: 8, border: 'none', background: active ? '#18a9e5' : 'transparent', color: active ? '#fff' : 'rgba(255,255,255,.66)', cursor: 'pointer', fontSize: 13, fontWeight: active ? 800 : 600, textAlign: 'left'
 })
 
 const sideButton: React.CSSProperties = { background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer', fontSize: 11, color: 'rgba(255,255,255,0.55)', padding: '8px 10px', borderRadius: 6, fontWeight: 800 }
 const dot: React.CSSProperties = { width: 9, height: 9, borderRadius: '50%', background: '#7dd3fc' }
-const selectStyle: React.CSSProperties = { width: 288, background: '#f7fcff', border: '1px solid #bfe1f3', borderRadius: 8, color: '#0d1b38', fontSize: 14, padding: '10px 12px', outline: 'none' }
-const inputStyle: React.CSSProperties = { width: 360, background: '#f7fcff', border: '1px solid #bfe1f3', borderRadius: 8, color: '#0d1b38', fontSize: 14, padding: '10px 12px', outline: 'none' }
+const selectStyle: React.CSSProperties = { width: 270, background: '#f7fcff', border: '1px solid #bfe1f3', borderRadius: 8, color: '#0d1b38', fontSize: 13, padding: '8px 10px', outline: 'none' }
+const inputStyle: React.CSSProperties = { width: 340, background: '#f7fcff', border: '1px solid #bfe1f3', borderRadius: 8, color: '#0d1b38', fontSize: 13, padding: '8px 10px', outline: 'none' }
 const emptyStyle: React.CSSProperties = { background: '#fff', border: '1.5px dashed #b7dcf0', borderRadius: 10, padding: '78px 20px', textAlign: 'center', color: '#7286bd' }
 const tableStyle: React.CSSProperties = { width: '100%', borderCollapse: 'collapse' }
-const notice: React.CSSProperties = { border: '1px solid #c6e5f4', background: '#f5fcff', borderRadius: 8, padding: 14, color: '#243d71', lineHeight: 1.45 }
-const excelBtn: React.CSSProperties = { marginLeft: 'auto', border: '1px solid #c6e5f4', background: '#fff', color: '#087fa8', borderRadius: 8, padding: '9px 14px', fontWeight: 900, cursor: 'pointer' }
+const notice: React.CSSProperties = { border: '1px solid #c6e5f4', background: '#f5fcff', borderRadius: 8, padding: 12, color: '#243d71', lineHeight: 1.4, fontSize: 13 }
+const excelBtn: React.CSSProperties = { marginLeft: 'auto', border: '1px solid #c6e5f4', background: '#fff', color: '#087fa8', borderRadius: 8, padding: '7px 12px', fontSize: 12, fontWeight: 800, cursor: 'pointer' }

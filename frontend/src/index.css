@@ -22,7 +22,7 @@ body,
 }
 
 body {
-  overflow: hidden;
+  overflow: auto;
 }
 
 #root {
