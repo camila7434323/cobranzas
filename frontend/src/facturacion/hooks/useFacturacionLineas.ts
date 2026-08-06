@@ -35,17 +35,26 @@ export function useFacturacionLineas() {
   const cargar = useCallback(async () => {
     setLoading(true)
     setError(null)
-    const { data: result, error: dbError } = await supabase
-      .from('facturacion_lineas')
-      .select('*')
-      .order('fecha_factura', { ascending: false })
+    const PAGE_SIZE = 1000
+    const todas: FacturacionLinea[] = []
+    let desde = 0
+    while (true) {
+      const { data: result, error: dbError } = await supabase
+        .from('facturacion_lineas')
+        .select('*')
+        .order('fecha_factura', { ascending: false })
+        .range(desde, desde + PAGE_SIZE - 1)
 
-    if (dbError) {
-      setError(dbError.message)
-      setLoading(false)
-      return
+      if (dbError) {
+        setError(dbError.message)
+        setLoading(false)
+        return
+      }
+      todas.push(...(result || []))
+      if (!result || result.length < PAGE_SIZE) break
+      desde += PAGE_SIZE
     }
-    setData(result || [])
+    setData(todas)
     setLoading(false)
   }, [])
 

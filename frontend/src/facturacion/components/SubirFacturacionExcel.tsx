@@ -40,9 +40,26 @@ function buildHeaderIndex(headerRow: any[]): Record<string, number> {
 }
 
 function toIsoDate(v: any): string | null {
-  if (!v) return null
+  if (v == null || v === '') return null
   if (v instanceof Date) {
     return `${v.getFullYear()}-${String(v.getMonth() + 1).padStart(2, '0')}-${String(v.getDate()).padStart(2, '0')}`
+  }
+  if (typeof v === 'number') {
+    const d = XLSX.SSF.parse_date_code(v)
+    if (!d) return null
+    return `${d.y}-${String(d.m).padStart(2, '0')}-${String(d.d).padStart(2, '0')}`
+  }
+  const s = v.toString().trim()
+  const dmy = s.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{2,4})$/)
+  if (dmy) {
+    const [, dd, mm, yy] = dmy
+    const year = yy.length === 2 ? Number(yy) + 2000 : Number(yy)
+    return `${year}-${mm.padStart(2, '0')}-${dd.padStart(2, '0')}`
+  }
+  const ymd = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/)
+  if (ymd) {
+    const [, yy, mm, dd] = ymd
+    return `${yy}-${mm.padStart(2, '0')}-${dd.padStart(2, '0')}`
   }
   return null
 }
