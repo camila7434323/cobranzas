@@ -53,9 +53,10 @@ function texto(v: any): string {
 
 interface Props {
   insertarLote: (filas: Omit<FacturacionLinea, 'id' | 'creado_el'>[]) => Promise<void>
+  compact?: boolean
 }
 
-export function SubirFacturacionExcel({ insertarLote }: Props) {
+export function SubirFacturacionExcel({ insertarLote, compact = false }: Props) {
   const inputRef = useRef<HTMLInputElement | null>(null)
   const [cargando, setCargando] = useState(false)
   const [error, setError] = useState('')
@@ -122,6 +123,26 @@ export function SubirFacturacionExcel({ insertarLote }: Props) {
       setCargando(false)
       if (inputRef.current) inputRef.current.value = ''
     }
+  }
+
+  if (compact) {
+    return (
+      <div style={{ display: 'grid', gap: '8px' }}>
+        <label style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px', background: cargando ? '#7a8fbb' : '#0ea5e9', color: '#fff', padding: '11px 14px', borderRadius: '8px', fontSize: '13px', fontWeight: 800, cursor: cargando ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap' }}>
+          {cargando ? 'Procesando...' : '↓ Cargar Excel'}
+          <input
+            ref={inputRef}
+            type="file"
+            accept=".xls,.xlsx"
+            onChange={e => { const f = e.target.files?.[0]; if (f) procesar(f) }}
+            disabled={cargando}
+            style={{ display: 'none' }}
+          />
+        </label>
+        {error && <div style={{ color: '#fecaca', fontSize: '11px', lineHeight: 1.35 }}>{error}</div>}
+        {exito && <div style={{ color: '#34d399', fontSize: '11px', lineHeight: 1.35 }}>{exito}</div>}
+      </div>
+    )
   }
 
   return (
