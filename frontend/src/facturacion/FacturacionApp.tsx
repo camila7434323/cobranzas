@@ -642,7 +642,7 @@ function Insight({ children, color, bg }: { children: React.ReactNode; color: st
   return <div style={{ background: bg, border: `1px solid ${color}`, color: '#0b4b5d', borderRadius: 8, padding: '10px 12px', fontSize: 13, lineHeight: 1.45 }}>{children}</div>
 }
 
-function Th({ children, right = false, onClick }: { children: React.ReactNode; right?: boolean; onClick?: () => void }) {
+function Th({ children, right = false, onClick }: { children?: React.ReactNode; right?: boolean; onClick?: () => void }) {
   return <th onClick={onClick} style={{ padding: '8px 10px', color: '#7286bd', fontSize: 10.5, textTransform: 'uppercase', letterSpacing: 0.8, textAlign: right ? 'right' : 'left', borderBottom: '1px solid #d3eaf6', cursor: onClick ? 'pointer' : 'default', userSelect: 'none' }}>{children}</th>
 }
 
