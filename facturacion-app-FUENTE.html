@@ -1,0 +1,1355 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Facturación · ASAP Consulting</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --navy-900: #0c2436; --navy-800: #123449; --navy-700: #155166; --navy-600: #0e7490;
+  --navy-500: #0ea5e9; --navy-400: #38bdf8; --navy-300: #7dd3fc; --navy-200: #bae6fd;
+  --navy-100: #e0f2fe; --navy-50:  #f0f9ff;
+  --bg: #eff8fd; --surface: #ffffff; --surface2: #f5fbfe; --surface3: #eaf6fd;
+  --border: #d8ecf7; --border2: #b7dcf0; --text: #0d1b38; --text2: #3d5278;
+  --muted: #7a8fbb; --muted2: #a0b0d0;
+  --green: #059669; --green-dim: #d1fae5; --green-text: #065f46;
+  --amber: #d97706; --amber-dim: #fef3c7; --amber-text: #92400e;
+  --crit: #7c3aed; --crit-dim: #ede9fe; --crit-text: #4c1d95;
+  --font: 'Inter', sans-serif; --mono: 'JetBrains Mono', monospace;
+  --radius: 10px;
+  --shadow: 0 1px 3px rgba(10,22,40,0.08), 0 1px 2px rgba(10,22,40,0.05);
+  --shadow-md: 0 6px 24px rgba(10,22,40,0.14);
+}
+
+html, body { height: 100%; background: var(--bg); color: var(--text); font-family: var(--font); font-size: 14px; }
+.shell { display: grid; grid-template-columns: 240px 1fr; grid-template-rows: auto 1fr; min-height: 100vh; }
+
+/* Sidebar */
+.sidebar { grid-row: 1/3; background: var(--navy-900); display: flex; flex-direction: column; box-shadow: 2px 0 12px rgba(10,22,40,0.18); }
+.sidebar-logo { padding: 22px 20px 16px; border-bottom: 1px solid rgba(255,255,255,0.07); }
+.logo-mark { display: flex; align-items: center; gap: 10px; margin-bottom: 3px; }
+.logo-icon { width: 32px; height: 32px; background: var(--navy-500); border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.logo-icon svg { width: 16px; height: 16px; }
+.logo-name { font-size: 15px; font-weight: 600; color: #fff; letter-spacing: -0.2px; }
+.logo-sub { font-size: 10px; color: rgba(255,255,255,0.3); text-transform: uppercase; letter-spacing: 1px; margin-left: 42px; }
+.sidebar-label { font-size: 9px; font-weight: 600; letter-spacing: 1.4px; text-transform: uppercase; color: rgba(255,255,255,0.28); padding: 14px 20px 6px; }
+.nav-item { display: flex; align-items: center; gap: 9px; padding: 9px 12px; border-radius: 9px; cursor: pointer; font-size: 13px; font-weight: 500; color: rgba(255,255,255,0.55); transition: all 0.15s; margin: 0 14px 5px; user-select: none; }
+.nav-item:hover { background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.9); }
+.nav-item.active { background: var(--navy-500); color: #fff; }
+.nav-flag { width: 16px; height: 12px; border-radius: 2px; flex-shrink: 0; object-fit: cover; }
+.nav-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; background: var(--navy-300); }
+.nav-divider { height: 1px; background: rgba(255,255,255,0.08); margin: 8px 20px; }
+.sidebar-foot-actions { margin-top: auto; padding: 14px; border-top: 1px solid rgba(255,255,255,0.07); }
+.upload-btn { width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; background: var(--navy-500); color: #fff; border: none; cursor: pointer; font-family: var(--font); font-size: 12.5px; font-weight: 600; padding: 10px 12px; border-radius: 8px; }
+.upload-btn:hover { background: var(--navy-400); }
+.upload-btn svg { width: 14px; height: 14px; flex-shrink: 0; }
+.file-status { font-size: 10.5px; color: rgba(255,255,255,0.35); margin-top: 9px; display: flex; align-items: center; gap: 6px; line-height: 1.4; }
+.file-status .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--muted2); flex-shrink: 0; }
+.file-status.ok .dot { background: var(--green); }
+
+/* Topbar */
+.topbar { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 26px; display: flex; align-items: center; gap: 14px; height: 54px; box-shadow: var(--shadow); }
+.topbar-title { font-size: 17px; font-weight: 700; color: var(--text); letter-spacing: -0.3px; }
+.topbar-sub { font-size: 12px; color: var(--muted); margin-left: 10px; }
+.topbar-spacer { flex: 1; }
+.search-wrap { position: relative; }
+.search-wrap svg { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); width: 14px; height: 14px; color: var(--muted); pointer-events: none; }
+.search-input { background: var(--surface2); border: 1px solid var(--border); color: var(--text); font-family: var(--font); font-size: 13px; padding: 7px 12px 7px 32px; border-radius: 8px; width: 290px; outline: none; }
+.search-input:focus { border-color: var(--navy-400); box-shadow: 0 0 0 3px rgba(37,84,160,0.1); }
+.search-input::placeholder { color: var(--muted2); }
+
+.main { padding: 20px 26px 30px; overflow-y: auto; }
+
+.empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 90px 20px; background: var(--surface); border: 1.5px dashed var(--border2); border-radius: var(--radius); }
+.empty-state svg { width: 44px; height: 44px; color: var(--navy-300); margin-bottom: 16px; }
+.empty-state h2 { font-size: 16px; font-weight: 700; margin-bottom: 6px; }
+.empty-state p { font-size: 13px; color: var(--muted); max-width: 420px; margin-bottom: 20px; }
+.empty-state .upload-btn { width: auto; padding: 10px 20px; }
+
+/* KPIs */
+.kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px,1fr)); gap: 12px; margin-bottom: 16px; }
+.kpi-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; box-shadow: var(--shadow); position: relative; overflow: hidden; min-width: 0; }
+.kpi-card.k-navy  { border-top: 3px solid var(--navy-500); }
+.kpi-card.k-green { border-top: 3px solid var(--green); }
+.kpi-card.k-amber { border-top: 3px solid var(--amber); }
+.kpi-card.k-crit  { border-top: 3px solid var(--crit); }
+.kpi-label { font-size: 9.5px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 6px; }
+.kpi-value { font-size: 18px; font-weight: 700; letter-spacing: -0.3px; line-height: 1.15; font-family: var(--mono); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.k-navy .kpi-value{color:var(--navy-600)} .k-green .kpi-value{color:var(--green-text)} .k-amber .kpi-value{color:var(--amber-text)} .k-crit .kpi-value{color:var(--crit-text)}
+
+/* Multi-select */
+.msel { position: relative; display: inline-block; }
+.msel-btn { border: 1px solid var(--border); border-radius: 6px; padding: 4px 8px; font-size: 11px; background: var(--surface2); color: var(--text); font-family: var(--font); cursor: pointer; display: flex; align-items: center; gap: 5px; white-space: nowrap; width: 100%; justify-content: space-between; }
+.msel-btn:hover { border-color: var(--navy-300); }
+.msel-caret { font-size: 8px; color: var(--muted); }
+.msel-panel { background: var(--surface); border: 1px solid var(--border2); border-radius: 8px; box-shadow: var(--shadow-md); z-index: 999; max-height: 260px; overflow-y: auto; min-width: 220px; padding: 6px; }
+#msel-portal { position: fixed; top: 0; left: 0; width: 0; height: 0; z-index: 9999; }
+.msel-search { width: 100%; border: 1px solid var(--border); border-radius: 6px; padding: 5px 8px; font-size: 11.5px; font-family: var(--font); color: var(--text); background: var(--surface2); outline: none; margin-bottom: 6px; }
+.msel-search:focus { border-color: var(--navy-400); }
+.msel-actions { display: flex; justify-content: space-between; padding: 2px 6px 6px; border-bottom: 1px solid var(--border); margin-bottom: 4px; font-size: 10.5px; }
+.msel-actions span { cursor: pointer; color: var(--navy-500); font-weight: 600; }
+.msel-actions span:hover { text-decoration: underline; }
+.msel-option { display: flex; align-items: center; gap: 6px; padding: 4px 6px; font-size: 12px; cursor: pointer; border-radius: 5px; color: var(--text2); }
+.msel-option:hover { background: var(--surface2); }
+.msel-year { display: flex; align-items: center; justify-content: space-between; padding: 4px 6px 2px; margin-top: 4px; }
+.msel-year b { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.6px; }
+.msel-year span { font-size: 10px; color: var(--navy-500); cursor: pointer; font-weight: 600; }
+
+/* CC breakdown (tabla limpia, sin barras) */
+.cc-currency-label { font-size: 10.5px; font-weight: 700; color: var(--navy-600); text-transform: uppercase; letter-spacing: 0.7px; margin: 12px 16px 4px; }
+.cc-currency-label:first-child { margin-top: 4px; }
+.cc-table-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 16px; cursor: pointer; font-size: 12.5px; border-bottom: 1px solid var(--border); }
+.cc-table-row:last-child { border-bottom: none; }
+.cc-table-row:hover { background: var(--surface2); }
+.cc-table-row.active { background: var(--navy-50); }
+.cc-table-row .name { color: var(--text2); font-weight: 500; }
+.cc-table-row.active .name { color: var(--navy-600); font-weight: 700; }
+.cc-table-row .val { font-family: var(--mono); font-weight: 600; color: var(--text); }
+.cc-check { width: 14px; height: 14px; border-radius: 4px; border: 1.5px solid var(--border2); flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; margin-right: 8px; }
+.cc-table-row.active .cc-check { background: var(--navy-500); border-color: var(--navy-500); color: #fff; font-size: 10px; }
+
+/* Table */
+.table-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); margin-bottom: 16px; }
+.table-header { padding: 12px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; background: var(--surface2); }
+.table-title { font-size: 13px; font-weight: 600; color: var(--text); }
+.table-count { font-size: 12px; color: var(--muted); }
+.table-spacer { flex: 1; }
+.clear-btn { padding: 6px 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); font-size: 11.5px; font-weight: 600; color: var(--muted); cursor: pointer; font-family: var(--font); }
+.clear-btn:hover { border-color: var(--navy-300); color: var(--navy-600); }
+.export-btn { padding: 6px 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); font-size: 11.5px; font-weight: 600; color: var(--navy-600); cursor: pointer; font-family: var(--font); display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+.export-btn:hover { border-color: var(--navy-300); background: var(--navy-50); }
+.table-scroll { overflow-x: auto; overflow-y: visible; }
+table { width: 100%; border-collapse: collapse; min-width: 900px; }
+thead th { padding: 8px 12px; text-align: left; font-size: 9.5px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.8px; background: var(--surface2); border-bottom: 1px solid var(--border); white-space: nowrap; cursor: pointer; user-select: none; }
+thead th:hover { color: var(--navy-600); }
+thead th .sort-arrow { font-size: 9px; margin-left: 3px; opacity: 0.6; }
+.filter-row th { padding: 6px 10px; background: var(--surface); border-bottom: 1px solid var(--border); cursor: default; overflow: visible; }
+.filter-row input[type="text"] { width: 100%; border: 1px solid var(--border); border-radius: 6px; padding: 4px 6px; font-size: 11px; background: var(--surface2); color: var(--text); font-family: var(--font); outline: none; }
+tbody tr.data-row { border-bottom: 1px solid var(--border); cursor: pointer; transition: background 0.1s; }
+tbody tr.data-row:hover { background: var(--navy-50); }
+tbody tr.detail-row td { padding: 0; background: var(--surface2); border-bottom: 1px solid var(--border); }
+td { padding: 9px 12px; font-size: 12.5px; vertical-align: top; }
+.chev-cell { width: 20px; }
+.chev { width: 8px; height: 8px; transition: transform 0.15s; color: var(--muted); flex-shrink: 0; margin-top: 4px; }
+.data-row.open .chev { transform: rotate(90deg); }
+.cliente-name { font-weight: 600; color: var(--text); font-size: 12.5px; line-height: 1.3; }
+.cliente-cuit { display: inline-block; font-size: 10px; color: var(--muted); font-family: var(--mono); margin-top: 2px; background: var(--surface3); padding: 1px 6px; border-radius: 4px; }
+.comp-flag { width: 14px; height: 10px; border-radius: 2px; vertical-align: middle; margin-right: 5px; }
+.exec-tag { display: inline-block; font-size: 10.5px; font-weight: 600; padding: 2px 8px; border-radius: 20px; white-space: nowrap; border: 1px solid; }
+.periodo { font-size: 12px; font-weight: 600; color: var(--text2); white-space: nowrap; }
+.fecha { font-size: 12px; color: var(--text2); white-space: nowrap; }
+.nfactura { font-family: var(--mono); font-size: 11.5px; color: var(--text2); white-space: nowrap; }
+.ccdesc { font-size: 11.5px; color: var(--text2); }
+.monto-wrap { text-align: right; white-space: nowrap; }
+.monto { font-family: var(--mono); font-size: 13px; font-weight: 700; color: var(--text); display: flex; align-items: center; justify-content: flex-end; gap: 6px; }
+.cur-tag { font-family: var(--font); font-size: 9.5px; font-weight: 700; letter-spacing: 0.3px; padding: 2px 6px; border-radius: 4px; background: var(--amber-dim); color: var(--amber-text); border: 1px solid #fcd34d; }
+.monto-sub { font-size: 10.5px; color: var(--muted); font-family: var(--mono); margin-top: 2px; }
+.empty { text-align: center; padding: 40px; color: var(--muted); font-size: 13px; }
+.cc-notice { background: var(--amber-dim); border: 1px solid #fcd34d; color: var(--amber-text); font-size: 12px; padding: 9px 14px; border-radius: 8px; margin-bottom: 16px; line-height: 1.5; }
+.pdf-btn { font-size: 10.5px; font-weight: 600; padding: 4px 9px; border-radius: 6px; border: 1px solid; cursor: pointer; font-family: var(--font); white-space: nowrap; display: inline-flex; align-items: center; gap: 4px; }
+.pdf-btn.attached { background: var(--green-dim); color: var(--green-text); border-color: #6ee7b7; }
+.pdf-btn.attached:hover { background: #bbf7d0; }
+.pdf-btn.missing { background: var(--surface2); color: var(--muted); border-color: var(--border); }
+.pdf-btn.missing:hover { border-color: var(--navy-300); color: var(--navy-600); }
+
+.detail-grid { padding: 12px 16px 14px 34px; display: grid; grid-template-columns: repeat(auto-fit, minmax(180px,1fr)); gap: 8px 20px; }
+.detail-item { font-size: 11.5px; }
+.detail-item .dl { color: var(--muted); text-transform: uppercase; letter-spacing: 0.6px; font-size: 9.5px; font-weight: 600; margin-bottom: 2px; }
+.detail-item .dv { color: var(--text2); }
+
+/* Dashboard */
+.dash-controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 16px; }
+.seg { display: inline-flex; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+.seg-btn { padding: 7px 14px; font-size: 12px; font-weight: 600; color: var(--text2); background: transparent; border: none; cursor: pointer; font-family: var(--font); }
+.seg-btn.active { background: var(--navy-500); color: #fff; }
+.dash-select { border: 1px solid var(--border); border-radius: 8px; padding: 7px 12px; font-size: 12.5px; background: var(--surface); color: var(--text); font-family: var(--font); cursor: pointer; outline: none; min-width: 230px; }
+.dash-controls .msel-btn { min-width: 230px; padding: 7px 12px; }
+.chart-wrap { padding: 18px 16px 8px; }
+.currency-block-title { font-size: 13px; font-weight: 700; color: var(--navy-700); margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+.currency-block-title .tag { font-size: 10px; font-weight: 700; color: var(--navy-600); background: var(--navy-50); border: 1px solid var(--navy-100); padding: 2px 8px; border-radius: 20px; }
+.tag { font-size: 10px; font-weight: 700; color: var(--navy-600); background: var(--navy-50); border: 1px solid var(--navy-100); padding: 2px 8px; border-radius: 20px; }
+
+.pivot-table { width: 100%; border-collapse: collapse; min-width: max-content; }
+.pivot-table th { padding: 7px 10px; font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.6px; color: var(--muted); font-weight: 600; background: var(--surface2); border-bottom: 1px solid var(--border); white-space: nowrap; position: sticky; top: 0; }
+.pivot-table td { padding: 6px 10px; font-size: 11.5px; white-space: nowrap; border-bottom: 1px solid var(--border); color: var(--text2); }
+.pivot-table td:first-child, .pivot-table th:first-child { position: sticky; left: 0; background: var(--surface); z-index: 1; }
+.pivot-client-row { cursor: pointer; font-weight: 600; color: var(--text); }
+.pivot-client-row td:first-child { background: var(--surface); font-weight: 600; color: var(--text); }
+.pivot-client-row:hover td { background: var(--navy-50); }
+.pivot-client-row .chev { width: 7px; height: 7px; margin-right: 6px; transition: transform 0.15s; }
+.pivot-client-row.open .chev { transform: rotate(90deg); }
+.pivot-cc-row td { background: var(--surface2); font-size: 11px; color: var(--muted); font-weight: 400; }
+.pivot-cc-row td:first-child { background: var(--surface2); }
+.pivot-month-cell { text-align: right; font-family: var(--mono); }
+.pivot-total-col { text-align: right; font-family: var(--mono); font-weight: 700; background: var(--green-dim); color: var(--green-text); }
+.pivot-grand-row td { background: var(--navy-50); font-weight: 700; color: var(--navy-700); border-top: 2px solid var(--navy-200); }
+.pivot-grand-row td:first-child { background: var(--navy-50); }
+.pivot-grand-row .pivot-total-col { background: var(--green-dim); color: var(--green-text); }
+
+.insight-box { padding: 10px 16px 14px; display: flex; flex-direction: column; gap: 6px; }
+.insight-line { font-size: 12px; color: var(--text2); background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; line-height: 1.5; }
+.insight-line b { color: var(--text); }
+.insight-line.up { background: var(--green-dim); border-color: #6ee7b7; color: var(--green-text); }
+.insight-line.up b { color: var(--green-text); }
+.insight-line.down { background: var(--crit-dim); border-color: #c4b5fd; color: var(--crit-text); }
+.insight-line.down b { color: var(--crit-text); }
+.rank-cell { color: var(--muted); font-weight: 600; width: 24px; }
+.pct-cell { text-align: right; font-family: var(--mono); font-weight: 600; color: var(--navy-600); }
+.pct-cell.muted { color: var(--muted); font-weight: 500; }
+
+.dash-note { font-size: 11.5px; color: var(--muted); margin: -6px 0 14px; padding-left: 2px; }
+.selection-banner { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 12px; color: var(--text2); background: var(--navy-50); border: 1px solid var(--navy-100); border-radius: 8px; padding: 9px 12px; margin: -6px 0 14px; }
+.sel-chip { background: var(--surface); border: 1px solid var(--navy-200); color: var(--navy-700); font-weight: 600; font-size: 11.5px; padding: 3px 10px; border-radius: 20px; display: inline-flex; align-items: center; gap: 7px; }
+.chip-x { cursor: pointer; color: var(--muted); font-weight: 700; opacity: 0.7; line-height: 1; }
+.chip-x:hover { opacity: 1; color: var(--crit-text); }
+.clear-all-link { margin-left: auto; font-size: 11px; font-weight: 600; color: var(--muted); cursor: pointer; white-space: nowrap; }
+.clear-all-link:hover { color: var(--crit-text); text-decoration: underline; }
+.conc-layout { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 16px; }
+.pivot-toggle-row td { text-align: center; cursor: pointer; color: var(--navy-500); font-weight: 600; font-size: 11.5px; padding: 8px; background: var(--surface2); }
+.pivot-toggle-row td:hover { background: var(--navy-50); }
+.pie-wrap { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.pie-legend { display: flex; flex-direction: column; gap: 5px; flex: 1; min-width: 140px; }
+.pie-legend-item { font-size: 11.5px; color: var(--text2); display: flex; align-items: center; gap: 6px; }
+.pie-legend-item b { color: var(--text); margin-left: auto; font-family: var(--mono); }
+.pie-dot { width: 9px; height: 9px; border-radius: 3px; flex-shrink: 0; }
+
+::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+</style>
+</head>
+<body>
+
+<div class="shell">
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-mark">
+        <div class="logo-icon"><svg viewBox="0 0 20 20" fill="none"><path d="M4 5h12M4 10h8M4 15h5" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/></svg></div>
+        <span class="logo-name">Facturación</span>
+      </div>
+      <div class="logo-sub">ASAP Consulting</div>
+    </div>
+
+    <div class="sidebar-label">Vistas</div>
+    <div class="nav-item" id="nav-dashboard" onclick="setView('dashboard')">
+      <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><rect x="2" y="8" width="3" height="6" stroke="currentColor" stroke-width="1.3"/><rect x="6.5" y="4" width="3" height="10" stroke="currentColor" stroke-width="1.3"/><rect x="11" y="2" width="3" height="12" stroke="currentColor" stroke-width="1.3"/></svg>
+      Panel de Ventas
+    </div>
+
+    <div class="nav-divider" id="company-divider"></div>
+    <div class="sidebar-label" id="company-label">Compañías</div>
+    <div id="company-nav"></div>
+
+    <div class="sidebar-foot-actions">
+      <input type="file" id="file-input" accept=".xlsx,.xls" style="display:none" onchange="handleFile(this.files[0])">
+      <button class="upload-btn" onclick="document.getElementById('file-input').click()">
+        <svg viewBox="0 0 16 16" fill="none"><path d="M8 2v8m0 0l-3-3m3 3l3-3M2.5 12v1.5A1.5 1.5 0 004 15h8a1.5 1.5 0 001.5-1.5V12" stroke="#fff" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Cargar Excel
+      </button>
+      <div class="file-status" id="file-status"><span class="dot"></span><span>Sin archivo cargado</span></div>
+    </div>
+  </aside>
+
+  <header class="topbar">
+    <span class="topbar-title">Facturación</span>
+    <span class="topbar-sub" id="view-sub"></span>
+    <div class="topbar-spacer"></div>
+    <div class="search-wrap" id="search-wrap">
+      <svg viewBox="0 0 16 16" fill="none"><circle cx="7" cy="7" r="4.5" stroke="currentColor" stroke-width="1.3"/><path d="M11 11l2.5 2.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+      <input class="search-input" type="text" placeholder="Buscar por palabra clave (cliente, CUIT, ejecutivo, factura)..." id="search" oninput="render()">
+    </div>
+  </header>
+
+  <main class="main" id="main"></main>
+</div>
+
+<div id="msel-portal"></div>
+
+<script>
+let ROWS = [];
+let COMPANIES = [];
+let ACTIVE = 'all';
+let DASH_ACTIVE = 'all';
+let CURRENT_VIEW = 'detalle';
+let OPEN_ROWS = new Set();
+let PIVOT_OPEN = new Set();
+let FILTERS = { clientes: [], ejecutivos: [], ccs: [], periodos: [], nfactura: '' };
+let SORT = { col:null, dir:'asc' };
+let OPEN_MSEL = null;
+let MSEL_OPTIONS = {};
+let MSEL_SEARCH = {};
+let MSEL_META = {};
+let MSEL_STORE = {};
+let CC_BREAKDOWN_CURRENT = [];
+let PDF_STORE = new Map(); // key: número de factura normalizado -> File
+let DASH_STATE = { mode:'compania', values:[], year:null, months:[] };
+
+const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+const FLAGS = { 'ARS': 'https://flagcdn.com/16x12/ar.png', 'USD': 'https://flagcdn.com/16x12/us.png', 'EUR': 'https://flagcdn.com/16x12/es.png' };
+const EXEC_PALETTE = [
+  {bg:'#ddeafd',text:'#1d4170',bd:'#a8c4f5'}, {bg:'#d1fae5',text:'#065f46',bd:'#6ee7b7'},
+  {bg:'#fef3c7',text:'#92400e',bd:'#fcd34d'}, {bg:'#ede9fe',text:'#4c1d95',bd:'#c4b5fd'},
+  {bg:'#ccfbf1',text:'#0f766e',bd:'#5eead4'}, {bg:'#cffafe',text:'#155e75',bd:'#67e8f9'},
+  {bg:'#fce7f3',text:'#9d174d',bd:'#f9a8d4'}, {bg:'#e0e7ff',text:'#3730a3',bd:'#a5b4fc'},
+  {bg:'#dcfce7',text:'#166534',bd:'#86efac'}, {bg:'#ffedd5',text:'#9a3412',bd:'#fdba74'}
+];
+
+const HEADER_MAP = {
+  desde: ['desde'],
+  cliente: ['razón social cliente','razon social cliente'],
+  cuit: ['cuit'],
+  ejecutivo: ['ejecutivo comercial'],
+  legajo: ['legajo'],
+  colaborador: ['colaborador'],
+  otrosConceptos: ['otros conceptos/proyectos'],
+  svs: ['svs.','svs'],
+  oc: ['oc'],
+  leyenda: ['leyenda en factura'],
+  mon: ['mon.','mon'],
+  cant: ['cant.','cant'],
+  precioUnitario: ['precio unitario'],
+  totalNeto: ['total neto'],
+  estado: ['estado'],
+  fechaFactura: ['fecha factura'],
+  nFactura: ['n° factura','nº factura','n factura'],
+  condVenta: ['cond. venta','cond venta'],
+  art: ['art.','art'],
+  descArticulo: ['descripción articulo','descripcion articulo','descripción artículo'],
+  ccCodigo: ['cc código','cc codigo'],
+  ccDescripcion: ['cc descripción','cc descripcion']
+};
+
+function norm(s){ return (s||'').toString().trim().toLowerCase(); }
+function escapeHtml(s){ return (s==null?'':s.toString()).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+function truncate(s,n){ s=s||''; return s.length>n ? s.slice(0,n-1)+'…' : s; }
+
+function normalizeInvoiceKey(s){ return (s||'').toString().toUpperCase().replace(/[^A-Z0-9]/g,''); }
+
+function handlePdfFiles(fileList){
+  const files = Array.from(fileList);
+  const knownKeys = Array.from(new Set(ROWS.map(r=>normalizeInvoiceKey(r.nFactura)).filter(Boolean)));
+  let matched = 0;
+  files.forEach(f=>{
+    const baseName = f.name.replace(/\.pdf$/i,'');
+    const normFile = normalizeInvoiceKey(baseName);
+    let bestKey = null;
+    knownKeys.forEach(key=>{
+      if(key && (normFile.includes(key) || key.includes(normFile))){
+        if(!bestKey || key.length > bestKey.length) bestKey = key;
+      }
+    });
+    if(bestKey){ PDF_STORE.set(bestKey, f); matched++; }
+  });
+  updatePdfStatus();
+  render();
+}
+
+function updatePdfStatus(){
+  const el = document.getElementById('pdf-status');
+  if(!el) return;
+  const knownKeys = Array.from(new Set(ROWS.map(r=>normalizeInvoiceKey(r.nFactura)).filter(Boolean)));
+  const withPdf = knownKeys.filter(k=>PDF_STORE.has(k)).length;
+  el.className = 'file-status' + (withPdf>0 ? ' ok' : '');
+  el.innerHTML = knownKeys.length ? `<span class="dot"></span><span>${withPdf} / ${knownKeys.length} facturas con PDF</span>` : '<span class="dot"></span><span>Cargá el Excel primero</span>';
+}
+
+function attachPdfForRow(key){
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = 'application/pdf';
+  input.onchange = ()=>{ if(input.files[0]){ PDF_STORE.set(key, input.files[0]); updatePdfStatus(); render(); } };
+  input.click();
+}
+
+function openPdfForRow(key){
+  const f = PDF_STORE.get(key);
+  if(!f) return;
+  const url = URL.createObjectURL(f);
+  window.open(url, '_blank');
+}
+
+function execColor(name){
+  let hash = 0;
+  const str = name || '·';
+  for(let i=0;i<str.length;i++){ hash = str.charCodeAt(i) + ((hash<<5)-hash); }
+  return EXEC_PALETTE[Math.abs(hash) % EXEC_PALETTE.length];
+}
+
+function buildHeaderIndex(headerRow){
+  const idx = {};
+  headerRow.forEach((h,i)=>{
+    const n = norm(h);
+    for(const key in HEADER_MAP){ if(HEADER_MAP[key].includes(n)) idx[key] = i; }
+  });
+  return idx;
+}
+
+function handleFile(file){
+  if(!file) return;
+  const statusEl = document.getElementById('file-status');
+  statusEl.innerHTML = '<span class="dot"></span><span>Leyendo archivo...</span>';
+  const reader = new FileReader();
+  reader.onload = function(e){
+    try{
+      const data = new Uint8Array(e.target.result);
+      const wb = XLSX.read(data, {type:'array', cellDates:true});
+      const sheet = wb.Sheets[wb.SheetNames[0]];
+      const raw = XLSX.utils.sheet_to_json(sheet, {header:1, defval:null});
+      const idx = buildHeaderIndex(raw[0]);
+
+      if(idx.cliente === undefined || idx.totalNeto === undefined){
+        statusEl.innerHTML = '<span class="dot"></span><span>No se reconocieron las columnas esperadas</span>';
+        return;
+      }
+
+      const rows = [];
+      for(let i=1;i<raw.length;i++){
+        const r = raw[i];
+        if(!r || r[idx.cliente] == null) continue;
+        rows.push({
+          id: rows.length,
+          desde: (r[idx.desde]||'').toString().trim(),
+          cliente: (r[idx.cliente]||'').toString().trim(),
+          cuit: idx.cuit!==undefined ? (r[idx.cuit]||'').toString().trim() : '',
+          ejecutivo: idx.ejecutivo!==undefined ? (r[idx.ejecutivo]||'').toString().trim() : '',
+          legajo: idx.legajo!==undefined ? r[idx.legajo] : '',
+          colaborador: idx.colaborador!==undefined ? (r[idx.colaborador]||'').toString().trim() : '',
+          otrosConceptos: idx.otrosConceptos!==undefined ? (r[idx.otrosConceptos]||'').toString().trim() : '',
+          svs: idx.svs!==undefined ? r[idx.svs] : null,
+          oc: idx.oc!==undefined ? (r[idx.oc]!=null?r[idx.oc].toString().trim():'') : '',
+          leyenda: idx.leyenda!==undefined ? (r[idx.leyenda]||'').toString().trim() : '',
+          mon: idx.mon!==undefined ? (r[idx.mon]||'').toString().trim() : '',
+          cant: idx.cant!==undefined ? Number(r[idx.cant])||0 : 0,
+          precioUnitario: idx.precioUnitario!==undefined ? Number(r[idx.precioUnitario])||0 : 0,
+          totalNeto: Number(r[idx.totalNeto])||0,
+          fechaFactura: idx.fechaFactura!==undefined ? r[idx.fechaFactura] : null,
+          nFactura: idx.nFactura!==undefined ? (r[idx.nFactura]||'').toString().trim() : '',
+          condVenta: idx.condVenta!==undefined ? (r[idx.condVenta]||'').toString().trim() : '',
+          art: idx.art!==undefined ? (r[idx.art]!=null?r[idx.art].toString().trim():'') : '',
+          descArticulo: idx.descArticulo!==undefined ? (r[idx.descArticulo]||'').toString().trim() : '',
+          ccDescripcion: idx.ccDescripcion!==undefined ? (r[idx.ccDescripcion]||'').toString().trim() : ''
+        });
+      }
+
+      ROWS = rows;
+
+      const map = new Map();
+      rows.forEach(r=>{
+        if(!r.desde) return;
+        if(!map.has(r.desde)) map.set(r.desde, {});
+        const m = map.get(r.desde);
+        m[r.mon] = (m[r.mon]||0)+1;
+      });
+      COMPANIES = Array.from(map.entries()).map(([name, monCounts])=>{
+        const currency = Object.entries(monCounts).sort((a,b)=>b[1]-a[1])[0][0] || 'ARS';
+        return { name, currency, flag: FLAGS[currency] || '' };
+      }).sort((a,b)=>{
+        const pa = a.currency==='ARS' ? 0 : 1;
+        const pb = b.currency==='ARS' ? 0 : 1;
+        return pa!==pb ? pa-pb : a.name.localeCompare(b.name);
+      });
+
+      ACTIVE = 'all';
+      DASH_ACTIVE = 'all';
+      CURRENT_VIEW = 'detalle';
+      OPEN_ROWS = new Set();
+      PIVOT_OPEN = new Set();
+      FILTERS = { clientes:[], ejecutivos:[], ccs:[], periodos:[], nfactura:'' };
+      SORT = { col:null, dir:'asc' };
+      OPEN_MSEL = null;
+      DASH_STATE = { mode:'compania', values:[], year:null, months:[] };
+      PDF_STORE = new Map();
+      statusEl.className = 'file-status ok';
+      const cargaFecha = new Date().toLocaleString('es-AR', {day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit'});
+      statusEl.innerHTML = '<span class="dot"></span><span>' + escapeHtml(file.name) + ' · ' + rows.length + ' filas<br>Cargado ' + cargaFecha + '</span>';
+      renderSidebar();
+      render();
+    }catch(err){
+      statusEl.innerHTML = '<span class="dot"></span><span>Error al leer el archivo</span>';
+      console.error(err);
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function setActive(name){ ACTIVE = name; OPEN_ROWS = new Set(); PIVOT_OPEN = new Set(); FILTERS = { clientes:[], ejecutivos:[], ccs:[], periodos:[], nfactura:'' }; SORT = {col:null,dir:'asc'}; OPEN_MSEL=null; renderSidebar(); render(); }
+function setActiveByIndex(i){ setActive(COMPANIES[i].name); }
+function setDashActive(name){ DASH_ACTIVE = name; render(); }
+function setDashActiveByIndex(i){ setDashActive(COMPANIES[i].name); }
+function goToCompany(name){ CURRENT_VIEW = 'detalle'; setActive(name); }
+function goToCompanyByIndex(i){ goToCompany(COMPANIES[i].name); }
+function setView(view){ CURRENT_VIEW = view; OPEN_MSEL=null; renderSidebar(); render(); }
+function clearFilters(){ FILTERS = { clientes:[], ejecutivos:[], ccs:[], periodos:[], nfactura:'' }; OPEN_MSEL=null; const s=document.getElementById('search'); if(s) s.value=''; render(); }
+function setSort(col){ if(SORT.col===col){ SORT.dir = SORT.dir==='asc'?'desc':'asc'; } else { SORT.col=col; SORT.dir='asc'; } render(); }
+function setDashMode(m){ DASH_STATE.mode = m; render(); }
+function removeDashValue(i){ DASH_STATE.values.splice(i,1); render(); }
+function removeDashMonth(i){ DASH_STATE.months.splice(i,1); render(); }
+function clearDashValues(){ DASH_STATE.values = []; render(); }
+function clearDashMonths(){ DASH_STATE.months = []; render(); }
+
+/* Multi-select genérico */
+function toggleMsel(key){ const wasOpen = OPEN_MSEL===key; OPEN_MSEL = wasOpen ? null : key; MSEL_SEARCH[key] = ''; render(); }
+function toggleMselOption(key, i){
+  const opt = MSEL_OPTIONS[key][i];
+  const arr = MSEL_STORE[key];
+  const idx = arr.indexOf(opt.value);
+  if(idx>=0) arr.splice(idx,1); else arr.push(opt.value);
+  render();
+}
+function mselSelectAll(key){ const all = MSEL_OPTIONS[key].map(o=>o.value); MSEL_STORE[key].splice(0, MSEL_STORE[key].length, ...all); render(); }
+function mselClear(key){ MSEL_STORE[key].splice(0, MSEL_STORE[key].length); render(); }
+function setMselSearch(key, term){
+  MSEL_SEARCH[key] = term;
+  render();
+  const el = document.getElementById('msel-search-'+key);
+  if(el){ el.focus(); const len = el.value.length; el.setSelectionRange(len, len); }
+}
+function mselSelectYear(key, year){
+  const arr = MSEL_STORE[key];
+  MSEL_OPTIONS[key].filter(o=>o.value.startsWith(year+'-')).forEach(o=>{ if(!arr.includes(o.value)) arr.push(o.value); });
+  render();
+}
+function ccRowToggle(i){
+  const item = CC_BREAKDOWN_CURRENT[i];
+  const arr = FILTERS.ccs;
+  const idx = arr.indexOf(item.name);
+  if(idx>=0) arr.splice(idx,1); else arr.push(item.name);
+  render();
+}
+
+document.addEventListener('click', function(){
+  if(OPEN_MSEL){ OPEN_MSEL = null; render(); }
+});
+
+function renderMsel(key, items, labelAll, arrRef){
+  MSEL_OPTIONS[key] = items;
+  MSEL_STORE[key] = arrRef;
+  MSEL_META[key] = labelAll;
+  const selected = arrRef;
+  let label = labelAll;
+  if(selected.length === 1){
+    const found = items.find(o=>o.value===selected[0]);
+    label = truncate(found ? found.label : selected[0], 16);
+  } else if(selected.length > 1){
+    label = selected.length + ' seleccionados';
+  }
+  return `<div class="msel">
+    <button type="button" class="msel-btn" id="msel-btn-${key}" onclick="event.stopPropagation(); toggleMsel('${key}')"><span>${escapeHtml(label)}</span><span class="msel-caret">▾</span></button>
+  </div>`;
+}
+
+function buildMselPanelHtml(key){
+  const items = MSEL_OPTIONS[key] || [];
+  const selected = MSEL_STORE[key] || [];
+  const searchTerm = MSEL_SEARCH[key] || '';
+  const showSearch = items.length > 8;
+  const visibleItems = searchTerm ? items.filter(o=>norm(o.label).includes(norm(searchTerm))) : items;
+
+  const isPeriodo = (key === 'periodos');
+  let itemsHtml = '';
+  let lastYear = null;
+  visibleItems.forEach((opt)=>{
+    const i = items.indexOf(opt);
+    if(isPeriodo && !searchTerm){
+      const year = opt.value.split('-')[0];
+      if(year !== lastYear){
+        itemsHtml += `<div class="msel-year"><b>${year}</b><span onclick="event.stopPropagation();mselSelectYear('${key}','${year}')">Seleccionar año</span></div>`;
+        lastYear = year;
+      }
+    }
+    const checked = selected.includes(opt.value);
+    itemsHtml += `<label class="msel-option"><input type="checkbox" ${checked?'checked':''} onclick="event.stopPropagation()" onchange="toggleMselOption('${key}', ${i})"> <span>${escapeHtml(opt.label)}</span></label>`;
+  });
+  if(visibleItems.length === 0){
+    itemsHtml = '<div style="padding:6px;font-size:11px;color:var(--muted)">Sin resultados</div>';
+  }
+
+  return `<div class="msel-panel" onclick="event.stopPropagation()">
+      ${showSearch ? `<input type="text" class="msel-search" id="msel-search-${key}" placeholder="Buscar..." value="${escapeHtml(searchTerm)}" onclick="event.stopPropagation()" oninput="setMselSearch('${key}', this.value)">` : ''}
+      <div class="msel-actions"><span onclick="mselSelectAll('${key}')">Todos</span><span onclick="mselClear('${key}')">Limpiar</span></div>
+      ${itemsHtml || '<div style="padding:6px;font-size:11px;color:var(--muted)">Sin opciones</div>'}
+    </div>`;
+}
+
+function updateMselPortal(){
+  const portal = document.getElementById('msel-portal');
+  if(!portal) return;
+  portal.innerHTML = '';
+  if(!OPEN_MSEL) return;
+  const btn = document.getElementById('msel-btn-'+OPEN_MSEL);
+  if(!btn || !MSEL_OPTIONS[OPEN_MSEL]){ OPEN_MSEL = null; return; }
+  const rect = btn.getBoundingClientRect();
+  const wrapper = document.createElement('div');
+  wrapper.innerHTML = buildMselPanelHtml(OPEN_MSEL);
+  const panelEl = wrapper.firstElementChild;
+  panelEl.style.position = 'fixed';
+  let top = rect.bottom + 4;
+  let left = rect.left;
+  const maxTop = window.innerHeight - 300;
+  if(top > maxTop) top = Math.max(8, rect.top - 264);
+  const minWidth = Math.max(rect.width, 220);
+  if(left + minWidth > window.innerWidth - 8) left = window.innerWidth - minWidth - 8;
+  panelEl.style.top = top + 'px';
+  panelEl.style.left = left + 'px';
+  panelEl.style.minWidth = minWidth + 'px';
+  portal.appendChild(panelEl);
+}
+
+function renderSidebar(){
+  document.getElementById('nav-dashboard').className = 'nav-item' + (CURRENT_VIEW==='dashboard' ? ' active' : '');
+  const nav = document.getElementById('company-nav');
+  const label = document.getElementById('company-label');
+  const divider = document.getElementById('company-divider');
+  if(COMPANIES.length === 0){
+    nav.innerHTML = '';
+    if(label) label.style.display = 'none';
+    if(divider) divider.style.display = 'none';
+    return;
+  }
+  if(label) label.style.display = '';
+  if(divider) divider.style.display = '';
+  let html = `<div class="nav-item ${ACTIVE==='all'?'active':''}" onclick="goToCompany('all')"><span class="nav-dot"></span> Todas las compañías</div>`;
+  COMPANIES.forEach((c,i)=>{
+    html += `<div class="nav-item ${ACTIVE===c.name?'active':''}" onclick="goToCompanyByIndex(${i})">
+      ${c.flag?`<img class="nav-flag" src="${c.flag}">`:''} ${escapeHtml(c.name)}
+    </div>`;
+  });
+  nav.innerHTML = html;
+}
+
+let EXPORT_REGISTRY = {};
+function registerExport(key, payload){ EXPORT_REGISTRY[key] = payload; }
+function exportRegistered(key){ const p = EXPORT_REGISTRY[key]; if(p) exportSheetToExcel(p); }
+
+function xlsxCurrencyFormat(cur){
+  if(cur === 'USD') return '"US$" #,##0.00';
+  if(cur === 'EUR') return '"€" #,##0.00';
+  return '"$" #,##0.00';
+}
+
+function exportSheetToExcel(opts){
+  const { filename, sheetName, headers, rows, moneyCols = [], currency = 'ARS' } = opts;
+  const aoa = [headers, ...rows];
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+  const range = XLSX.utils.decode_range(ws['!ref']);
+  const border = { top:{style:'thin',color:{rgb:'D8ECF7'}}, bottom:{style:'thin',color:{rgb:'D8ECF7'}}, left:{style:'thin',color:{rgb:'D8ECF7'}}, right:{style:'thin',color:{rgb:'D8ECF7'}} };
+
+  for(let c=range.s.c;c<=range.e.c;c++){
+    const addr = XLSX.utils.encode_cell({r:0,c});
+    if(ws[addr]) ws[addr].s = { font:{bold:true,color:{rgb:'FFFFFF'},sz:11}, fill:{fgColor:{rgb:'0EA5E9'}}, alignment:{horizontal:'center',vertical:'center'}, border };
+  }
+
+  for(let r=1;r<=range.e.r;r++){
+    const rowCur = Array.isArray(currency) ? (currency[r-1] || 'ARS') : currency;
+    const isLastRow = (r === range.e.r) && rows.length > 1 && opts.boldLastRow;
+    for(let c=range.s.c;c<=range.e.c;c++){
+      const addr = XLSX.utils.encode_cell({r,c});
+      if(!ws[addr]) continue;
+      const isMoney = moneyCols.includes(c);
+      ws[addr].s = {
+        font: { sz:10.5, bold: !!isLastRow, color:{rgb: isLastRow ? '065F46' : '0D1B38'} },
+        fill: { fgColor: { rgb: isLastRow ? 'D1FAE5' : (r%2===0 ? 'F0F9FF' : 'FFFFFF') } },
+        border,
+        alignment: { horizontal: isMoney ? 'right':'left', vertical:'center' }
+      };
+      if(isMoney && typeof ws[addr].v === 'number'){
+        ws[addr].z = xlsxCurrencyFormat(rowCur);
+      }
+    }
+  }
+
+  ws['!cols'] = headers.map((h,i)=>({ wch: moneyCols.includes(i) ? 18 : Math.max(14, String(h).length+4) }));
+  ws['!rows'] = [{ hpx: 22 }];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, sheetName.slice(0,31));
+  XLSX.writeFile(wb, filename);
+}
+
+function fmtMoney(value, currency){
+  const locale = currency === 'USD' ? 'en-US' : currency === 'EUR' ? 'es-ES' : 'es-AR';
+  try{ return new Intl.NumberFormat(locale, {style:'currency', currency: currency || 'ARS', maximumFractionDigits: 2}).format(value); }
+  catch(e){ return (value||0).toLocaleString(locale, {maximumFractionDigits:2}); }
+}
+function fmtCompact(value, currency){
+  const locale = currency === 'USD' ? 'en-US' : currency === 'EUR' ? 'es-ES' : 'es-AR';
+  try{ return new Intl.NumberFormat(locale, {notation:'compact', maximumFractionDigits:1}).format(value); }
+  catch(e){ return Math.round(value); }
+}
+function fmtNum(value){ return (value||0).toLocaleString('es-AR', {maximumFractionDigits:2}); }
+function kpiCard(label, valueText, colorClass){
+  const len = (valueText||'').length;
+  const size = len>17 ? '12.5px' : len>13 ? '14.5px' : len>10 ? '16.5px' : '18px';
+  return `<div class="kpi-card ${colorClass}"><div class="kpi-label">${escapeHtml(label)}</div><div class="kpi-value" style="font-size:${size}">${escapeHtml(valueText)}</div></div>`;
+}
+function fmtFecha(v){
+  if(!v) return '—';
+  if(v instanceof Date) return v.toLocaleDateString('es-AR');
+  return v.toString();
+}
+function parseFechaFactura(v){
+  if(v instanceof Date) return v.getTime();
+  if(typeof v === 'string'){
+    const m = v.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    if(m) return new Date(+m[3], +m[2]-1, +m[1]).getTime();
+  }
+  return 0;
+}
+function fmtPeriodo(v){
+  if(!v) return '—';
+  if(v instanceof Date) return MESES[v.getMonth()] + ' ' + v.getFullYear();
+  return v.toString();
+}
+function naturalCompare(a,b){
+  const ax = (a||'').match(/\d+|\D+/g) || [];
+  const bx = (b||'').match(/\d+|\D+/g) || [];
+  const len = Math.max(ax.length, bx.length);
+  for(let i=0;i<len;i++){
+    const as = ax[i]||'', bs = bx[i]||'';
+    const an = parseInt(as,10), bn = parseInt(bs,10);
+    if(!isNaN(an) && !isNaN(bn)){ if(an!==bn) return an-bn; }
+    else { const c = as.localeCompare(bs); if(c!==0) return c; }
+  }
+  return 0;
+}
+function compareRows(a,b,col){
+  switch(col){
+    case 'cliente': return a.cliente.localeCompare(b.cliente);
+    case 'ejecutivo': return (a.ejecutivo||'').localeCompare(b.ejecutivo||'');
+    case 'periodo': return (a.svs instanceof Date?a.svs.getTime():0) - (b.svs instanceof Date?b.svs.getTime():0);
+    case 'fecha': return parseFechaFactura(a.fechaFactura) - parseFechaFactura(b.fechaFactura);
+    case 'nfactura': return naturalCompare(a.nFactura, b.nFactura);
+    case 'cc': return (a.ccDescripcion||'').localeCompare(b.ccDescripcion||'');
+    case 'total': return a.totalNeto - b.totalNeto;
+    default: return 0;
+  }
+}
+function sortArrow(col){ return SORT.col===col ? `<span class="sort-arrow">${SORT.dir==='asc'?'▲':'▼'}</span>` : ''; }
+function monthKey(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); }
+
+function getCompanyRows(company){ return company==='all' ? ROWS : ROWS.filter(r=>r.desde===company); }
+
+function niceCeil(v){
+  if(v<=0) return 1;
+  const exp = Math.floor(Math.log10(v));
+  const base = Math.pow(10,exp);
+  const norm = v/base;
+  let nice;
+  if(norm<=1) nice=1; else if(norm<=2) nice=2; else if(norm<=5) nice=5; else nice=10;
+  return nice*base;
+}
+
+function svgLineChart(data, currency){
+  const W=900, H=270, padL=56, padR=16, padT=20, padB=40;
+  const innerW=W-padL-padR, innerH=H-padT-padB;
+  const max = Math.max(1, ...data.map(d=>d.value));
+  const niceMax = niceCeil(max*1.05);
+  const steps = 4;
+  let gridLines='', gridLabels='';
+  for(let i=0;i<=steps;i++){
+    const v = niceMax/steps*i;
+    const y = padT+innerH-(v/niceMax*innerH);
+    gridLines += `<line x1="${padL}" y1="${y.toFixed(1)}" x2="${W-padR}" y2="${y.toFixed(1)}" stroke="var(--border)" stroke-width="1" ${i===0?'':'stroke-dasharray="3,3"'}/>`;
+    gridLabels += `<text x="${(padL-8).toFixed(1)}" y="${(y+3).toFixed(1)}" font-size="9.5" text-anchor="end" style="fill:var(--muted);font-family:var(--mono)">${fmtCompact(v,currency)}</text>`;
+  }
+  const n = data.length;
+  const stepX = n>1 ? innerW/(n-1) : 0;
+  const points = data.map((d,i)=>{
+    const x = padL + (n>1 ? i*stepX : innerW/2);
+    const y = padT+innerH-(d.value/niceMax*innerH);
+    return {x,y,d};
+  });
+  const pathD = points.map((p,i)=> (i===0?'M':'L')+p.x.toFixed(1)+','+p.y.toFixed(1)).join(' ');
+  const areaD = points.length ? pathD + ` L${points[points.length-1].x.toFixed(1)},${(padT+innerH).toFixed(1)} L${points[0].x.toFixed(1)},${(padT+innerH).toFixed(1)} Z` : '';
+  let dots='', vlabels='', xlabels='';
+  points.forEach(p=>{
+    dots += `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="3.5" style="fill:var(--navy-500);stroke:#fff;stroke-width:1.5"/>`;
+    vlabels += `<text x="${p.x.toFixed(1)}" y="${(p.y-10).toFixed(1)}" font-size="9.5" text-anchor="middle" style="fill:var(--text2);font-family:var(--mono);font-weight:600">${fmtCompact(p.d.value,currency)}</text>`;
+    xlabels += `<text x="${p.x.toFixed(1)}" y="${H-padB+16}" font-size="10" text-anchor="middle" style="fill:var(--muted)">${escapeHtml(p.d.label)}</text>`;
+  });
+  return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:230px;display:block">
+    ${gridLines}${gridLabels}
+    ${areaD?`<path d="${areaD}" style="fill:var(--navy-100);opacity:0.55"/>`:''}
+    ${pathD?`<path d="${pathD}" style="fill:none;stroke:var(--navy-500);stroke-width:2.4"/>`:''}
+    ${dots}${vlabels}${xlabels}
+  </svg>`;
+}
+
+function svgHBarChart(data, currency){
+  const W=900, rowH=26, gap=8, padL=190, padR=90, padT=6, padB=6;
+  const n = data.length || 1;
+  const H = padT+padB+n*(rowH+gap)-gap;
+  const innerW = W-padL-padR;
+  const max = Math.max(1, ...data.map(d=>d.value));
+  const niceMax = niceCeil(max*1.05);
+  const steps=4;
+  let gridLines='';
+  for(let i=0;i<=steps;i++){
+    const v = niceMax/steps*i;
+    const x = padL + (v/niceMax*innerW);
+    gridLines += `<line x1="${x.toFixed(1)}" y1="${padT}" x2="${x.toFixed(1)}" y2="${H-padB}" stroke="var(--border)" stroke-width="1" ${i===0?'':'stroke-dasharray="3,3"'}/>`;
+  }
+  let bars='', labels='';
+  data.forEach((d,i)=>{
+    const y = padT + i*(rowH+gap);
+    const w = Math.max((d.value/niceMax)*innerW, 2);
+    labels += `<text x="${(padL-10).toFixed(1)}" y="${(y+rowH/2+4).toFixed(1)}" font-size="11" text-anchor="end" style="fill:var(--text2)">${escapeHtml(truncate(d.label,26))}</text>`;
+    bars += `<rect x="${padL}" y="${y.toFixed(1)}" width="${w.toFixed(1)}" height="${rowH}" rx="4" style="fill:var(--navy-500)"/>`;
+    bars += `<text x="${(padL+w+8).toFixed(1)}" y="${(y+rowH/2+4).toFixed(1)}" font-size="11" style="fill:var(--text);font-family:var(--mono);font-weight:700">${fmtMoney(d.value,currency)}</text>`;
+  });
+  return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:${(H*0.62).toFixed(0)}px;display:block">${gridLines}${labels}${bars}</svg>`;
+}
+
+function render(){
+  const main = document.getElementById('main');
+  const sub = document.getElementById('view-sub');
+
+  if(COMPANIES.length === 0){
+    sub.textContent = '';
+    document.getElementById('search-wrap').style.display = 'none';
+    main.innerHTML = `
+      <div class="empty-state">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M4 4h16v16H4z" stroke="currentColor" stroke-width="1.3" opacity="0.4"/><path d="M8 9h8M8 13h8M8 17h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+        <h2>Todavía no cargaste ningún archivo</h2>
+        <p>Subí el Excel de desglose de facturación para poder filtrar por cliente, ejecutivo, período y centro de costo.</p>
+        <button class="upload-btn" onclick="document.getElementById('file-input').click()">Cargar Excel</button>
+      </div>`;
+    updateMselPortal();
+    return;
+  }
+
+  sub.textContent = '· ' + (ACTIVE==='all' ? 'Todas las compañías' : ACTIVE);
+  document.getElementById('search-wrap').style.display = CURRENT_VIEW==='detalle' ? 'flex' : 'none';
+
+  if(CURRENT_VIEW === 'dashboard') renderDashboard(main);
+  else renderDetalle(main);
+  updateMselPortal();
+}
+window.addEventListener('resize', updateMselPortal);
+document.getElementById('main').addEventListener('scroll', updateMselPortal);
+
+function renderDetalle(main){
+  const companyRows = getCompanyRows(ACTIVE);
+  const term = norm(document.getElementById('search') ? document.getElementById('search').value : '');
+
+  const clientesItems = Array.from(new Set(companyRows.map(r=>r.cliente))).sort((a,b)=>a.localeCompare(b)).map(v=>({value:v,label:v}));
+  const ejecutivosItems = Array.from(new Set(companyRows.map(r=>r.ejecutivo).filter(Boolean))).sort((a,b)=>a.localeCompare(b)).map(v=>({value:v,label:v}));
+  const monthMap = new Map();
+  companyRows.forEach(r=>{ if(r.svs instanceof Date){ monthMap.set(monthKey(r.svs), MESES[r.svs.getMonth()]+' '+r.svs.getFullYear()); } });
+  const periodosItems = Array.from(monthMap.entries()).sort((a,b)=>a[0].localeCompare(b[0])).map(([value,label])=>({value,label}));
+
+  const baseFiltered = companyRows.filter(r=>{
+    if(FILTERS.clientes.length && !FILTERS.clientes.includes(r.cliente)) return false;
+    if(FILTERS.ejecutivos.length && !FILTERS.ejecutivos.includes(r.ejecutivo)) return false;
+    if(FILTERS.periodos.length){ if(!(r.svs instanceof Date) || !FILTERS.periodos.includes(monthKey(r.svs))) return false; }
+    if(FILTERS.nfactura && !norm(r.nFactura).includes(norm(FILTERS.nfactura))) return false;
+    if(term && !(norm(r.cliente).includes(term)||norm(r.cuit).includes(term)||norm(r.ejecutivo).includes(term)||norm(r.nFactura).includes(term)||norm(r.colaborador).includes(term))) return false;
+    return true;
+  });
+
+  // El filtro de CC solo ofrece los centros de costo presentes dentro de lo ya filtrado (cliente/ejecutivo/período/búsqueda)
+  const ccsInScope = Array.from(new Set(baseFiltered.map(r=>r.ccDescripcion).filter(Boolean))).sort((a,b)=>a.localeCompare(b));
+  FILTERS.ccs = FILTERS.ccs.filter(c=>ccsInScope.includes(c));
+  const ccsItems = ccsInScope.map(v=>({value:v,label:v}));
+
+  let filtered = baseFiltered.filter(r=> !FILTERS.ccs.length || FILTERS.ccs.includes(r.ccDescripcion));
+  if(SORT.col){ filtered = filtered.slice().sort((a,b)=> (SORT.dir==='asc'?1:-1) * compareRows(a,b,SORT.col)); }
+
+  // KPIs — totales en paralelo por moneda, nunca sumados entre sí
+  let kpiHtml = '<div class="kpi-grid">';
+  const curTotals = new Map();
+  filtered.forEach(r=>{ const k=r.mon||'—'; curTotals.set(k,(curTotals.get(k)||0)+r.totalNeto); });
+  Array.from(curTotals.entries()).sort((a,b)=>a[0].localeCompare(b[0])).forEach(([cur,val])=>{
+    kpiHtml += kpiCard('Total facturado ('+cur+')', fmtMoney(val,cur), 'k-navy');
+  });
+  const clientesSet = new Set(filtered.map(r=>r.cliente));
+  const facturasSet = new Set(filtered.map(r=>r.nFactura).filter(Boolean));
+  kpiHtml += kpiCard('Clientes', String(clientesSet.size), 'k-green');
+  kpiHtml += kpiCard('Facturas', String(facturasSet.size), 'k-amber');
+  kpiHtml += kpiCard('Líneas', String(filtered.length), 'k-crit');
+  kpiHtml += '</div>';
+
+  // Aviso: si no se filtró por CC puntual y hay más de uno en el alcance actual, el total de arriba los combina
+  // (solo tiene sentido mostrarlo cuando realmente se está filtrando por algo, no con la planilla entera sin filtrar)
+  const hayFiltroActivo = FILTERS.clientes.length || FILTERS.ejecutivos.length || FILTERS.periodos.length || FILTERS.nfactura || term;
+  let ccNoticeHtml = '';
+  if(hayFiltroActivo && FILTERS.ccs.length === 0 && ccsInScope.length > 1){
+    ccNoticeHtml = `<div class="cc-notice">⚠ El total de arriba combina <b>${ccsInScope.length} centros de costo distintos</b> (${escapeHtml(ccsInScope.join(', '))}). Usá el filtro de "CC Descripción" si querés verlos por separado.</div>`;
+  }
+
+  const ccHtml = '';
+
+  // Filas de detalle
+  let rowsHtml = '';
+  if(filtered.length === 0){
+    rowsHtml = `<tr><td colspan="9" class="empty">No se encontraron resultados con estos filtros</td></tr>`;
+  } else {
+    filtered.forEach(r=>{
+      const isOpen = OPEN_ROWS.has(r.id);
+      const flag = FLAGS[r.mon] || '';
+      const qtyLine = (r.cant || r.precioUnitario) ? `${fmtNum(r.cant)} u. à ${fmtMoney(r.precioUnitario, r.mon)}` : '';
+      const ec = execColor(r.ejecutivo);
+      const companyCur = (COMPANIES.find(c=>c.name===r.desde)||{}).currency;
+      const isOffCurrency = r.mon && companyCur && r.mon !== companyCur;
+      const curTag = isOffCurrency ? `<span class="cur-tag">${escapeHtml(r.mon)}</span>` : '';
+      const pdfKey = normalizeInvoiceKey(r.nFactura);
+      const hasPdf = pdfKey && PDF_STORE.has(pdfKey);
+      const pdfBtn = !pdfKey ? '' : hasPdf
+        ? `<button class="pdf-btn attached" onclick="event.stopPropagation(); openPdfForRow('${pdfKey}')">✓ Ver PDF Factura</button>`
+        : `<button class="pdf-btn missing" onclick="event.stopPropagation(); attachPdfForRow('${pdfKey}')">PDF Factura</button>`;
+      rowsHtml += `<tr class="data-row ${isOpen?'open':''}" onclick="toggleRow(${r.id})">
+        <td class="chev-cell"><svg class="chev" viewBox="0 0 8 12" fill="none"><path d="M1 1l5 5-5 5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></td>
+        <td>
+          ${ACTIVE==='all' && flag ? `<img class="comp-flag" src="${flag}">` : ''}
+          <div class="cliente-name" style="display:inline">${escapeHtml(r.cliente)}</div><br>
+          ${r.cuit ? `<span class="cliente-cuit">${escapeHtml(r.cuit)}</span>` : ''}
+        </td>
+        <td>${r.ejecutivo ? `<span class="exec-tag" style="background:${ec.bg};color:${ec.text};border-color:${ec.bd}">${escapeHtml(r.ejecutivo)}</span>` : '—'}</td>
+        <td><span class="periodo">${fmtPeriodo(r.svs)}</span></td>
+        <td><span class="fecha">${fmtFecha(r.fechaFactura)}</span></td>
+        <td class="nfactura">${escapeHtml(r.nFactura) || '—'}</td>
+        <td class="ccdesc">${escapeHtml(r.ccDescripcion) || '—'}</td>
+        <td class="monto-wrap">
+          <div class="monto">${curTag}${fmtMoney(r.totalNeto, r.mon)}</div>
+          ${qtyLine ? `<div class="monto-sub">${qtyLine}</div>` : ''}
+        </td>
+        <td onclick="event.stopPropagation()">${pdfBtn}</td>
+      </tr>`;
+      if(isOpen){
+        rowsHtml += `<tr class="detail-row"><td colspan="9">
+          <div class="detail-grid">
+            <div class="detail-item"><div class="dl">Legajo</div><div class="dv">${escapeHtml(r.legajo) || '—'}</div></div>
+            <div class="detail-item"><div class="dl">Colaborador</div><div class="dv">${escapeHtml(r.colaborador) || '—'}</div></div>
+            <div class="detail-item"><div class="dl">Otros conceptos / proyecto</div><div class="dv">${escapeHtml(r.otrosConceptos) || '—'}</div></div>
+            <div class="detail-item"><div class="dl">Cond. de venta</div><div class="dv">${escapeHtml(r.condVenta) || '—'}</div></div>
+            <div class="detail-item"><div class="dl">OC</div><div class="dv">${escapeHtml(r.oc) || '—'}</div></div>
+            <div class="detail-item"><div class="dl">Leyenda en factura</div><div class="dv">${escapeHtml(r.leyenda) || '—'}</div></div>
+            <div class="detail-item"><div class="dl">Artículo</div><div class="dv">${escapeHtml(r.art) || '—'} ${r.descArticulo ? '· '+escapeHtml(r.descArticulo) : ''}</div></div>
+          </div>
+        </td></tr>`;
+      }
+    });
+  }
+
+  registerExport('detalle', {
+    filename: 'facturacion_detalle.xlsx',
+    sheetName: 'Detalle',
+    headers: ['Cliente','CUIT','Ejecutivo','Período','Fecha Factura','N° Factura','Cond. Venta','Colaborador','Legajo','CC Descripción','Moneda','Cantidad','Precio Unitario','Total Neto','OC','Leyenda'],
+    rows: filtered.map(r=>[r.cliente, r.cuit||'', r.ejecutivo||'', fmtPeriodo(r.svs), fmtFecha(r.fechaFactura), r.nFactura||'', r.condVenta||'', r.colaborador||'', r.legajo||'', r.ccDescripcion||'', r.mon||'', r.cant||0, r.precioUnitario||0, r.totalNeto||0, r.oc||'', r.leyenda||'']),
+    moneyCols: [12,13],
+    currency: filtered.map(r=>r.mon||'ARS')
+  });
+
+  const tableHtml = `<div class="table-card">
+      <div class="table-header">
+        <span class="table-title">Detalle de facturación</span>
+        <span class="table-count">${filtered.length} línea${filtered.length===1?'':'s'}</span>
+        <div class="table-spacer"></div>
+        <button class="export-btn" onclick="exportRegistered('detalle')">⬇ Excel</button>
+        <button class="clear-btn" onclick="clearFilters()">✕ Limpiar filtros</button>
+      </div>
+      <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th></th>
+            <th onclick="setSort('cliente')">Cliente${sortArrow('cliente')}</th>
+            <th onclick="setSort('ejecutivo')">Ejecutivo${sortArrow('ejecutivo')}</th>
+            <th onclick="setSort('periodo')">Período${sortArrow('periodo')}</th>
+            <th onclick="setSort('fecha')">Fecha factura${sortArrow('fecha')}</th>
+            <th onclick="setSort('nfactura')">N° Factura${sortArrow('nfactura')}</th>
+            <th onclick="setSort('cc')">CC Descripción${sortArrow('cc')}</th>
+            <th onclick="setSort('total')" style="text-align:right">Importe${sortArrow('total')}</th>
+            <th>PDF</th>
+          </tr>
+          <tr class="filter-row">
+            <th></th>
+            <th>${renderMsel('clientes', clientesItems, 'Todos', FILTERS.clientes)}</th>
+            <th>${renderMsel('ejecutivos', ejecutivosItems, 'Todos', FILTERS.ejecutivos)}</th>
+            <th>${renderMsel('periodos', periodosItems, 'Todos', FILTERS.periodos)}</th>
+            <th></th>
+            <th><input type="text" placeholder="Buscar..." value="${escapeHtml(FILTERS.nfactura)}" oninput="FILTERS.nfactura=this.value; render();"></th>
+            <th>${renderMsel('ccs', ccsItems, 'Todos', FILTERS.ccs)}</th>
+            <th></th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>${rowsHtml}</tbody>
+      </table>
+      </div>
+    </div>`;
+
+  main.innerHTML = kpiHtml + ccNoticeHtml + ccHtml + tableHtml;
+}
+
+function buildBuckets(rows, gran){
+  const buckets = new Map();
+  rows.forEach(r=>{
+    if(!(r.svs instanceof Date)) return;
+    let key, label;
+    if(gran === 'trimestre'){
+      const q = Math.floor(r.svs.getMonth()/3)+1;
+      key = r.svs.getFullYear()+'-Q'+q; label = 'Q'+q+' '+r.svs.getFullYear();
+    } else {
+      key = monthKey(r.svs);
+      label = MESES[r.svs.getMonth()].slice(0,3) + ' ' + r.svs.getFullYear();
+    }
+    if(!buckets.has(key)) buckets.set(key, {label, value:0});
+    buckets.get(key).value += r.totalNeto;
+  });
+  return Array.from(buckets.entries()).sort((a,b)=>a[0].localeCompare(b[0])).map(([k,v])=>v);
+}
+
+function togglePivot(key){ if(PIVOT_OPEN.has(key)) PIVOT_OPEN.delete(key); else PIVOT_OPEN.add(key); render(); }
+
+function renderClientPivot(rows, currency){
+  const months = Array.from(new Set(rows.filter(r=>r.svs instanceof Date).map(r=>monthKey(r.svs)))).sort();
+  if(months.length === 0) return '<div class="empty">Sin datos de período para esta selección</div>';
+  const monthLabels = months.map(k=>{ const [y,m]=k.split('-'); return MESES[parseInt(m,10)-1].slice(0,3)+' '+y.slice(2); });
+
+  const byClient = new Map();
+  rows.forEach(r=>{
+    if(!(r.svs instanceof Date)) return;
+    const mk = monthKey(r.svs);
+    if(!byClient.has(r.cliente)) byClient.set(r.cliente, {months:new Map(), total:0, ccMap:new Map()});
+    const c = byClient.get(r.cliente);
+    c.months.set(mk, (c.months.get(mk)||0)+r.totalNeto);
+    c.total += r.totalNeto;
+    const ccKey = r.ccDescripcion || '(Sin centro de costo)';
+    if(!c.ccMap.has(ccKey)) c.ccMap.set(ccKey, new Map());
+    const ccM = c.ccMap.get(ccKey);
+    ccM.set(mk, (ccM.get(mk)||0)+r.totalNeto);
+  });
+
+  const clientsArr = Array.from(byClient.entries()).map(([name,data])=>({name,...data})).sort((a,b)=>b.total-a.total);
+  const grandTotals = months.map(mk=>clientsArr.reduce((s,c)=>s+(c.months.get(mk)||0),0));
+  const grandTotal = clientsArr.reduce((s,c)=>s+c.total,0);
+
+  const thead = `<tr><th>Cliente</th>${monthLabels.map(l=>`<th style="text-align:right">${escapeHtml(l)}</th>`).join('')}<th class="pivot-total-col" style="text-align:right">TOTAL</th></tr>`;
+
+  let rowsHtml = '';
+  clientsArr.forEach((c,i)=>{
+    const key = currency+':'+i;
+    const isOpen = PIVOT_OPEN.has(key);
+    rowsHtml += `<tr class="pivot-client-row ${isOpen?'open':''}" onclick="togglePivot('${key}')">
+      <td><svg class="chev" viewBox="0 0 8 12" fill="none"><path d="M1 1l5 5-5 5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg> ${escapeHtml(c.name)}</td>
+      ${months.map(mk=>`<td class="pivot-month-cell">${c.months.get(mk) ? fmtMoney(c.months.get(mk), currency) : '—'}</td>`).join('')}
+      <td class="pivot-total-col">${fmtMoney(c.total, currency)}</td>
+    </tr>`;
+    if(isOpen){
+      Array.from(c.ccMap.entries()).sort((a,b)=>{
+        const ta = Array.from(a[1].values()).reduce((s,v)=>s+v,0);
+        const tb = Array.from(b[1].values()).reduce((s,v)=>s+v,0);
+        return tb-ta;
+      }).forEach(([ccName,ccMonths])=>{
+        const ccTotal = Array.from(ccMonths.values()).reduce((s,v)=>s+v,0);
+        rowsHtml += `<tr class="pivot-cc-row">
+          <td style="padding-left:26px">${escapeHtml(ccName)}</td>
+          ${months.map(mk=>`<td class="pivot-month-cell">${ccMonths.get(mk) ? fmtMoney(ccMonths.get(mk), currency) : '—'}</td>`).join('')}
+          <td class="pivot-total-col">${fmtMoney(ccTotal, currency)}</td>
+        </tr>`;
+      });
+    }
+  });
+
+  rowsHtml += `<tr class="pivot-grand-row">
+    <td>TOTAL GENERAL</td>
+    ${grandTotals.map(v=>`<td class="pivot-month-cell">${fmtMoney(v, currency)}</td>`).join('')}
+    <td class="pivot-total-col">${fmtMoney(grandTotal, currency)}</td>
+  </tr>`;
+
+  registerExport('pivot-'+currency, {
+    filename: 'clientes_x_mes_'+currency+'.xlsx',
+    sheetName: 'Clientes x mes',
+    headers: ['Cliente', ...monthLabels, 'TOTAL'],
+    rows: [
+      ...clientsArr.map(c=>[c.name, ...months.map(mk=>c.months.get(mk)||0), c.total]),
+      ['TOTAL GENERAL', ...grandTotals, grandTotal]
+    ],
+    moneyCols: Array.from({length: months.length+1}, (_,i)=>i+1),
+    currency: currency,
+    boldLastRow: true
+  });
+
+  return `<div class="table-scroll"><table class="pivot-table"><thead>${thead}</thead><tbody>${rowsHtml}</tbody></table></div>`;
+}
+
+let CONC_EXPANDED = new Set();
+
+function isCompleteMonth(date){
+  const now = new Date();
+  if(date.getFullYear() < now.getFullYear()) return true;
+  if(date.getFullYear() > now.getFullYear()) return false;
+  return date.getMonth() < now.getMonth();
+}
+function toggleConcExpand(cur){ if(CONC_EXPANDED.has(cur)) CONC_EXPANDED.delete(cur); else CONC_EXPANDED.add(cur); render(); }
+
+function svgPieChart(data){
+  const size=200, cx=size/2, cy=size/2, r=88;
+  const total = data.reduce((s,d)=>s+d.value,0) || 1;
+  const palette = ['#0ea5e9','#38bdf8','#7dd3fc','#0e7490','#a5b4fc','#c4b5fd','#86efac','#fcd34d','#fda4af','#cbd5e1','#5eead4'];
+  let angle = -90, paths = '', legend = '';
+  data.forEach((d,i)=>{
+    const pct = d.value/total;
+    const sweep = pct*360;
+    const color = palette[i%palette.length];
+    if(pct > 0.0001){
+      if(pct >= 0.9999){
+        paths += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${color}"/>`;
+      } else {
+        const x1 = cx + r*Math.cos(angle*Math.PI/180), y1 = cy + r*Math.sin(angle*Math.PI/180);
+        const endAngle = angle+sweep;
+        const x2 = cx + r*Math.cos(endAngle*Math.PI/180), y2 = cy + r*Math.sin(endAngle*Math.PI/180);
+        const largeArc = sweep>180?1:0;
+        paths += `<path d="M${cx},${cy} L${x1.toFixed(2)},${y1.toFixed(2)} A${r},${r} 0 ${largeArc} 1 ${x2.toFixed(2)},${y2.toFixed(2)} Z" fill="${color}"/>`;
+      }
+    }
+    legend += `<div class="pie-legend-item"><span class="pie-dot" style="background:${color}"></span>${escapeHtml(truncate(d.label,24))} <b>${(pct*100).toFixed(1)}%</b></div>`;
+    angle += sweep;
+  });
+  return `<div class="pie-wrap"><svg viewBox="0 0 ${size} ${size}" style="width:170px;height:170px;flex-shrink:0">${paths}</svg><div class="pie-legend">${legend}</div></div>`;
+}
+
+function computeInsights(data){
+  if(data.length < 2) return null;
+  let maxUp = null, maxDown = null, firstAppearance = null;
+  for(let i=1;i<data.length;i++){
+    const prev = data[i-1].value, curr = data[i].value;
+    if(prev === 0){
+      if(curr > 0 && !firstAppearance) firstAppearance = data[i];
+      continue;
+    }
+    const pct = ((curr-prev)/Math.abs(prev))*100;
+    if(!maxUp || pct > maxUp.pct) maxUp = {pct, from:data[i-1], to:data[i]};
+    if(!maxDown || pct < maxDown.pct) maxDown = {pct, from:data[i-1], to:data[i]};
+  }
+  return {maxUp, maxDown, firstAppearance};
+}
+
+function renderInsights(data, currency){
+  const insights = computeInsights(data);
+  if(!insights) return '';
+  let lines = '';
+  if(insights.maxUp && insights.maxUp.pct > 1){
+    lines += `<div class="insight-line up">📈 <b>Mayor suba:</b> +${insights.maxUp.pct.toFixed(0)}% de ${escapeHtml(insights.maxUp.from.label)} a ${escapeHtml(insights.maxUp.to.label)} (${fmtMoney(insights.maxUp.from.value,currency)} → ${fmtMoney(insights.maxUp.to.value,currency)})</div>`;
+  }
+  if(insights.maxDown && insights.maxDown.pct < -1){
+    lines += `<div class="insight-line down">📉 <b>Mayor baja:</b> ${insights.maxDown.pct.toFixed(0)}% de ${escapeHtml(insights.maxDown.from.label)} a ${escapeHtml(insights.maxDown.to.label)} (${fmtMoney(insights.maxDown.from.value,currency)} → ${fmtMoney(insights.maxDown.to.value,currency)})</div>`;
+  }
+  if(insights.firstAppearance){
+    lines += `<div class="insight-line">🆕 Empezó a facturar en ${escapeHtml(insights.firstAppearance.label)}</div>`;
+  }
+  return lines ? `<div class="insight-box">${lines}</div>` : '';
+}
+
+function renderConcentration(rows, currency, periodLabel){
+  const byClient = new Map();
+  rows.forEach(r=>{ byClient.set(r.cliente, (byClient.get(r.cliente)||0)+r.totalNeto); });
+  const total = Array.from(byClient.values()).reduce((s,v)=>s+v,0);
+  if(total <= 0 || byClient.size === 0) return '';
+  const arr = Array.from(byClient.entries()).sort((a,b)=>b[1]-a[1]).map(([name,val])=>({name, val, pct: val/total*100}));
+
+  const TOP_N = 10;
+  const top = arr.slice(0, TOP_N);
+  const rest = arr.slice(TOP_N);
+  const expanded = CONC_EXPANDED.has(currency);
+
+  const rowHtml = (c,i) => `<tr>
+      <td class="rank-cell">${i+1}</td>
+      <td>${escapeHtml(c.name)}</td>
+      <td class="pivot-month-cell">${fmtMoney(c.val, currency)}</td>
+      <td class="pct-cell">${c.pct.toFixed(1)}%</td>
+    </tr>`;
+
+  let rowsHtml = top.map((c,i)=>rowHtml(c,i)).join('');
+  if(rest.length){
+    if(expanded) rowsHtml += rest.map((c,i)=>rowHtml(c, TOP_N+i)).join('');
+    rowsHtml += `<tr class="pivot-toggle-row"><td colspan="4" onclick="toggleConcExpand('${currency}')">${expanded ? '▲ Ver menos' : '▼ Ver los '+rest.length+' restantes'}</td></tr>`;
+  }
+
+  const top3 = arr.slice(0,3).reduce((s,c)=>s+c.pct,0);
+  const summary = `<div class="insight-box"><div class="insight-line">🔍 <b>${escapeHtml(arr[0].name)}</b> es tu cliente principal: representa el <b>${arr[0].pct.toFixed(1)}%</b> de la facturación ${escapeHtml(periodLabel)} (${escapeHtml(currency)}). Entre los 3 principales concentran el <b>${top3.toFixed(1)}%</b>.</div></div>`;
+
+  const pieData = rest.length
+    ? top.concat([{name:'Otros ('+rest.length+' clientes)', val: rest.reduce((s,c)=>s+c.val,0)}])
+    : top;
+
+  registerExport('conc-'+currency, {
+    filename: 'concentracion_clientes_'+currency+'.xlsx',
+    sheetName: 'Concentración',
+    headers: ['#','Cliente','Facturación','% '+periodLabel],
+    rows: arr.map((c,i)=>[i+1, c.name, c.val, Number(c.pct.toFixed(1))]),
+    moneyCols: [2],
+    currency: currency
+  });
+
+  return `<div class="conc-layout">
+    <div class="table-card" style="flex:1.6;min-width:340px;margin-bottom:0">
+      <div class="table-header"><span class="table-title">Concentración de clientes <span class="tag" style="margin-left:8px">${escapeHtml(currency)}</span></span><div class="table-spacer"></div><span class="table-count">% ${escapeHtml(periodLabel)}</span><button class="export-btn" onclick="exportRegistered('conc-${currency}')">⬇ Excel</button></div>
+      ${summary}
+      <div class="table-scroll"><table class="pivot-table">
+        <thead><tr><th>#</th><th>Cliente</th><th style="text-align:right">Facturación</th><th style="text-align:right">% ${escapeHtml(periodLabel)}</th></tr></thead>
+        <tbody>${rowsHtml}</tbody>
+      </table></div>
+    </div>
+    <div class="table-card" style="flex:1;min-width:260px;margin-bottom:0">
+      <div class="table-header"><span class="table-title">Distribución</span></div>
+      <div style="padding:16px">${svgPieChart(pieData.map(d=>({label:d.name,value:d.val})))}</div>
+    </div>
+  </div>`;
+}
+
+function setDashYear(y){ DASH_STATE.year = y; render(); }
+
+function renderDashboard(main){
+  const rawRows = getCompanyRows(DASH_ACTIVE);
+  // Se excluye el mes en curso (incompleto) de todo el análisis para no mostrar caídas artificiales
+  const allRows = rawRows.filter(r=> !(r.svs instanceof Date) || isCompleteMonth(r.svs));
+  const mode = DASH_STATE.mode;
+
+  const now = new Date();
+  let lm = now.getMonth()-1, ly = now.getFullYear();
+  if(lm < 0){ lm = 11; ly -= 1; }
+  const lastCompleteLabel = MESES[lm] + ' ' + ly;
+
+  const availableYears = Array.from(new Set(allRows.filter(r=>r.svs instanceof Date).map(r=>r.svs.getFullYear()))).sort((a,b)=>a-b);
+  if(DASH_STATE.year === null || (DASH_STATE.year !== 'all' && !availableYears.map(String).includes(DASH_STATE.year))){
+    DASH_STATE.year = availableYears.length ? String(availableYears[availableYears.length-1]) : 'all';
+  }
+  const rows0 = DASH_STATE.year === 'all' ? allRows : allRows.filter(r=> r.svs instanceof Date && r.svs.getFullYear() === parseInt(DASH_STATE.year,10));
+
+  const monthMap = new Map();
+  rows0.forEach(r=>{ if(r.svs instanceof Date){ monthMap.set(monthKey(r.svs), MESES[r.svs.getMonth()]+' '+r.svs.getFullYear()); } });
+  const monthItems = Array.from(monthMap.entries()).sort((a,b)=>a[0].localeCompare(b[0])).map(([value,label])=>({value,label}));
+  DASH_STATE.months = DASH_STATE.months.filter(m=>monthItems.some(o=>o.value===m));
+
+  const rows = DASH_STATE.months.length === 0 ? rows0 : rows0.filter(r=> r.svs instanceof Date && DASH_STATE.months.includes(monthKey(r.svs)));
+
+  let periodLabel;
+  if(DASH_STATE.months.length === 1){
+    const found = monthItems.find(o=>o.value===DASH_STATE.months[0]);
+    periodLabel = 'de '+(found ? found.label : DASH_STATE.months[0]);
+  } else if(DASH_STATE.months.length > 1){
+    periodLabel = 'de '+DASH_STATE.months.length+' meses seleccionados';
+  } else {
+    periodLabel = DASH_STATE.year === 'all' ? 'del total' : 'del '+DASH_STATE.year;
+  }
+
+  let controlsHtml = `<div class="dash-controls">
+    <div class="seg">
+      <button class="seg-btn ${DASH_ACTIVE==='all'?'active':''}" onclick="setDashActive('all')">Todas</button>
+      ${COMPANIES.map((c,i)=>`<button class="seg-btn ${DASH_ACTIVE===c.name?'active':''}" onclick="setDashActiveByIndex(${i})">${c.flag?`<img class="nav-flag" src="${c.flag}" style="margin-right:5px">`:''}${escapeHtml(c.name)}</button>`).join('')}
+    </div>
+  </div>
+  <div class="dash-controls">
+    <div class="seg">
+      <button class="seg-btn ${mode==='compania'?'active':''}" onclick="setDashMode('compania')">Toda la compañía</button>
+      <button class="seg-btn ${mode==='cliente'?'active':''}" onclick="setDashMode('cliente')">Ventas por cliente</button>
+      <button class="seg-btn ${mode==='cc'?'active':''}" onclick="setDashMode('cc')">Ventas por CC</button>
+    </div>
+    <div class="seg">
+      ${availableYears.map(y=>`<button class="seg-btn ${DASH_STATE.year===String(y)?'active':''}" onclick="setDashYear('${y}')">${y}</button>`).join('')}
+      <button class="seg-btn ${DASH_STATE.year==='all'?'active':''}" onclick="setDashYear('all')">Todos los años</button>
+    </div>
+    ${renderMsel('dashmonths', monthItems, 'Todos los meses', DASH_STATE.months)}`;
+
+  const isEntidadMode = (mode === 'cliente' || mode === 'cc');
+  let values = [];
+  if(isEntidadMode){
+    const fieldGetter = mode==='cliente' ? (r=>r.cliente) : (r=>r.ccDescripcion);
+    values = Array.from(new Set(rows.map(fieldGetter).filter(Boolean))).sort((a,b)=>a.localeCompare(b));
+    DASH_STATE.values = DASH_STATE.values.filter(v=>values.includes(v));
+    const valueItems = values.map(v=>({value:v,label:v}));
+    const placeholder = mode==='cliente' ? 'Elegí uno o más clientes' : 'Elegí uno o más CC';
+    controlsHtml += renderMsel('dashval', valueItems, placeholder, DASH_STATE.values);
+  }
+  controlsHtml += `</div>
+  <div class="dash-note">📅 Análisis hasta <b>${lastCompleteLabel}</b> — se excluye el mes en curso por estar incompleto.</div>`;
+
+  if(DASH_STATE.months.length){
+    controlsHtml += `<div class="selection-banner">📆 Meses: ${DASH_STATE.months.map((m,i)=>{
+      const found = monthItems.find(o=>o.value===m);
+      return `<span class="sel-chip">${escapeHtml(found?found.label:m)}<span class="chip-x" onclick="removeDashMonth(${i})">×</span></span>`;
+    }).join('')}<span class="clear-all-link" onclick="clearDashMonths()">Limpiar todos</span></div>`;
+  }
+
+  if(isEntidadMode && DASH_STATE.values.length){
+    controlsHtml += `<div class="selection-banner">📌 Mostrando: ${DASH_STATE.values.map((v,i)=>`<span class="sel-chip">${escapeHtml(v)}<span class="chip-x" onclick="removeDashValue(${i})">×</span></span>`).join('')}<span class="clear-all-link" onclick="clearDashValues()">Limpiar todos</span></div>`;
+  }
+
+  if(isEntidadMode && DASH_STATE.values.length === 0){
+    main.innerHTML = controlsHtml + `<div class="empty-state" style="padding:60px 20px">
+      <h2>Elegí ${mode==='cliente'?'uno o más clientes':'uno o más centros de costo'}</h2>
+      <p>Usá el selector de arriba para ver su evolución mensual, subas/bajas y facturación.</p>
+    </div>`;
+    return;
+  }
+
+  const scopedRows = mode==='cliente' ? rows.filter(r => DASH_STATE.values.includes(r.cliente))
+    : mode==='cc' ? rows.filter(r => DASH_STATE.values.includes(r.ccDescripcion))
+    : rows;
+
+  const byCurrency = new Map();
+  scopedRows.forEach(r=>{ const cur = r.mon||'—'; if(!byCurrency.has(cur)) byCurrency.set(cur, []); byCurrency.get(cur).push(r); });
+  const currencies = Array.from(byCurrency.keys()).sort((a,b)=>a.localeCompare(b));
+
+  let kpiHtml = '<div class="kpi-grid">';
+  let blocksHtml = '';
+
+  if(currencies.length === 0){
+    blocksHtml = `<div class="empty-state" style="padding:60px 20px"><h2>Sin datos de período</h2><p>No hay filas con el campo Svs. (período) cargado para esta selección.</p></div>`;
+  }
+
+  currencies.forEach(cur=>{
+    const curRows = byCurrency.get(cur);
+    const data = buildBuckets(curRows, 'mes');
+    const total = data.reduce((s,d)=>s+d.value,0);
+    kpiHtml += kpiCard('Facturación '+periodLabel+' ('+cur+')', fmtMoney(total,cur), 'k-navy');
+
+    blocksHtml += `<div class="table-card"><div class="chart-wrap">
+        <div class="currency-block-title">Evolución mensual <span class="tag">${escapeHtml(cur)}</span></div>
+        ${data.length ? svgLineChart(data, cur) : '<div class="empty">Sin datos de período para esta selección</div>'}
+      </div>
+      ${renderInsights(data, cur)}
+    </div>`;
+
+    if(mode === 'compania'){
+      blocksHtml += renderConcentration(curRows, cur, periodLabel);
+      const pivotHtml = renderClientPivot(curRows, cur);
+      blocksHtml += `<div class="table-card">
+          <div class="table-header"><span class="table-title">Clientes × mes <span class="tag" style="margin-left:8px">${escapeHtml(cur)}</span></span><div class="table-spacer"></div><span class="table-count">clic en un cliente para ver el desglose por CC</span><button class="export-btn" onclick="exportRegistered('pivot-${cur}')">⬇ Excel</button></div>
+          ${pivotHtml}
+        </div>`;
+    } else {
+      registerExport('permes-'+cur, {
+        filename: 'detalle_por_mes_'+cur+'.xlsx',
+        sheetName: 'Detalle por mes',
+        headers: ['Período','Total'],
+        rows: data.map(d=>[d.label, d.value]),
+        moneyCols: [1],
+        currency: cur
+      });
+      blocksHtml += `<div class="table-card">
+          <div class="table-header"><span class="table-title">Detalle por mes (${escapeHtml(cur)})</span><div class="table-spacer"></div><button class="export-btn" onclick="exportRegistered('permes-${cur}')">⬇ Excel</button></div>
+          <table><thead><tr><th>Período</th><th style="text-align:right">Total</th></tr></thead>
+          <tbody>${data.map(d=>`<tr><td>${escapeHtml(d.label)}</td><td style="text-align:right" class="monto">${fmtMoney(d.value,cur)}</td></tr>`).join('')}</tbody></table>
+        </div>`;
+    }
+  });
+  kpiHtml += '</div>';
+
+  main.innerHTML = controlsHtml + kpiHtml + blocksHtml;
+}
+
+
+function toggleRow(id){
+  if(OPEN_ROWS.has(id)) OPEN_ROWS.delete(id); else OPEN_ROWS.add(id);
+  render();
+}
+
+renderSidebar();
+render();
+</script>
+</body>
+</html>
