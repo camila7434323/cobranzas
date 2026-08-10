@@ -1,4 +1,5 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
+import * as XLSX from 'xlsx-js-style'
 import type { Session } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
 import { useFacturacionLineas, type FacturacionLinea } from './hooks/useFacturacionLineas'
@@ -71,15 +72,46 @@ const execColor = (name: string) => {
   return EXEC_PALETTE[Math.abs(hash) % EXEC_PALETTE.length]
 }
 
-const exportCsv = (filename: string, rows: Array<Array<string | number>>) => {
-  const csv = rows.map(row => row.map(v => `"${String(v).replace(/"/g, '""')}"`).join(';')).join('\n')
-  const blob = new Blob([`\ufeff${csv}`], { type: 'text/csv;charset=utf-8;' })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = filename
-  a.click()
-  URL.revokeObjectURL(url)
+const estilizarComoTabla = (ws: XLSX.WorkSheet, numRows: number, numCols: number) => {
+  const thinBorder = { style: 'thin', color: { rgb: 'DDE3F0' } }
+  for (let ci = 0; ci < numCols; ci++) {
+    const cell = ws[XLSX.utils.encode_cell({ r: 0, c: ci })]
+    if (!cell) continue
+    cell.s = {
+      fill: { patternType: 'solid', fgColor: { rgb: '1D4170' } },
+      font: { bold: true, color: { rgb: 'FFFFFF' }, sz: 11 },
+      alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
+      border: { top: thinBorder, bottom: thinBorder, left: thinBorder, right: thinBorder },
+    }
+  }
+  for (let ri = 1; ri <= numRows; ri++) {
+    for (let ci = 0; ci < numCols; ci++) {
+      const cell = ws[XLSX.utils.encode_cell({ r: ri, c: ci })]
+      if (!cell) continue
+      cell.s = {
+        fill: { patternType: 'solid', fgColor: { rgb: ri % 2 ? 'F8FAFF' : 'FFFFFF' } },
+        font: { color: { rgb: '0F172A' }, sz: 10 },
+        border: { top: thinBorder, bottom: thinBorder, left: thinBorder, right: thinBorder },
+      }
+    }
+  }
+  ws['!cols'] = Array.from({ length: numCols }, (_, ci) => {
+    let max = 10
+    for (let ri = 0; ri <= numRows; ri++) {
+      const cell = ws[XLSX.utils.encode_cell({ r: ri, c: ci })]
+      if (cell) max = Math.max(max, String(cell.v ?? '').length)
+    }
+    return { wch: Math.min(40, max + 2) }
+  })
+  ws['!autofilter'] = { ref: XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: numRows, c: Math.max(numCols - 1, 0) } }) }
+}
+
+const exportXlsx = (filename: string, rows: Array<Array<string | number>>) => {
+  const ws = XLSX.utils.aoa_to_sheet(rows)
+  estilizarComoTabla(ws, rows.length - 1, rows[0]?.length || 0)
+  const wb = XLSX.utils.book_new()
+  XLSX.utils.book_append_sheet(wb, ws, 'Datos')
+  XLSX.writeFile(wb, filename)
 }
 
 export function FacturacionApp({ session, onCambiarModulo }: { session: Session; onCambiarModulo: () => void }) {
@@ -336,7 +368,7 @@ function ClientConcentration({ clientes, total, moneda }: { rows: FacturacionLin
   const top3 = clientes.slice(0, 3).reduce((s, [, v]) => s + v, 0)
   return (
     <Card noPadding>
-      <CardHeader><CardTitle title="Concentración de clientes" badge={moneda} /><button style={excelBtn} onClick={() => exportCsv(`concentracion-clientes-${moneda}.csv`, [['#', 'Cliente', 'Facturación', '% del total'], ...clientes.map(([name, value], i) => [i + 1, name, value.toFixed(2), ((value / total) * 100).toFixed(1)])])}>↓ Excel</button></CardHeader>
+      <CardHeader><CardTitle title="Concentración de clientes" badge={moneda} /><button style={excelBtn} onClick={() => exportXlsx(`concentracion-clientes-${moneda}.xlsx`, [['#', 'Cliente', 'Facturación', '% del total'], ...clientes.map(([name, value], i) => [i + 1, name, value.toFixed(2), ((value / total) * 100).toFixed(1)])])}>↓ Excel</button></CardHeader>
       <div style={{ padding: 14 }}>
         {main && <div style={notice}>🔎 <strong>{main[0]}</strong> es tu cliente principal: representa el <strong>{((main[1] / total) * 100).toFixed(1)}%</strong> de la facturación. Entre los 3 principales concentran el <strong>{((top3 / total) * 100).toFixed(1)}%</strong>.</div>}
       </div>
@@ -380,7 +412,7 @@ function ClientMonthTable({ rows, moneda }: { rows: FacturacionLinea[]; moneda: 
   const sumFor = (client: string, month: string, cc?: string) => rows.filter(r => nombreCliente(r) === client && periodoKey(r) === month && (!cc || nombreCc(r) === cc)).reduce((s, r) => s + r.total_neto, 0)
   return (
     <Card noPadding>
-      <CardHeader><CardTitle title="Clientes x mes" badge={moneda} /><span style={{ color: '#7286bd', fontSize: 12 }}>clic en un cliente para ver el desglose por CC</span><button style={excelBtn} onClick={() => exportCsv(`clientes-por-mes-${moneda}.csv`, [['Cliente', ...months.map(mesCorto)], ...clients.map(([client]) => [client, ...months.map(m => sumFor(client, m).toFixed(2))])])}>↓ Excel</button></CardHeader>
+      <CardHeader><CardTitle title="Clientes x mes" badge={moneda} /><span style={{ color: '#7286bd', fontSize: 12 }}>clic en un cliente para ver el desglose por CC</span><button style={excelBtn} onClick={() => exportXlsx(`clientes-por-mes-${moneda}.xlsx`, [['Cliente', ...months.map(mesCorto)], ...clients.map(([client]) => [client, ...months.map(m => sumFor(client, m).toFixed(2))])])}>↓ Excel</button></CardHeader>
       <div style={{ overflowX: 'auto' }}>
         <table style={{ ...tableStyle, minWidth: 680 }}>
           <thead><tr><Th>Cliente</Th>{months.map(m => <Th key={m} right>{mesCorto(m)}</Th>)}</tr></thead>
@@ -475,7 +507,7 @@ function Detalle({ filas, empresaActiva }: { filas: FacturacionLinea[]; empresaA
         <strong>Detalle de facturación</strong>
         <span style={{ color: '#7286bd' }}>{sorted.length} línea{sorted.length === 1 ? '' : 's'}</span>
         <span style={{ marginLeft: 'auto' }} />
-        <button style={excelBtn} onClick={() => exportCsv('facturacion_detalle.csv', [
+        <button style={excelBtn} onClick={() => exportXlsx('facturacion_detalle.xlsx', [
           ['Cliente', 'CUIT', 'Ejecutivo', 'Período', 'Fecha Factura', 'N° Factura', 'Cond. Venta', 'Colaborador', 'Legajo', 'CC Descripción', 'Moneda', 'Cantidad', 'Precio Unitario', 'Total Neto', 'OC', 'Leyenda'],
           ...sorted.map(r => [
             nombreCliente(r), r.cuit || '', r.ejecutivo || '', r.periodo ? mesLabel(periodoKey(r)) : '',
