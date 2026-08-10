@@ -43,6 +43,7 @@ export function useFacturacionLineas() {
         .from('facturacion_lineas')
         .select('*')
         .order('fecha_factura', { ascending: false })
+        .order('id', { ascending: true })
         .range(desde, desde + PAGE_SIZE - 1)
 
       if (dbError) {
