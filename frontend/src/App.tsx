@@ -529,8 +529,6 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
     setVista(nuevaVista)
     setEditandoManual(null)
     limpiarSeleccionTabla()
-    if (nuevaVista === 'historial' || nuevaVista === 'global') refetchHistorial()
-    else refetch()
   }
 
   const guardarOEditarFacturaManual = async (factura: ManualFactura) => {
