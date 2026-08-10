@@ -68,6 +68,19 @@ function texto(v: any): string {
   return v == null ? '' : v.toString().trim()
 }
 
+function numero(v: any): number {
+  if (typeof v === 'number') return Number.isFinite(v) ? v : 0
+  const s = texto(v)
+  if (!s) return 0
+  const normalizado = s
+    .replace(/\s/g, '')
+    .replace(/[^\d,.-]/g, '')
+    .replace(/\.(?=\d{3}(\D|$))/g, '')
+    .replace(',', '.')
+  const n = Number(normalizado)
+  return Number.isFinite(n) ? n : 0
+}
+
 interface Props {
   insertarLote: (filas: Omit<FacturacionLinea, 'id' | 'creado_el'>[]) => Promise<void>
   compact?: boolean
@@ -111,9 +124,9 @@ export function SubirFacturacionExcel({ insertarLote, compact = false }: Props) 
           oc: idx.oc !== undefined ? texto(r[idx.oc]) : '',
           leyenda: idx.leyenda !== undefined ? texto(r[idx.leyenda]) : '',
           moneda: idx.mon !== undefined ? (texto(r[idx.mon]) || 'ARS') : 'ARS',
-          cantidad: idx.cant !== undefined ? Number(r[idx.cant]) || 0 : 0,
-          precio_unitario: idx.precioUnitario !== undefined ? Number(r[idx.precioUnitario]) || 0 : 0,
-          total_neto: Number(r[idx.totalNeto]) || 0,
+          cantidad: idx.cant !== undefined ? numero(r[idx.cant]) : 0,
+          precio_unitario: idx.precioUnitario !== undefined ? numero(r[idx.precioUnitario]) : 0,
+          total_neto: numero(r[idx.totalNeto]),
           fecha_factura: idx.fechaFactura !== undefined ? toIsoDate(r[idx.fechaFactura]) : null,
           n_factura: idx.nFactura !== undefined ? texto(r[idx.nFactura]) : '',
           cond_venta: idx.condVenta !== undefined ? texto(r[idx.condVenta]) : '',
@@ -124,6 +137,27 @@ export function SubirFacturacionExcel({ insertarLote, compact = false }: Props) 
         })
       }
       if (filas.length === 0) throw new Error('No se encontraron filas válidas en el archivo.')
+
+      const { data: reportesPrevios, error: prevError } = await supabase
+        .from('facturacion_reportes')
+        .select('id')
+        .eq('nombre_archivo', archivo.name)
+      if (prevError) throw prevError
+
+      const idsPrevios = (reportesPrevios || []).map(r => r.id).filter(Boolean)
+      if (idsPrevios.length > 0) {
+        const { error: lineasError } = await supabase
+          .from('facturacion_lineas')
+          .delete()
+          .in('reporte_id', idsPrevios)
+        if (lineasError) throw lineasError
+
+        const { error: reportesError } = await supabase
+          .from('facturacion_reportes')
+          .delete()
+          .in('id', idsPrevios)
+        if (reportesError) throw reportesError
+      }
 
       const { data: reporte, error: repError } = await supabase
         .from('facturacion_reportes')
