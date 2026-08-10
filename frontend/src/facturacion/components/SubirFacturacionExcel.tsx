@@ -103,6 +103,20 @@ export function SubirFacturacionExcel({ insertarLote, compact = false }: Props) 
       const raw: any[][] = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: null })
       if (raw.length === 0) throw new Error('El Excel está vacío.')
 
+      // Excel guarda el valor de una celda combinada solo en la celda superior-izquierda;
+      // el resto queda null. Sin esto, columnas como Colaborador quedan vacías en las
+      // filas que comparten una combinación (ej. varias líneas de una misma factura).
+      for (const m of sheet['!merges'] || []) {
+        const val = raw[m.s.r]?.[m.s.c]
+        if (val == null) continue
+        for (let r = m.s.r; r <= m.e.r; r++) {
+          if (!raw[r]) raw[r] = []
+          for (let c = m.s.c; c <= m.e.c; c++) {
+            if (raw[r][c] == null) raw[r][c] = val
+          }
+        }
+      }
+
       const idx = buildHeaderIndex(raw[0])
       if (idx.cliente === undefined || idx.totalNeto === undefined) {
         throw new Error('No se reconocieron las columnas esperadas (Razón social cliente / Total neto).')
