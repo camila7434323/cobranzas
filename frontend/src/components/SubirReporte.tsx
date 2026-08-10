@@ -351,7 +351,7 @@ export function SubirReporte({ batchUpsert, onExport }: Props) {
       <Overlay
         state={overlay}
         onClose={() => { setOverlay(null); pendingRowsRef.current = [] }}
-        onContinue={pendingRowsRef.current.length > 0 ? () => doSaveRows(pendingRowsRef.current) : undefined}
+        onContinue={() => doSaveRows(pendingRowsRef.current)}
       />
 
       <div

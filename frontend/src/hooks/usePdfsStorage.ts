@@ -63,7 +63,7 @@ export function usePdfsStorage() {
     let offset = 0
     let errorCarga = false
 
-    do {
+    while (true) {
       const { data, error } = await supabase.storage
         .from(BUCKET)
         .list('', { limit: 1000, offset, sortBy: { column: 'name', order: 'asc' } })
@@ -77,7 +77,7 @@ export function usePdfsStorage() {
       todos.push(...lote)
       if (lote.length < 1000) break
       offset += 1000
-    } while (true)
+    }
 
     if (!errorCarga) {
       setArchivos(
