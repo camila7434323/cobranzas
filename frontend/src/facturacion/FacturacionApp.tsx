@@ -353,13 +353,15 @@ function PieCard({ clientes, total }: { clientes: [string, number][]; total: num
   const top = clientes.slice(0, 10)
   const otros = clientes.slice(10).reduce((s, [, v]) => s + v, 0)
   const items = otros > 0 ? [...top, [`Otros (${clientes.length - 10} clientes)`, otros] as [string, number]] : top
-  let acc = 0
-  const segs = items.map(([name, value], i) => {
-    const start = acc / total
-    acc += value
-    const end = acc / total
-    return { name, value, color: PALETTE[i % PALETTE.length], d: pieSlice(110, 110, 88, start, end) }
-  })
+  const segs = items.reduce<{ acc: number; list: { name: string; value: number; color: string; d: string }[] }>(
+    (state, [name, value], i) => {
+      const start = state.acc / total
+      const acc = state.acc + value
+      const end = acc / total
+      return { acc, list: [...state.list, { name, value, color: PALETTE[i % PALETTE.length], d: pieSlice(110, 110, 88, start, end) }] }
+    },
+    { acc: 0, list: [] }
+  ).list
   return (
     <Card noPadding>
       <div style={{ padding: '14px 18px', fontSize: 15, fontWeight: 800, borderBottom: '1px solid #d3eaf6' }}>Distribución</div>
@@ -474,8 +476,13 @@ function Detalle({ filas, empresaActiva }: { filas: FacturacionLinea[]; empresaA
         <span style={{ color: '#7286bd' }}>{sorted.length} línea{sorted.length === 1 ? '' : 's'}</span>
         <span style={{ marginLeft: 'auto' }} />
         <button style={excelBtn} onClick={() => exportCsv('facturacion_detalle.csv', [
-          ['Cliente', 'CUIT', 'Ejecutivo', 'Período', 'Fecha factura', 'N° Factura', 'CC Descripción', 'Moneda', 'Importe'],
-          ...sorted.map(r => [nombreCliente(r), r.cuit || '', r.ejecutivo || '', r.periodo ? mesLabel(periodoKey(r)) : '', fmtFecha(r.fecha_factura), r.n_factura || '', nombreCc(r), monedaFila(r), r.total_neto.toFixed(2)]),
+          ['Cliente', 'CUIT', 'Ejecutivo', 'Período', 'Fecha Factura', 'N° Factura', 'Cond. Venta', 'Colaborador', 'Legajo', 'CC Descripción', 'Moneda', 'Cantidad', 'Precio Unitario', 'Total Neto', 'OC', 'Leyenda'],
+          ...sorted.map(r => [
+            nombreCliente(r), r.cuit || '', r.ejecutivo || '', r.periodo ? mesLabel(periodoKey(r)) : '',
+            fmtFecha(r.fecha_factura), r.n_factura || '', r.cond_venta || '', r.colaborador || '', r.legajo || '',
+            nombreCc(r), monedaFila(r), r.cantidad || 0, r.precio_unitario.toFixed(2), r.total_neto.toFixed(2),
+            r.oc || '', r.leyenda || '',
+          ]),
         ])}>↓ Excel</button>
         <button style={clearBtn} onClick={clearFilters}>✕ Limpiar filtros</button>
       </CardHeader>
