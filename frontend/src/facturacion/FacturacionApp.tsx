@@ -159,12 +159,17 @@ export function FacturacionApp({ session, onCambiarModulo }: { session: Session;
   const clientesDisponibles = useMemo(() => groupSum(dashboardRows, nombreCliente).map(([k]) => k), [dashboardRows])
   const ccDisponibles = useMemo(() => groupSum(dashboardRows, nombreCc).map(([k]) => k), [dashboardRows])
 
-  const rowsEmpresa = empresaActiva === 'all' ? data : data.filter(r => r.empresa === empresaActiva)
-  const filas = rowsEmpresa.filter(r => {
-    if (!busqueda.trim()) return true
+  const rowsEmpresa = useMemo(
+    () => empresaActiva === 'all' ? data : data.filter(r => r.empresa === empresaActiva),
+    [data, empresaActiva]
+  )
+  const filas = useMemo(() => {
+    if (!busqueda.trim()) return rowsEmpresa
     const q = busqueda.toLowerCase()
-    return [r.cliente, r.cuit, r.ejecutivo, r.n_factura, r.cc_descripcion, r.empresa].some(v => String(v || '').toLowerCase().includes(q))
-  })
+    return rowsEmpresa.filter(r =>
+      [r.cliente, r.cuit, r.ejecutivo, r.n_factura, r.cc_descripcion, r.empresa].some(v => String(v || '').toLowerCase().includes(q))
+    )
+  }, [rowsEmpresa, busqueda])
 
   const abrirDashboard = () => {
     setVista('dashboard')
@@ -276,7 +281,19 @@ function PanelVentas(props: {
   filtroCc: string
   setFiltroCc: (v: string) => void
 }) {
-  const monedas = groupSum(props.rows, monedaFila).map(([m]) => m)
+  const rowsByMoneda = useMemo(() => {
+    const map = new Map<string, FacturacionLinea[]>()
+    props.rows.forEach(r => {
+      const m = monedaFila(r)
+      const list = map.get(m)
+      if (list) list.push(r); else map.set(m, [r])
+    })
+    return map
+  }, [props.rows])
+  const monedas = useMemo(
+    () => Array.from(rowsByMoneda.entries()).sort((a, b) => b[1].reduce((s, r) => s + r.total_neto, 0) - a[1].reduce((s, r) => s + r.total_neto, 0)).map(([m]) => m),
+    [rowsByMoneda]
+  )
   const ultimoMes = props.meses[props.meses.length - 1]
 
   return (
@@ -310,10 +327,10 @@ function PanelVentas(props: {
       <div style={{ color: '#7286bd', fontSize: 13 }}>▦ Análisis hasta <strong>{ultimoMes ? mesLabel(ultimoMes) : 'el último período cargado'}</strong> — se excluye el mes en curso por estar incompleto.</div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))', gap: 14 }}>
-        {monedas.map(m => <Kpi key={m} label={`Facturación del ${props.anio === 'all' ? 'período' : props.anio} (${m})`} value={fmtMoney(props.rows.filter(r => monedaFila(r) === m).reduce((s, r) => s + r.total_neto, 0), m)} />)}
+        {monedas.map(m => <Kpi key={m} label={`Facturación del ${props.anio === 'all' ? 'período' : props.anio} (${m})`} value={fmtMoney((rowsByMoneda.get(m) || []).reduce((s, r) => s + r.total_neto, 0), m)} />)}
       </div>
 
-      {monedas.map(m => <MonedaSection key={m} rows={props.rows.filter(r => monedaFila(r) === m)} moneda={m} />)}
+      {monedas.map(m => <MonedaSection key={m} rows={rowsByMoneda.get(m) || []} moneda={m} />)}
     </div>
   )
 }
@@ -407,9 +424,45 @@ function PieCard({ clientes, total }: { clientes: [string, number][]; total: num
 
 function ClientMonthTable({ rows, moneda }: { rows: FacturacionLinea[]; moneda: string }) {
   const [open, setOpen] = useState<Record<string, boolean>>({})
-  const months = Array.from(new Set(rows.map(periodoKey).filter(Boolean))).sort()
-  const clients = groupSum(rows, nombreCliente).slice(0, 16)
-  const sumFor = (client: string, month: string, cc?: string) => rows.filter(r => nombreCliente(r) === client && periodoKey(r) === month && (!cc || nombreCc(r) === cc)).reduce((s, r) => s + r.total_neto, 0)
+  const months = useMemo(() => Array.from(new Set(rows.map(periodoKey).filter(Boolean))).sort(), [rows])
+  const clients = useMemo(() => groupSum(rows, nombreCliente).slice(0, 16), [rows])
+
+  // Una sola pasada sobre rows en vez de re-filtrar por cada celda cliente×mes×CC en cada render/click.
+  const { monthTotals, ccMonthTotals, ccOrder, monthGrandTotal } = useMemo(() => {
+    const monthTotals = new Map<string, Map<string, number>>()
+    const ccMonthTotals = new Map<string, Map<string, Map<string, number>>>()
+    const ccTotal = new Map<string, Map<string, number>>()
+    const monthGrandTotal = new Map<string, number>()
+    rows.forEach(r => {
+      const client = nombreCliente(r)
+      const month = periodoKey(r)
+      const cc = nombreCc(r)
+      const v = r.total_neto
+
+      monthGrandTotal.set(month, (monthGrandTotal.get(month) || 0) + v)
+
+      const cm = monthTotals.get(client) || new Map<string, number>()
+      cm.set(month, (cm.get(month) || 0) + v)
+      monthTotals.set(client, cm)
+
+      const clientCcMap = ccMonthTotals.get(client) || new Map<string, Map<string, number>>()
+      const cmMap = clientCcMap.get(cc) || new Map<string, number>()
+      cmMap.set(month, (cmMap.get(month) || 0) + v)
+      clientCcMap.set(cc, cmMap)
+      ccMonthTotals.set(client, clientCcMap)
+
+      const ct = ccTotal.get(client) || new Map<string, number>()
+      ct.set(cc, (ct.get(cc) || 0) + v)
+      ccTotal.set(client, ct)
+    })
+    const ccOrder = new Map<string, string[]>()
+    ccTotal.forEach((map, client) => ccOrder.set(client, Array.from(map.entries()).sort((a, b) => b[1] - a[1]).map(([c]) => c)))
+    return { monthTotals, ccMonthTotals, ccOrder, monthGrandTotal }
+  }, [rows])
+
+  const sumFor = (client: string, month: string, cc?: string) =>
+    (cc ? ccMonthTotals.get(client)?.get(cc) : monthTotals.get(client))?.get(month) || 0
+
   return (
     <Card noPadding>
       <CardHeader><CardTitle title="Clientes x mes" badge={moneda} /><span style={{ color: '#7286bd', fontSize: 12 }}>clic en un cliente para ver el desglose por CC</span><button style={excelBtn} onClick={() => exportXlsx(`clientes-por-mes-${moneda}.xlsx`, [['Cliente', ...months.map(mesCorto)], ...clients.map(([client]) => [client, ...months.map(m => sumFor(client, m).toFixed(2))])])}>↓ Excel</button></CardHeader>
@@ -418,17 +471,17 @@ function ClientMonthTable({ rows, moneda }: { rows: FacturacionLinea[]; moneda: 
           <thead><tr><Th>Cliente</Th>{months.map(m => <Th key={m} right>{mesCorto(m)}</Th>)}</tr></thead>
           <tbody>
             {clients.map(([client]) => {
-              const ccs = groupSum(rows.filter(r => nombreCliente(r) === client), nombreCc).map(([c]) => c)
+              const ccs = ccOrder.get(client) || []
               return (
                 <Fragment key={client}>
                   <tr key={client} onClick={() => setOpen(o => ({ ...o, [client]: !o[client] }))} style={{ cursor: 'pointer' }}>
-                    <Td><strong>{open[client] ? '⌄' : '›'} {client}</strong></Td>{months.map(m => <Td key={m} right><strong>{sumFor(client, m) ? fmtMoney(sumFor(client, m), moneda) : '-'}</strong></Td>)}
+                    <Td><strong>{open[client] ? '⌄' : '›'} {client}</strong></Td>{months.map(m => { const v = sumFor(client, m); return <Td key={m} right><strong>{v ? fmtMoney(v, moneda) : '-'}</strong></Td> })}
                   </tr>
-                  {open[client] && ccs.map(cc => <tr key={`${client}-${cc}`} style={{ background: '#f1fbff' }}><Td style={{ paddingLeft: 34, color: '#7286bd' }}>{cc}</Td>{months.map(m => <Td key={m} right style={{ color: '#7286bd' }}>{sumFor(client, m, cc) ? fmtMoney(sumFor(client, m, cc), moneda) : '-'}</Td>)}</tr>)}
+                  {open[client] && ccs.map(cc => <tr key={`${client}-${cc}`} style={{ background: '#f1fbff' }}><Td style={{ paddingLeft: 34, color: '#7286bd' }}>{cc}</Td>{months.map(m => { const v = sumFor(client, m, cc); return <Td key={m} right style={{ color: '#7286bd' }}>{v ? fmtMoney(v, moneda) : '-'}</Td> })}</tr>)}
                 </Fragment>
               )
             })}
-            <tr style={{ background: '#e8f8ff' }}><Td><strong>TOTAL GENERAL</strong></Td>{months.map(m => <Td key={m} right><strong>{fmtMoney(rows.filter(r => periodoKey(r) === m).reduce((s, r) => s + r.total_neto, 0), moneda)}</strong></Td>)}</tr>
+            <tr style={{ background: '#e8f8ff' }}><Td><strong>TOTAL GENERAL</strong></Td>{months.map(m => <Td key={m} right><strong>{fmtMoney(monthGrandTotal.get(m) || 0, moneda)}</strong></Td>)}</tr>
           </tbody>
         </table>
       </div>
