@@ -152,27 +152,6 @@ export function SubirFacturacionExcel({ insertarLote, compact = false }: Props) 
       }
       if (filas.length === 0) throw new Error('No se encontraron filas válidas en el archivo.')
 
-      const { data: reportesPrevios, error: prevError } = await supabase
-        .from('facturacion_reportes')
-        .select('id')
-        .eq('nombre_archivo', archivo.name)
-      if (prevError) throw prevError
-
-      const idsPrevios = (reportesPrevios || []).map(r => r.id).filter(Boolean)
-      if (idsPrevios.length > 0) {
-        const { error: lineasError } = await supabase
-          .from('facturacion_lineas')
-          .delete()
-          .in('reporte_id', idsPrevios)
-        if (lineasError) throw lineasError
-
-        const { error: reportesError } = await supabase
-          .from('facturacion_reportes')
-          .delete()
-          .in('id', idsPrevios)
-        if (reportesError) throw reportesError
-      }
-
       const { data: reporte, error: repError } = await supabase
         .from('facturacion_reportes')
         .insert({ nombre_archivo: archivo.name, subido_por: 'usuario@asap.com', filas_importadas: filas.length })

@@ -63,7 +63,9 @@ export function useFacturacionLineas() {
 
   const insertarLote = async (filas: Omit<FacturacionLinea, 'id' | 'creado_el'>[]) => {
     for (let i = 0; i < filas.length; i += 500) {
-      const { error } = await supabase.from('facturacion_lineas').insert(filas.slice(i, i + 500))
+      const { error } = await supabase
+        .from('facturacion_lineas')
+        .upsert(filas.slice(i, i + 500), { onConflict: 'empresa,n_factura,articulo_codigo,cc_descripcion,oc' })
       if (error) throw error
     }
     await cargar()
