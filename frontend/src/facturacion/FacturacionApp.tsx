@@ -194,7 +194,7 @@ export function FacturacionApp({ session, onCambiarModulo }: { session: Session;
   }
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '280px 1fr', minHeight: '100vh', background: '#eaf7fd', color: '#0d1b38', fontFamily: 'Inter, sans-serif', fontSize: 13 }}>
+    <div style={{ display: 'grid', gridTemplateColumns: '280px minmax(0, 1fr)', width: '100vw', height: '100vh', overflow: 'hidden', background: '#eaf7fd', color: '#0d1b38', fontFamily: 'Inter, sans-serif', fontSize: 13 }}>
       <aside className="scroll-sin-barra" style={{ background: '#0c2a3d', display: 'flex', flexDirection: 'column', position: 'sticky', top: 0, height: '100vh', overflowY: 'auto', boxShadow: '2px 0 14px rgba(10,22,40,0.2)' }}>
         <div style={{ padding: '20px 18px 16px', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -226,7 +226,7 @@ export function FacturacionApp({ session, onCambiarModulo }: { session: Session;
         </div>
       </aside>
 
-      <section style={{ minWidth: 0 }}>
+      <section style={{ minWidth: 0, overflow: 'hidden' }}>
         <header style={{ height: 58, background: '#fff', borderBottom: '1px solid #d3eaf6', padding: '0 28px', display: 'flex', alignItems: 'center', gap: 12, boxShadow: '0 1px 5px rgba(10,22,40,0.08)' }}>
           <span style={{ fontSize: 20, fontWeight: 800 }}>Facturación</span>
           <span style={{ color: '#7286bd', fontSize: 13 }}>· {empresaActiva === 'all' ? 'Todas las compañías' : empresaActiva}</span>
@@ -234,7 +234,7 @@ export function FacturacionApp({ session, onCambiarModulo }: { session: Session;
           <span style={{ fontSize: 12, color: '#7a8fbb' }}>{session.user.email}</span>
         </header>
 
-        <main style={{ padding: '22px 28px 36px', height: 'calc(100vh - 58px)', overflowY: 'auto', scrollbarGutter: 'stable', display: 'flex', flexDirection: 'column' }}>
+        <main style={{ padding: '22px 28px 36px', height: 'calc(100vh - 58px)', overflowY: 'auto', overflowX: 'hidden', scrollbarGutter: 'stable', display: 'flex', flexDirection: 'column' }}>
           {error && <div style={{ color: '#dc2626', marginBottom: 14, fontSize: 13 }}>⚠ {error}</div>}
           {loading ? (
             <div style={{ flex: 1, display: 'grid', placeItems: 'center' }}><div style={emptyStyle}>Cargando facturación...</div></div>
@@ -311,16 +311,18 @@ function PanelVentas(props: {
   const ultimoMes = props.meses[props.meses.length - 1]
 
   return (
-    <div style={{ display: 'grid', gap: 16 }}>
-      <Segmented>
-        <Seg active={props.empresaActiva === 'all'} onClick={() => props.setEmpresaActiva('all')}>Todas</Seg>
-        {props.empresas.map(e => (
-          <Seg key={e.nombre} active={props.empresaActiva === e.nombre} onClick={() => props.setEmpresaActiva(e.nombre)}>
-            <span className={`fi fi-${flagCode(e.moneda)}`} style={{ borderRadius: 2, marginRight: 6, verticalAlign: 'middle' }} />
-            {e.nombre.toUpperCase()}
-          </Seg>
-        ))}
-      </Segmented>
+    <div style={{ display: 'grid', gap: 16, width: '100%', minWidth: 0 }}>
+      <div style={{ width: '100%', overflowX: 'auto', overflowY: 'hidden', scrollbarGutter: 'stable' }}>
+        <Segmented>
+          <Seg active={props.empresaActiva === 'all'} onClick={() => props.setEmpresaActiva('all')}>Todas</Seg>
+          {props.empresas.map(e => (
+            <Seg key={e.nombre} active={props.empresaActiva === e.nombre} onClick={() => props.setEmpresaActiva(e.nombre)}>
+              <span className={`fi fi-${flagCode(e.moneda)}`} style={{ borderRadius: 2, marginRight: 6, verticalAlign: 'middle', flexShrink: 0 }} />
+              {e.nombre.toUpperCase()}
+            </Seg>
+          ))}
+        </Segmented>
+      </div>
 
       <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
         <Segmented>
@@ -355,7 +357,7 @@ function PanelVentas(props: {
 
       <div style={{ color: '#7286bd', fontSize: 13 }}>▦ Análisis hasta <strong>{ultimoMes ? mesLabel(ultimoMes) : 'el último período cargado'}</strong> — se excluye el mes en curso por estar incompleto.</div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))', gap: 14 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))', gap: 14, minHeight: 89 }}>
         {monedas.map(m => <Kpi key={m} label={`Facturación del ${props.anio === 'all' ? 'período' : props.anio} (${m})`} value={fmtMoney((rowsByMoneda.get(m) || []).reduce((s, r) => s + r.total_neto, 0), m)} />)}
       </div>
 
@@ -394,13 +396,13 @@ function LineCard({ rows, moneda }: { rows: FacturacionLinea[]; moneda: string }
   return (
     <Card>
       <CardTitle title="Evolución mensual" badge={moneda} />
-      <svg viewBox="0 0 940 265" style={{ width: '100%', height: 265, display: 'block' }}>
+      <svg viewBox="0 0 940 265" style={{ width: '100%', height: 265, display: 'block', flexShrink: 0 }}>
         {[0, 1, 2, 3, 4].map(i => <line key={i} x1="60" x2="900" y1={230 - i * 45} y2={230 - i * 45} stroke="#d8ecf7" strokeDasharray="4 5" />)}
         {area && <path d={area} fill="#e5f6fd" />}
         {line && <path d={line} fill="none" stroke="#19a8e6" strokeWidth="3" />}
         {points.map(p => <g key={p.k}><circle cx={p.x} cy={p.y} r="4" fill="#19a8e6" stroke="#fff" strokeWidth="2" /><text x={p.x} y={p.y - 12} textAnchor="middle" fontSize="11" fill="#243d71" fontWeight="800">{fmtShort(p.v, moneda)}</text><text x={p.x} y="252" textAnchor="middle" fontSize="11" fill="#7286bd">{mesCorto(p.k)}</text></g>)}
       </svg>
-      <div style={{ display: 'grid', gap: 8 }}>
+      <div style={{ display: 'grid', gap: 8, minHeight: 98, alignContent: 'start' }}>
         {subida && <Insight color="#22c55e" bg="#d8ffe8">📈 <strong>Mayor suba:</strong> {subida.pct.toFixed(0)}% de {mesLabel(subida.from.k)} a {mesLabel(subida.to.k)} ({fmtMoney(subida.from.v, moneda)} → {fmtMoney(subida.to.v, moneda)})</Insight>}
         {baja && <Insight color="#8b5cf6" bg="#efe9ff">📉 <strong>Mayor baja:</strong> {baja.pct.toFixed(0)}% de {mesLabel(baja.from.k)} a {mesLabel(baja.to.k)} ({fmtMoney(baja.from.v, moneda)} → {fmtMoney(baja.to.v, moneda)})</Insight>}
       </div>
@@ -732,15 +734,15 @@ function MultiSelect({ options, selected, onChange, placeholderAll, formatLabel 
 }
 
 function Segmented({ children }: { children: React.ReactNode }) {
-  return <div style={{ display: 'inline-flex', border: '1px solid #c6e5f4', borderRadius: 8, overflow: 'hidden', background: '#f7fcff' }}>{children}</div>
+  return <div style={{ display: 'inline-flex', maxWidth: '100%', border: '1px solid #c6e5f4', borderRadius: 8, overflow: 'hidden', background: '#f7fcff' }}>{children}</div>
 }
 
 function Seg({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
-  return <button onClick={onClick} style={{ border: 0, borderRight: '1px solid #c6e5f4', background: active ? '#18a9e5' : 'transparent', color: active ? '#fff' : '#243d71', padding: '9px 14px', fontSize: 13, fontWeight: 700, cursor: 'pointer', minWidth: 72 }}>{children}</button>
+  return <button onClick={onClick} style={{ border: 0, borderRight: '1px solid #c6e5f4', background: active ? '#18a9e5' : 'transparent', color: active ? '#fff' : '#243d71', padding: '9px 14px', fontSize: 13, fontWeight: 700, cursor: 'pointer', minWidth: 72, whiteSpace: 'nowrap', flexShrink: 0 }}>{children}</button>
 }
 
 function Card({ children, noPadding = false }: { children: React.ReactNode; noPadding?: boolean }) {
-  return <section style={{ background: '#fff', border: '1px solid #cbe5f3', borderRadius: 8, padding: noPadding ? 0 : 16, boxShadow: '0 1px 4px rgba(14,74,103,.1)', overflow: 'hidden' }}>{children}</section>
+  return <section style={{ width: '100%', minWidth: 0, background: '#fff', border: '1px solid #cbe5f3', borderRadius: 8, padding: noPadding ? 0 : 16, boxShadow: '0 1px 4px rgba(14,74,103,.1)', overflow: 'hidden' }}>{children}</section>
 }
 
 function CardHeader({ children }: { children: React.ReactNode }) {
@@ -796,7 +798,7 @@ const clearBtn: React.CSSProperties = { border: '1px solid #c6e5f4', background:
 const filterInputStyle: React.CSSProperties = { width: '100%', border: '1px solid #bfe1f3', borderRadius: 6, padding: '4px 6px', fontSize: 11, background: '#f7fcff', color: '#0d1b38', outline: 'none' }
 const pdfBtnStyle: React.CSSProperties = { fontSize: 10.5, fontWeight: 700, padding: '4px 9px', borderRadius: 6, border: '1px solid #d3eaf6', background: '#f7fcff', color: '#a0b0d0', cursor: 'default', whiteSpace: 'nowrap' }
 const mselBtn: React.CSSProperties = { border: '1px solid #bfe1f3', borderRadius: 6, padding: '4px 8px', fontSize: 11, background: '#f7fcff', color: '#0d1b38', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5, width: '100%', minWidth: 90, justifyContent: 'space-between' }
-const mselPanel: React.CSSProperties = { position: 'absolute', top: 'calc(100% + 4px)', left: 0, background: '#fff', border: '1px solid #b7dcf0', borderRadius: 8, boxShadow: '0 6px 24px rgba(10,22,40,0.14)', zIndex: 50, maxHeight: 260, overflowY: 'auto', minWidth: 220, padding: 6 }
+const mselPanel: React.CSSProperties = { position: 'absolute', top: 'calc(100% + 4px)', left: 0, background: '#fff', border: '1px solid #b7dcf0', borderRadius: 8, boxShadow: '0 6px 24px rgba(10,22,40,0.14)', zIndex: 50, width: 270, maxWidth: 'calc(100vw - 40px)', maxHeight: 260, overflowY: 'auto', padding: 6 }
 const mselSearch: React.CSSProperties = { width: '100%', border: '1px solid #d3eaf6', borderRadius: 6, padding: '5px 8px', fontSize: 11.5, color: '#0d1b38', background: '#f7fcff', outline: 'none', marginBottom: 6 }
 const mselActions: React.CSSProperties = { display: 'flex', justifyContent: 'space-between', padding: '2px 6px 6px', borderBottom: '1px solid #d3eaf6', marginBottom: 4, fontSize: 10.5, color: '#19a8e6', fontWeight: 700, cursor: 'pointer' }
 const mselOption: React.CSSProperties = { display: 'flex', alignItems: 'center', gap: 6, padding: '4px 6px', fontSize: 12, cursor: 'pointer', borderRadius: 5, color: '#3d5278' }
