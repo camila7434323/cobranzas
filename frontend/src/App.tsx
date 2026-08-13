@@ -1062,7 +1062,7 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
             return (
               <div key={key} style={{ marginBottom: '8px' }}>
                 <button
-                  onClick={() => { setSociedadActiva(key); setSociedadesAbiertas(prev => ({ sa: false, llc: false, sl: false, [key]: !prev[key] })); if (vista === 'global') setVista('dashboard') }}
+                  onClick={() => { setSociedadActiva(key); setSociedadesAbiertas(prev => ({ sa: false, llc: false, sl: false, [key]: !prev[key] })); if (vista === 'global') setVista(perfil?.rol === 'ejecutivo' ? 'todos' : 'dashboard') }}
                   style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', padding: '10px 12px', borderRadius: '9px', border: activa ? '1px solid #3b6bc9' : '1px solid rgba(255,255,255,0.12)', background: activa ? '#2554a0' : 'rgba(255,255,255,0.06)', color: '#fff', cursor: 'pointer', fontSize: '13px', fontWeight: 700 }}
                 >
                   <span style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
@@ -1074,7 +1074,7 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
                 {abierta && (
                   <div style={{ padding: '6px 0 0 10px' }}>
                     {[
-                      { vista: 'dashboard' as Vista, label: 'Dashboard', count: pendienteCount },
+                      ...(perfil?.rol !== 'ejecutivo' ? [{ vista: 'dashboard' as Vista, label: 'Dashboard', count: pendienteCount }] : []),
                       { vista: 'todos' as Vista, label: 'Comprobantes por cobrar', count: pendienteCount },
                       ...(sociedad.manual && adminMode ? [{ vista: 'nueva' as Vista, label: 'Agregar factura', count: 0 }] : []),
                       { vista: 'historial' as Vista, label: 'Historial cobranzas', count: historialCount },
@@ -1093,7 +1093,7 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
                         </div>
                       )
                     })}
-                    {key === 'sa' && (
+                    {key === 'sa' && perfil?.rol !== 'ejecutivo' && (
                       <div style={{ padding: '10px 0 0' }}>
                         <div style={{ fontSize: '9px', fontWeight: 700, letterSpacing: '1.6px', textTransform: 'uppercase', color: 'rgba(255,255,255,0.22)', padding: '0 8px', marginBottom: '6px' }}>Por ejecutivo</div>
                         {[...ejecutivos, ...(data.some(r => esSinAsignar(r.ejecutivo)) ? ['Sin asignar'] : [])].map(exec => {
