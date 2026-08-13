@@ -234,7 +234,7 @@ export function FacturacionApp({ session, onCambiarModulo }: { session: Session;
           <span style={{ fontSize: 12, color: '#7a8fbb' }}>{session.user.email}</span>
         </header>
 
-        <main style={{ padding: '22px 28px 36px', minHeight: 'calc(100vh - 58px)', display: 'flex', flexDirection: 'column' }}>
+        <main style={{ padding: '22px 28px 36px', height: 'calc(100vh - 58px)', overflowY: 'auto', scrollbarGutter: 'stable', display: 'flex', flexDirection: 'column' }}>
           {error && <div style={{ color: '#dc2626', marginBottom: 14, fontSize: 13 }}>⚠ {error}</div>}
           {loading ? (
             <div style={{ flex: 1, display: 'grid', placeItems: 'center' }}><div style={emptyStyle}>Cargando facturación...</div></div>
