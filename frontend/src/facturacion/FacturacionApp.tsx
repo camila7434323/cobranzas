@@ -224,7 +224,7 @@ export function FacturacionApp({ session, onCambiarModulo }: { session: Session;
           <span style={{ fontSize: 12, color: '#7a8fbb' }}>{session.user.email}</span>
         </header>
 
-        <main style={{ padding: '22px 28px 36px', maxWidth: 1080 }}>
+        <main style={{ padding: '22px 28px 36px' }}>
           {error && <div style={{ color: '#dc2626', marginBottom: 14, fontSize: 13 }}>⚠ {error}</div>}
           {loading ? <div style={emptyStyle}>Cargando facturación...</div> : data.length === 0 ? <div style={emptyStyle}>Sin datos aún. Cargá el Excel para empezar.</div> : vista === 'dashboard' ? (
             <PanelVentas
