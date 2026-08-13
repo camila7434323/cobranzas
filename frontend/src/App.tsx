@@ -75,10 +75,8 @@ function DescPanel({ comprobante, extra, adminMode, onUpdate, condicionActual = 
   const FIELDS = [
     { key: 'descripcion',        label: 'Descripción',       wide: true },
     { key: 'centro_costo',       label: 'Centro de costo' },
-    { key: 'tipo_servicio',      label: 'Tipo de servicio' },
     { key: 'oc_hes_pedido',      label: 'OC / HES / Pedido' },
-    { key: 'colaborador',        label: 'Colaborador' },
-    { key: 'otros_conceptos',    label: 'Otros conceptos' },
+    { key: 'colaborador',        label: 'Ejecutivo' },
     { key: 'condicion_override', label: 'Condición override', type: 'select' },
     { key: 'periodo',            label: 'Período' },
     { key: 'nota',               label: 'Nota',              wide: true },
