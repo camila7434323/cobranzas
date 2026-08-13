@@ -18,6 +18,15 @@ import { useUltimoReporte } from './hooks/useUltimoReporte'
 import { CONDICION_OPTS, SOCIEDADES, type SociedadKey, type ManualFactura } from './types/sociedades'
 import { DASH_BAR_COLORS, EXEC_PIE_COLORS, svgPie } from './lib/dashboardUtils'
 
+const MESES_ABREV = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic']
+function fmtPeriodo(v: string): string {
+  const m = v.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/)
+  if (!m) return v
+  const mes = MESES_ABREV[Number(m[2]) - 1]
+  if (!mes) return v
+  return `${mes}-${m[3].slice(2)}`
+}
+
 function DescPanel({ comprobante, extra, adminMode, onUpdate, condicionActual = '' }: {
   comprobante: string
   extra: Extra | undefined
@@ -97,7 +106,7 @@ function DescPanel({ comprobante, extra, adminMode, onUpdate, condicionActual = 
             ) : (
               <input
                 type="text"
-                value={vals[f.key] || ''}
+                value={f.key === 'periodo' && !adminMode ? fmtPeriodo(vals[f.key] || '') : (vals[f.key] || '')}
                 onChange={e => { setVals(p => ({ ...p, [f.key]: e.target.value })); setSaveState('idle') }}
                 readOnly={!adminMode}
                 style={{ width: '100%', padding: '6px 10px', borderRadius: '6px', border: '1px solid #dde3f0', fontSize: '12px', background: adminMode ? '#fff' : '#f1f5f9', color: '#374151', outline: 'none', boxSizing: 'border-box' }}
