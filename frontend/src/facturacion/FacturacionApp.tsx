@@ -1,4 +1,5 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import * as XLSX from 'xlsx-js-style'
 import type { Session } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
@@ -147,15 +148,16 @@ export function FacturacionApp({ session, onCambiarModulo }: { session: Session;
   const [clientesSel, setClientesSel] = useState<string[]>([])
   const [ccsSel, setCcsSel] = useState<string[]>([])
   const [pdfNoEncontrado, setPdfNoEncontrado] = useState('')
+  const [modalPdf, setModalPdf] = useState<{ row: FacturacionLinea; url: string } | null>(null)
 
-  const abrirPdf = (nFactura: string) => {
-    const url = buscarPdf(nFactura)?.url
+  const abrirPdf = (row: FacturacionLinea) => {
+    const url = buscarPdf(row.n_factura)?.url
     if (!url) {
-      setPdfNoEncontrado(nFactura)
+      setPdfNoEncontrado(row.n_factura)
       setTimeout(() => setPdfNoEncontrado(''), 4000)
       return
     }
-    window.open(url, '_blank', 'noopener,noreferrer')
+    setModalPdf({ row, url })
   }
 
   const hoy = new Date()
@@ -300,6 +302,42 @@ export function FacturacionApp({ session, onCambiarModulo }: { session: Session;
         <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', zIndex: 1002, background: '#fef3c7', border: '1px solid #fcd34d', borderRadius: 10, padding: '16px 44px 16px 24px', fontSize: 14, color: '#92400e', fontWeight: 500, boxShadow: '0 10px 30px rgba(0,0,0,0.25)' }}>
           ⚠ Factura <strong>{pdfNoEncontrado}</strong> no subida a la base de datos.
           <button onClick={() => setPdfNoEncontrado('')} aria-label="Cerrar" style={{ position: 'absolute', top: 8, right: 10, background: 'none', border: 'none', cursor: 'pointer', color: '#92400e', fontSize: 18, lineHeight: 1, padding: 2 }}>×</button>
+        </div>
+      )}
+
+      {modalPdf && (
+        <div onClick={() => setModalPdf(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: 16, width: '100%', maxWidth: 620, maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}>
+            <div style={{ background: '#0a1628', borderRadius: '16px 16px 0 0', padding: '18px 24px', display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div style={{ width: 36, height: 36, background: 'rgba(255,255,255,0.1)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, flexShrink: 0 }}>📄</div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ color: '#fff', fontWeight: 700, fontSize: 16, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{modalPdf.row.n_factura}</div>
+                <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: 12 }}>{nombreCliente(modalPdf.row)} · Supabase Storage</div>
+              </div>
+              <button onClick={() => setModalPdf(null)} style={{ background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: 8, width: 32, height: 32, cursor: 'pointer', color: '#fff', fontSize: 16, flexShrink: 0 }}>✕</button>
+            </div>
+            <div style={{ background: '#f4f6fb', padding: 16 }}>
+              <iframe src={modalPdf.url} style={{ width: '100%', height: 380, border: 'none', borderRadius: 8, background: '#fff' }} title="PDF" />
+            </div>
+            <div style={{ padding: '16px 24px 24px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 16 }}>
+                {[
+                  { label: 'CLIENTE', value: nombreCliente(modalPdf.row) },
+                  { label: 'EJECUTIVO', value: modalPdf.row.ejecutivo || 'Sin asignar' },
+                  { label: 'PERÍODO', value: modalPdf.row.periodo ? mesLabel(periodoKey(modalPdf.row)) : '-' },
+                  { label: 'FECHA FACTURA', value: fmtFecha(modalPdf.row.fecha_factura) },
+                  { label: 'IMPORTE', value: fmtMoney(modalPdf.row.total_neto, monedaFila(modalPdf.row)) },
+                  { label: 'CC', value: nombreCc(modalPdf.row) },
+                ].map((item, idx) => (
+                  <div key={`modal-${item.label}-${idx}`} style={{ background: '#f8faff', borderRadius: 10, padding: '12px 16px' }}>
+                    <div style={{ fontSize: 10, fontWeight: 600, color: '#7a8fbb', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 4 }}>{item.label}</div>
+                    <div style={{ fontSize: 14, fontWeight: 600, color: '#0d1b38' }}>{item.value}</div>
+                  </div>
+                ))}
+              </div>
+              <a href={modalPdf.url} download target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, background: '#2554a0', color: '#fff', padding: 10, borderRadius: 10, fontSize: 13, fontWeight: 600, textDecoration: 'none' }}>⬇ Descargar</a>
+            </div>
+          </div>
         </div>
       )}
     </div>
@@ -553,7 +591,7 @@ function ClientMonthTable({ rows, moneda }: { rows: FacturacionLinea[]; moneda: 
 
 type SortCol = 'cliente' | 'ejecutivo' | 'periodo' | 'fecha' | 'nfactura' | 'cc' | 'total'
 
-function Detalle({ filas, empresaActiva, onAbrirPdf }: { filas: FacturacionLinea[]; empresaActiva: string; onAbrirPdf: (nFactura: string) => void }) {
+function Detalle({ filas, empresaActiva, onAbrirPdf }: { filas: FacturacionLinea[]; empresaActiva: string; onAbrirPdf: (row: FacturacionLinea) => void }) {
   const [openRows, setOpenRows] = useState<Set<string>>(new Set())
   const [clientesSel, setClientesSel] = useState<string[]>([])
   const [ejecutivosSel, setEjecutivosSel] = useState<string[]>([])
@@ -682,8 +720,8 @@ function Detalle({ filas, empresaActiva, onAbrirPdf }: { filas: FacturacionLinea
                       <Td>{r.n_factura || '-'}</Td>
                       <Td>{nombreCc(r)}</Td>
                       <Td right><strong>{fmtMoney(r.total_neto, moneda)}</strong></Td>
-                      <Td style={{ cursor: 'default' }} onClickCapture={e => e.stopPropagation()}>
-                        <button style={pdfBtnStyle(!!r.n_factura)} disabled={!r.n_factura} onClick={() => onAbrirPdf(r.n_factura)}>PDF Factura</button>
+                      <Td style={{ cursor: 'default' }} onClick={e => e.stopPropagation()}>
+                        <button style={pdfBtnStyle(!!r.n_factura)} disabled={!r.n_factura} onClick={() => onAbrirPdf(r)}>PDF Factura</button>
                       </Td>
                     </tr>
                     {isOpen && (
@@ -724,14 +762,33 @@ function DetailItem({ label, value }: { label: string; value?: string | null }) 
 function MultiSelect({ options, selected, onChange, placeholderAll, formatLabel }: { options: string[]; selected: string[]; onChange: (v: string[]) => void; placeholderAll: string; formatLabel?: (v: string) => string }) {
   const [open, setOpen] = useState(false)
   const [search, setSearch] = useState('')
+  const [coords, setCoords] = useState({ top: 0, left: 0, width: 270 })
   const ref = useRef<HTMLDivElement>(null)
+  const panelRef = useRef<HTMLDivElement>(null)
   const fmt = formatLabel || ((v: string) => v)
+
+  const actualizarCoords = () => {
+    const rect = ref.current?.getBoundingClientRect()
+    if (rect) setCoords({ top: rect.bottom + 4, left: rect.left, width: rect.width })
+  }
 
   useEffect(() => {
     if (!open) return
-    const close = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false) }
+    actualizarCoords()
+    const close = (e: MouseEvent) => {
+      const target = e.target as Node
+      if (ref.current?.contains(target) || panelRef.current?.contains(target)) return
+      setOpen(false)
+    }
     document.addEventListener('mousedown', close)
-    return () => document.removeEventListener('mousedown', close)
+    window.addEventListener('scroll', actualizarCoords, true)
+    window.addEventListener('resize', actualizarCoords)
+    return () => {
+      document.removeEventListener('mousedown', close)
+      window.removeEventListener('scroll', actualizarCoords, true)
+      window.removeEventListener('resize', actualizarCoords)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open])
 
   let label = placeholderAll
@@ -747,8 +804,8 @@ function MultiSelect({ options, selected, onChange, placeholderAll, formatLabel 
         <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{label}</span>
         <span style={{ fontSize: 8, color: '#7286bd' }}>▾</span>
       </button>
-      {open && (
-        <div style={mselPanel}>
+      {open && createPortal(
+        <div ref={panelRef} style={{ ...mselPanel, position: 'fixed', top: coords.top, left: coords.left, width: Math.max(coords.width, 220) }}>
           {options.length > 8 && <input autoFocus value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar..." style={mselSearch} />}
           <div style={mselActions}>
             <span onClick={() => onChange(options)}>Todos</span>
@@ -760,7 +817,8 @@ function MultiSelect({ options, selected, onChange, placeholderAll, formatLabel 
               <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{fmt(opt)}</span>
             </label>
           ))}
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   )
@@ -802,8 +860,8 @@ function Th({ children, right = false, onClick }: { children?: React.ReactNode; 
   return <th onClick={onClick} style={{ padding: '8px 10px', color: '#7286bd', fontSize: 10.5, textTransform: 'uppercase', letterSpacing: 0.8, textAlign: right ? 'right' : 'left', borderBottom: '1px solid #d3eaf6', cursor: onClick ? 'pointer' : 'default', userSelect: 'none' }}>{children}</th>
 }
 
-function Td({ children, right = false, style = {}, onClickCapture }: { children: React.ReactNode; right?: boolean; style?: React.CSSProperties; onClickCapture?: (e: React.MouseEvent) => void }) {
-  return <td onClickCapture={onClickCapture} style={{ padding: '8px 10px', color: '#243d71', fontSize: 13, textAlign: right ? 'right' : 'left', borderBottom: '1px solid #d3eaf6', ...style }}>{children}</td>
+function Td({ children, right = false, style = {}, onClick, onClickCapture }: { children: React.ReactNode; right?: boolean; style?: React.CSSProperties; onClick?: (e: React.MouseEvent) => void; onClickCapture?: (e: React.MouseEvent) => void }) {
+  return <td onClick={onClick} onClickCapture={onClickCapture} style={{ padding: '8px 10px', color: '#243d71', fontSize: 13, textAlign: right ? 'right' : 'left', borderBottom: '1px solid #d3eaf6', ...style }}>{children}</td>
 }
 
 function pieSlice(cx: number, cy: number, r: number, start: number, end: number) {
