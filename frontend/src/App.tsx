@@ -77,7 +77,7 @@ function DescPanel({ comprobante, extra, adminMode, onUpdate, condicionActual = 
     { key: 'centro_costo',       label: 'Centro de costo' },
     { key: 'oc_hes_pedido',      label: 'OC / HES / Pedido' },
     { key: 'colaborador',        label: 'Ejecutivo' },
-    { key: 'condicion_override', label: 'Condición override', type: 'select' },
+    { key: 'condicion_override', label: 'Condición de pago', type: 'select' },
     { key: 'periodo',            label: 'Período' },
     { key: 'nota',               label: 'Nota',              wide: true },
   ]

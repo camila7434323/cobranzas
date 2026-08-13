@@ -4,6 +4,7 @@ import type { Session } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
 import { useFacturacionLineas, type FacturacionLinea } from './hooks/useFacturacionLineas'
 import { SubirFacturacionExcel } from './components/SubirFacturacionExcel'
+import { usePdfsStorage } from '../hooks/usePdfsStorage'
 
 type Vista = 'dashboard' | 'detalle'
 type Modo = 'compania' | 'cliente' | 'cc'
@@ -136,6 +137,7 @@ const exportXlsx = (filename: string, rows: Array<Array<string | number>>) => {
 
 export function FacturacionApp({ session, onCambiarModulo }: { session: Session; onCambiarModulo: () => void }) {
   const { data, loading, error, insertarLote } = useFacturacionLineas()
+  const { buscarPdf } = usePdfsStorage()
   const [vista, setVista] = useState<Vista>('dashboard')
   const [empresaActiva, setEmpresaActiva] = useState('all')
   const [busqueda, setBusqueda] = useState('')
@@ -144,6 +146,17 @@ export function FacturacionApp({ session, onCambiarModulo }: { session: Session;
   const [mesesSel, setMesesSel] = useState<string[]>([])
   const [clientesSel, setClientesSel] = useState<string[]>([])
   const [ccsSel, setCcsSel] = useState<string[]>([])
+  const [pdfNoEncontrado, setPdfNoEncontrado] = useState('')
+
+  const abrirPdf = (nFactura: string) => {
+    const url = buscarPdf(nFactura)?.url
+    if (!url) {
+      setPdfNoEncontrado(nFactura)
+      setTimeout(() => setPdfNoEncontrado(''), 4000)
+      return
+    }
+    window.open(url, '_blank', 'noopener,noreferrer')
+  }
 
   const hoy = new Date()
   const mesActualKey = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}`
@@ -277,11 +290,18 @@ export function FacturacionApp({ session, onCambiarModulo }: { session: Session;
               <div style={{ marginBottom: 16 }}>
                 <input value={busqueda} onChange={e => setBusqueda(e.target.value)} placeholder="Buscar en toda la facturación (cliente, CUIT, ejecutivo, factura, período, artículo, importe...)" style={inputStyle} />
               </div>
-              <Detalle key={empresaActiva} filas={filas} empresaActiva={empresaActiva} />
+              <Detalle key={empresaActiva} filas={filas} empresaActiva={empresaActiva} onAbrirPdf={abrirPdf} />
             </>
           )}
         </main>
       </section>
+
+      {pdfNoEncontrado && (
+        <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', zIndex: 1002, background: '#fef3c7', border: '1px solid #fcd34d', borderRadius: 10, padding: '16px 44px 16px 24px', fontSize: 14, color: '#92400e', fontWeight: 500, boxShadow: '0 10px 30px rgba(0,0,0,0.25)' }}>
+          ⚠ Factura <strong>{pdfNoEncontrado}</strong> no subida a la base de datos.
+          <button onClick={() => setPdfNoEncontrado('')} aria-label="Cerrar" style={{ position: 'absolute', top: 8, right: 10, background: 'none', border: 'none', cursor: 'pointer', color: '#92400e', fontSize: 18, lineHeight: 1, padding: 2 }}>×</button>
+        </div>
+      )}
     </div>
   )
 }
@@ -533,7 +553,7 @@ function ClientMonthTable({ rows, moneda }: { rows: FacturacionLinea[]; moneda: 
 
 type SortCol = 'cliente' | 'ejecutivo' | 'periodo' | 'fecha' | 'nfactura' | 'cc' | 'total'
 
-function Detalle({ filas, empresaActiva }: { filas: FacturacionLinea[]; empresaActiva: string }) {
+function Detalle({ filas, empresaActiva, onAbrirPdf }: { filas: FacturacionLinea[]; empresaActiva: string; onAbrirPdf: (nFactura: string) => void }) {
   const [openRows, setOpenRows] = useState<Set<string>>(new Set())
   const [clientesSel, setClientesSel] = useState<string[]>([])
   const [ejecutivosSel, setEjecutivosSel] = useState<string[]>([])
@@ -662,7 +682,9 @@ function Detalle({ filas, empresaActiva }: { filas: FacturacionLinea[]; empresaA
                       <Td>{r.n_factura || '-'}</Td>
                       <Td>{nombreCc(r)}</Td>
                       <Td right><strong>{fmtMoney(r.total_neto, moneda)}</strong></Td>
-                      <Td style={{ cursor: 'default' }} onClickCapture={e => e.stopPropagation()}><button style={pdfBtnStyle} disabled>PDF Factura</button></Td>
+                      <Td style={{ cursor: 'default' }} onClickCapture={e => e.stopPropagation()}>
+                        <button style={pdfBtnStyle(!!r.n_factura)} disabled={!r.n_factura} onClick={() => onAbrirPdf(r.n_factura)}>PDF Factura</button>
+                      </Td>
                     </tr>
                     {isOpen && (
                       <tr style={{ background: '#f1fbff' }}>
@@ -807,7 +829,13 @@ const notice: React.CSSProperties = { border: '1px solid #c6e5f4', background: '
 const excelBtn: React.CSSProperties = { marginLeft: 'auto', border: '1px solid #c6e5f4', background: '#fff', color: '#087fa8', borderRadius: 8, padding: '7px 12px', fontSize: 12, fontWeight: 800, cursor: 'pointer' }
 const clearBtn: React.CSSProperties = { border: '1px solid #c6e5f4', background: '#fff', color: '#7286bd', borderRadius: 8, padding: '7px 12px', fontSize: 12, fontWeight: 800, cursor: 'pointer' }
 const filterInputStyle: React.CSSProperties = { width: '100%', border: '1px solid #bfe1f3', borderRadius: 6, padding: '4px 6px', fontSize: 11, background: '#f7fcff', color: '#0d1b38', outline: 'none' }
-const pdfBtnStyle: React.CSSProperties = { fontSize: 10.5, fontWeight: 700, padding: '4px 9px', borderRadius: 6, border: '1px solid #d3eaf6', background: '#f7fcff', color: '#a0b0d0', cursor: 'default', whiteSpace: 'nowrap' }
+const pdfBtnStyle = (activo: boolean): React.CSSProperties => ({
+  fontSize: 10.5, fontWeight: 700, padding: '4px 9px', borderRadius: 6, whiteSpace: 'nowrap',
+  border: `1px solid ${activo ? '#bfe1f3' : '#d3eaf6'}`,
+  background: activo ? '#f0f8ff' : '#f7fcff',
+  color: activo ? '#087fa8' : '#a0b0d0',
+  cursor: activo ? 'pointer' : 'default',
+})
 const mselBtn: React.CSSProperties = { border: '1px solid #bfe1f3', borderRadius: 6, padding: '4px 8px', fontSize: 11, background: '#f7fcff', color: '#0d1b38', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5, width: '100%', minWidth: 90, justifyContent: 'space-between' }
 const mselPanel: React.CSSProperties = { position: 'absolute', top: 'calc(100% + 4px)', left: 0, background: '#fff', border: '1px solid #b7dcf0', borderRadius: 8, boxShadow: '0 6px 24px rgba(10,22,40,0.14)', zIndex: 50, width: 270, maxWidth: 'calc(100vw - 40px)', maxHeight: 260, overflowY: 'auto', padding: 6 }
 const mselSearch: React.CSSProperties = { width: '100%', border: '1px solid #d3eaf6', borderRadius: 6, padding: '5px 8px', fontSize: 11.5, color: '#0d1b38', background: '#f7fcff', outline: 'none', marginBottom: 6 }
