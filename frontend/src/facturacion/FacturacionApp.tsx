@@ -787,7 +787,6 @@ const navStyle = (active: boolean): React.CSSProperties => ({
 
 const sideButton: React.CSSProperties = { background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer', fontSize: 11, color: 'rgba(255,255,255,0.55)', padding: '8px 10px', borderRadius: 6, fontWeight: 800 }
 const dot: React.CSSProperties = { width: 9, height: 9, borderRadius: '50%', background: '#7dd3fc' }
-const selectStyle: React.CSSProperties = { width: 270, background: '#f7fcff', border: '1px solid #bfe1f3', borderRadius: 8, color: '#0d1b38', fontSize: 13, padding: '8px 10px', outline: 'none' }
 const inputStyle: React.CSSProperties = { width: 340, background: '#f7fcff', border: '1px solid #bfe1f3', borderRadius: 8, color: '#0d1b38', fontSize: 13, padding: '8px 10px', outline: 'none' }
 const emptyStyle: React.CSSProperties = { background: '#fff', border: '1.5px dashed #b7dcf0', borderRadius: 10, padding: '78px 20px', textAlign: 'center', color: '#7286bd' }
 const tableStyle: React.CSSProperties = { width: '100%', borderCollapse: 'collapse' }
