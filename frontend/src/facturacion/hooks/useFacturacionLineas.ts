@@ -61,11 +61,20 @@ export function useFacturacionLineas() {
 
   useEffect(() => { cargar() }, [cargar])
 
+  const CLAVE_NATURAL = ['empresa', 'n_factura', 'articulo_codigo', 'cc_descripcion', 'oc', 'periodo'] as const
+
   const insertarLote = async (filas: Omit<FacturacionLinea, 'id' | 'creado_el'>[]) => {
-    for (let i = 0; i < filas.length; i += 500) {
+    // Si el mismo Excel trae dos filas con la misma clave natural (ej. una
+    // línea recurrente repetida), nos quedamos con la última: un solo
+    // comando de upsert no puede actualizar la misma fila dos veces.
+    const porClave = new Map<string, Omit<FacturacionLinea, 'id' | 'creado_el'>>()
+    for (const f of filas) porClave.set(CLAVE_NATURAL.map(k => f[k] ?? '').join('|'), f)
+    const filasUnicas = Array.from(porClave.values())
+
+    for (let i = 0; i < filasUnicas.length; i += 500) {
       const { error } = await supabase
         .from('facturacion_lineas')
-        .upsert(filas.slice(i, i + 500), { onConflict: 'empresa,n_factura,articulo_codigo,cc_descripcion,oc' })
+        .upsert(filasUnicas.slice(i, i + 500), { onConflict: CLAVE_NATURAL.join(',') })
       if (error) throw error
     }
     await cargar()
