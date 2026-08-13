@@ -21,7 +21,6 @@ type Props = {
   fmtFecha: (fecha: string) => string
   calcularVencimientoPorCondicion: (fechaEmision: string | null | undefined, condicion: string) => string | null
   calcularDiasMora: (fechaVencimiento: string | null) => number
-  onShowAdminPrompt: () => void
   onIrANueva: () => void
   onEditar: (factura: ManualFactura) => void
   onGuardarFactura: (factura: ManualFactura) => void
@@ -42,7 +41,7 @@ export function ManualSociedadView({
   vista, sociedad, nombreSociedad, monedas, condicionOpts, adminMode, facturas, historial,
   execsConocidos, clientesConocidos, busqueda, editando, fmtFecha,
   calcularVencimientoPorCondicion, calcularDiasMora,
-  onShowAdminPrompt, onIrANueva, onEditar, onGuardarFactura, onCancelarFactura,
+  onIrANueva, onEditar, onGuardarFactura, onCancelarFactura,
   onMarcarCobrada, onDeshacerCobro, onReasignarEjecutivo, onAbrirPdf, onVerFacturasCliente,
 }: Props) {
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set())
@@ -59,9 +58,6 @@ export function ManualSociedadView({
       return (
         <div style={{ background: '#fff', border: '1px solid #bcd0f7', borderRadius: '12px', padding: '60px 24px', textAlign: 'center' }}>
           <div style={{ color: '#7a8fbb', fontSize: '14px' }}>Solo el administrador puede agregar facturas.</div>
-          <button onClick={onShowAdminPrompt} style={{ marginTop: '18px', background: '#2554a0', color: '#fff', border: 'none', borderRadius: '8px', padding: '9px 18px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}>
-            Activar Admin
-          </button>
         </div>
       )
     }
@@ -253,11 +249,6 @@ export function ManualSociedadView({
             <div style={{ fontSize: '40px', marginBottom: '14px' }}>📋</div>
             <div style={{ fontSize: '16px', fontWeight: 600, color: '#0d1b38', marginBottom: '8px' }}>Sin datos aún</div>
             <div style={{ fontSize: '13px', color: '#7a8fbb', maxWidth: '340px' }}>Los indicadores aparecen automáticamente a medida que cargues facturas. Comenzá agregando la primera.</div>
-            {!adminMode && (
-              <button onClick={onShowAdminPrompt} style={{ marginTop: '18px', background: '#2554a0', color: '#fff', border: 'none', borderRadius: '8px', padding: '9px 18px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}>
-                Activar Admin
-              </button>
-            )}
           </div>
         ) : (
           <>
@@ -423,13 +414,9 @@ export function ManualSociedadView({
           <div style={{ color: '#6b7fb3', fontSize: '14px', maxWidth: '420px', margin: '0 auto' }}>
             Los indicadores aparecen automáticamente a medida que cargues facturas para {nombreSociedad}.
           </div>
-          {adminMode ? (
+          {adminMode && (
             <button onClick={onIrANueva} style={{ marginTop: '18px', background: '#2554a0', color: '#fff', border: 'none', borderRadius: '8px', padding: '9px 18px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}>
               + Agregar factura
-            </button>
-          ) : (
-            <button onClick={onShowAdminPrompt} style={{ marginTop: '18px', background: '#2554a0', color: '#fff', border: 'none', borderRadius: '8px', padding: '9px 18px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}>
-              Activar Admin
             </button>
           )}
         </div>

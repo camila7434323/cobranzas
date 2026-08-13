@@ -21,7 +21,7 @@ export function Login({ modulo = 'cobranzas', onVolver }: { modulo?: Modulo; onV
     setError('')
     const { error } = await supabase.auth.signInWithPassword({ email, password })
     if (error) {
-      setError('Email o contraseña incorrectos.')
+      setError('Usuario o contraseña incorrectos.')
       setCargando(false)
     }
   }
@@ -52,7 +52,7 @@ export function Login({ modulo = 'cobranzas', onVolver }: { modulo?: Modulo; onV
         <form onSubmit={handleSubmit}>
           <div style={{ marginBottom: '16px' }}>
             <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#3d5278', marginBottom: '6px' }}>
-              Email
+              Usuario
             </label>
             <input
               type="email"

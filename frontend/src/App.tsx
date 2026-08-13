@@ -212,9 +212,18 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
   const [linkCopiado, setLinkCopiado] = useState(false)
   const [mostrarTodosClientesDash, setMostrarTodosClientesDash] = useState(false)
   const [pdfNoEncontrado, setPdfNoEncontrado] = useState('')
-  const [adminMode, setAdminMode]             = useState(false)
-  const [showAdminPrompt, setShowAdminPrompt] = useState(false)
-  const [adminPwInput, setAdminPwInput]       = useState('')
+  const [perfil, setPerfil] = useState<{ rol: 'admin' | 'gerencia' | 'ejecutivo'; ejecutivo_nombre: string | null; nombre: string } | null | undefined>(undefined)
+  const adminMode = perfil?.rol === 'admin'
+  const rolLabel = perfil?.rol === 'admin' ? 'Admin'
+    : perfil?.rol === 'gerencia' ? 'Gerencia · Solo lectura'
+    : perfil?.rol === 'ejecutivo' ? `${perfil.nombre} · Solo lectura`
+    : ''
+  useEffect(() => {
+    let activo = true
+    supabase.from('perfiles').select('rol, ejecutivo_nombre, nombre').eq('id', session.user.id).single()
+      .then(({ data }) => { if (activo) setPerfil(data ?? null) })
+    return () => { activo = false }
+  }, [session.user.id])
   const [expandedRows, setExpandedRows]       = useState<Set<string>>(new Set())
   const [expandedGlobalRows, setExpandedGlobalRows] = useState<Set<string>>(new Set())
   const [sortCol, setSortCol]                 = useState<string | null>(null)
@@ -984,44 +993,6 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
         </div>
       )}
 
-      {/* ── ADMIN PASSWORD MODAL ─────────────────────────────────────────── */}
-      {showAdminPrompt && (
-        <div onClick={() => setShowAdminPrompt(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 1001, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: '16px', width: '340px', padding: '32px', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}>
-            <h2 style={{ margin: '0 0 8px', fontSize: '18px', fontWeight: 700, color: '#0d1b38' }}>Acceso Admin</h2>
-            <p style={{ margin: '0 0 20px', fontSize: '13px', color: '#7a8fbb' }}>Ingresá la contraseña para activar el modo administrador.</p>
-            <input
-              type="password"
-              value={adminPwInput}
-              onChange={e => setAdminPwInput(e.target.value)}
-              onKeyDown={e => {
-                if (e.key === 'Enter') {
-                  if (adminPwInput === 'asap2026') { setAdminMode(true); setShowAdminPrompt(false) }
-                  else setAdminPwInput('')
-                }
-                if (e.key === 'Escape') setShowAdminPrompt(false)
-              }}
-              placeholder="Contraseña"
-              autoFocus
-              style={{ width: '100%', padding: '10px 14px', borderRadius: '8px', border: '1px solid #dde3f0', fontSize: '14px', outline: 'none', boxSizing: 'border-box', marginBottom: '12px' }}
-            />
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <button
-                onClick={() => { if (adminPwInput === 'asap2026') { setAdminMode(true); setShowAdminPrompt(false) } else setAdminPwInput('') }}
-                style={{ flex: 1, background: '#2554a0', color: '#fff', border: 'none', padding: '10px', borderRadius: '8px', fontSize: '14px', fontWeight: 700, cursor: 'pointer' }}
-              >
-                Ingresar
-              </button>
-              <button
-                onClick={() => setShowAdminPrompt(false)}
-                style={{ flex: 1, background: '#f1f5f9', color: '#374151', border: 'none', padding: '10px', borderRadius: '8px', fontSize: '14px', fontWeight: 600, cursor: 'pointer' }}
-              >
-                Cancelar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* ── TOAST ÉXITO ───────────────────────────────────────────────────── */}
       {toastExito && (
@@ -1105,7 +1076,7 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
                     {[
                       { vista: 'dashboard' as Vista, label: 'Dashboard', count: pendienteCount },
                       { vista: 'todos' as Vista, label: 'Comprobantes por cobrar', count: pendienteCount },
-                      ...(sociedad.manual ? [{ vista: 'nueva' as Vista, label: 'Agregar factura', count: 0 }] : []),
+                      ...(sociedad.manual && adminMode ? [{ vista: 'nueva' as Vista, label: 'Agregar factura', count: 0 }] : []),
                       { vista: 'historial' as Vista, label: 'Historial cobranzas', count: historialCount },
                       { vista: 'clientes' as Vista, label: 'Listado de clientes', count: clientesCount },
                     ].map(item => {
@@ -1113,7 +1084,7 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
                       return (
                         <div
                           key={`${key}-${item.vista}`}
-                          onClick={() => item.vista === 'nueva' && !adminMode ? setShowAdminPrompt(true) : irAVista(item.vista, key)}
+                          onClick={() => irAVista(item.vista, key)}
                           style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '7px 10px', borderRadius: '8px', cursor: 'pointer', background: itemActivo ? 'rgba(37,84,160,0.4)' : 'transparent', color: itemActivo ? '#fff' : 'rgba(255,255,255,0.52)', fontSize: '12px', marginBottom: '1px' }}
                         >
                           <span>{item.vista === 'nueva' ? '+' : item.vista === 'historial' ? '○' : item.vista === 'clientes' ? '♧' : '▥'}</span>
@@ -1266,15 +1237,9 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
                 ↗ Exportar .xlsx
               </button>
             )}
-            <button
-              onClick={() => {
-                if (adminMode) { setAdminMode(false) }
-                else { setShowAdminPrompt(true); setAdminPwInput('') }
-              }}
-              style={{ background: adminMode ? '#0a1628' : '#fff', color: adminMode ? '#fff' : '#0d1b38', border: '1px solid #dde3f0', padding: '8px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}
-            >
-              ⚙ {adminMode ? 'Admin ✓' : 'Admin'}
-            </button>
+            <span style={{ background: adminMode ? '#0a1628' : '#fff', color: adminMode ? '#fff' : '#0d1b38', border: '1px solid #dde3f0', padding: '8px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, whiteSpace: 'nowrap' }}>
+              ⚙ {rolLabel}
+            </span>
           </div>
         </div>
 
@@ -1399,7 +1364,6 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
             fmtFecha={fmtFecha}
             calcularVencimientoPorCondicion={calcularVencimientoPorCondicion}
             calcularDiasMora={calcularDiasMora}
-            onShowAdminPrompt={() => setShowAdminPrompt(true)}
             onIrANueva={() => irAVista('nueva', sociedadActiva)}
             onEditar={f => { setEditandoManual(f); setVista('nueva') }}
             onGuardarFactura={guardarOEditarFacturaManual}
