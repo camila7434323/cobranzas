@@ -52,6 +52,12 @@ const groupSum = (rows: FacturacionLinea[], key: (r: FacturacionLinea) => string
 
 const flagCode = (moneda: string) => moneda === 'USD' ? 'us' : moneda === 'EUR' ? 'es' : 'ar'
 
+const ORDEN_EMPRESAS = ['ASAP CONSULTING SA', 'ASAP CONSULTING LLC', 'IT ASAP CONSULTING SOLUTIONS, SL']
+const ordenEmpresa = (nombre: string) => {
+  const i = ORDEN_EMPRESAS.indexOf(nombre)
+  return i === -1 ? ORDEN_EMPRESAS.length : i
+}
+
 const EXEC_PALETTE = [
   { bg: '#ddeafd', text: '#1d4170', bd: '#a8c4f5' },
   { bg: '#d1fae5', text: '#065f46', bd: '#6ee7b7' },
@@ -121,9 +127,12 @@ export function FacturacionApp({ session, onCambiarModulo }: { session: Session;
   const [busqueda, setBusqueda] = useState('')
   const [modo, setModo] = useState<Modo>('compania')
   const [anio, setAnio] = useState('2026')
-  const [mes, setMes] = useState('')
-  const [filtroCliente, setFiltroCliente] = useState('')
-  const [filtroCc, setFiltroCc] = useState('')
+  const [mesesSel, setMesesSel] = useState<string[]>([])
+  const [clientesSel, setClientesSel] = useState<string[]>([])
+  const [ccsSel, setCcsSel] = useState<string[]>([])
+
+  const hoy = new Date()
+  const mesActualKey = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}`
 
   const empresas = useMemo(() => {
     const map = new Map<string, { nombre: string; moneda: string }>()
@@ -132,7 +141,7 @@ export function FacturacionApp({ session, onCambiarModulo }: { session: Session;
       const moneda = groupSum(data.filter(x => x.empresa === r.empresa), monedaFila)[0]?.[0] || 'ARS'
       map.set(r.empresa, { nombre: r.empresa, moneda })
     })
-    return Array.from(map.values()).sort((a, b) => a.nombre.localeCompare(b.nombre))
+    return Array.from(map.values()).sort((a, b) => ordenEmpresa(a.nombre) - ordenEmpresa(b.nombre) || a.nombre.localeCompare(b.nombre))
   }, [data])
 
   const anios = useMemo(() => {
@@ -143,18 +152,19 @@ export function FacturacionApp({ session, onCambiarModulo }: { session: Session;
 
   const dashboardRows = useMemo(() => data.filter(r => {
     const key = periodoKey(r)
+    if (key && key >= mesActualKey) return false
     if (empresaActiva !== 'all' && r.empresa !== empresaActiva) return false
     if (anioActivo !== 'all' && key.slice(0, 4) !== anioActivo) return false
-    if (mes && key !== mes) return false
-    if (modo === 'cliente' && filtroCliente && nombreCliente(r) !== filtroCliente) return false
-    if (modo === 'cc' && filtroCc && nombreCc(r) !== filtroCc) return false
+    if (mesesSel.length && !mesesSel.includes(key)) return false
+    if (modo === 'cliente' && clientesSel.length && !clientesSel.includes(nombreCliente(r))) return false
+    if (modo === 'cc' && ccsSel.length && !ccsSel.includes(nombreCc(r))) return false
     return true
-  }), [data, empresaActiva, anioActivo, mes, modo, filtroCliente, filtroCc])
+  }), [data, empresaActiva, anioActivo, mesesSel, modo, clientesSel, ccsSel, mesActualKey])
 
   const mesesDisponibles = useMemo(() => {
     const set = new Set(data.filter(r => empresaActiva === 'all' || r.empresa === empresaActiva).map(periodoKey).filter(Boolean))
-    return Array.from(set).filter(k => anioActivo === 'all' || k.startsWith(anioActivo)).sort()
-  }, [data, empresaActiva, anioActivo])
+    return Array.from(set).filter(k => (anioActivo === 'all' || k.startsWith(anioActivo)) && k < mesActualKey).sort()
+  }, [data, empresaActiva, anioActivo, mesActualKey])
 
   const clientesDisponibles = useMemo(() => groupSum(dashboardRows, nombreCliente).map(([k]) => k), [dashboardRows])
   const ccDisponibles = useMemo(() => groupSum(dashboardRows, nombreCc).map(([k]) => k), [dashboardRows])
@@ -224,12 +234,16 @@ export function FacturacionApp({ session, onCambiarModulo }: { session: Session;
           <span style={{ fontSize: 12, color: '#7a8fbb' }}>{session.user.email}</span>
         </header>
 
-        <main style={{ padding: '22px 28px 36px' }}>
+        <main style={{ padding: '22px 28px 36px', minHeight: 'calc(100vh - 58px)', display: 'flex', flexDirection: 'column' }}>
           {error && <div style={{ color: '#dc2626', marginBottom: 14, fontSize: 13 }}>⚠ {error}</div>}
-          {loading ? <div style={emptyStyle}>Cargando facturación...</div> : data.length === 0 ? <div style={emptyStyle}>Sin datos aún. Cargá el Excel para empezar.</div> : vista === 'dashboard' ? (
+          {loading ? (
+            <div style={{ flex: 1, display: 'grid', placeItems: 'center' }}><div style={emptyStyle}>Cargando facturación...</div></div>
+          ) : data.length === 0 ? (
+            <div style={{ flex: 1, display: 'grid', placeItems: 'center' }}><div style={emptyStyle}>Sin datos aún. Cargá el Excel para empezar.</div></div>
+          ) : vista === 'dashboard' ? (
             <PanelVentas
               rows={dashboardRows}
-              empresas={empresas.map(e => e.nombre)}
+              empresas={empresas}
               empresaActiva={empresaActiva}
               setEmpresaActiva={setEmpresaActiva}
               modo={modo}
@@ -238,14 +252,14 @@ export function FacturacionApp({ session, onCambiarModulo }: { session: Session;
               anio={anioActivo}
               setAnio={setAnio}
               meses={mesesDisponibles}
-              mes={mes}
-              setMes={setMes}
+              mesesSel={mesesSel}
+              setMesesSel={setMesesSel}
               clientes={clientesDisponibles}
-              filtroCliente={filtroCliente}
-              setFiltroCliente={setFiltroCliente}
+              clientesSel={clientesSel}
+              setClientesSel={setClientesSel}
               centrosCosto={ccDisponibles}
-              filtroCc={filtroCc}
-              setFiltroCc={setFiltroCc}
+              ccsSel={ccsSel}
+              setCcsSel={setCcsSel}
             />
           ) : (
             <>
@@ -263,7 +277,7 @@ export function FacturacionApp({ session, onCambiarModulo }: { session: Session;
 
 function PanelVentas(props: {
   rows: FacturacionLinea[]
-  empresas: string[]
+  empresas: { nombre: string; moneda: string }[]
   empresaActiva: string
   setEmpresaActiva: (v: string) => void
   modo: Modo
@@ -272,14 +286,14 @@ function PanelVentas(props: {
   anio: string
   setAnio: (v: string) => void
   meses: string[]
-  mes: string
-  setMes: (v: string) => void
+  mesesSel: string[]
+  setMesesSel: (v: string[]) => void
   clientes: string[]
-  filtroCliente: string
-  setFiltroCliente: (v: string) => void
+  clientesSel: string[]
+  setClientesSel: (v: string[]) => void
   centrosCosto: string[]
-  filtroCc: string
-  setFiltroCc: (v: string) => void
+  ccsSel: string[]
+  setCcsSel: (v: string[]) => void
 }) {
   const rowsByMoneda = useMemo(() => {
     const map = new Map<string, FacturacionLinea[]>()
@@ -300,7 +314,12 @@ function PanelVentas(props: {
     <div style={{ display: 'grid', gap: 16 }}>
       <Segmented>
         <Seg active={props.empresaActiva === 'all'} onClick={() => props.setEmpresaActiva('all')}>Todas</Seg>
-        {props.empresas.map(e => <Seg key={e} active={props.empresaActiva === e} onClick={() => props.setEmpresaActiva(e)}>{e.toUpperCase()}</Seg>)}
+        {props.empresas.map(e => (
+          <Seg key={e.nombre} active={props.empresaActiva === e.nombre} onClick={() => props.setEmpresaActiva(e.nombre)}>
+            <span className={`fi fi-${flagCode(e.moneda)}`} style={{ borderRadius: 2, marginRight: 6, verticalAlign: 'middle' }} />
+            {e.nombre.toUpperCase()}
+          </Seg>
+        ))}
       </Segmented>
 
       <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
@@ -315,13 +334,23 @@ function PanelVentas(props: {
         </Segmented>
       </div>
 
-      <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-        <select value={props.mes} onChange={e => props.setMes(e.target.value)} style={selectStyle}>
-          <option value="">Todos los meses</option>
-          {props.meses.map(m => <option key={m} value={m}>{mesLabel(m)}</option>)}
-        </select>
-        {props.modo === 'cliente' && <select value={props.filtroCliente} onChange={e => props.setFiltroCliente(e.target.value)} style={selectStyle}><option value="">Elegí uno o más clientes</option>{props.clientes.map(c => <option key={c}>{c}</option>)}</select>}
-        {props.modo === 'cc' && <select value={props.filtroCc} onChange={e => props.setFiltroCc(e.target.value)} style={selectStyle}><option value="">Elegí uno o más CC</option>{props.centrosCosto.map(c => <option key={c}>{c}</option>)}</select>}
+      <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
+        <div style={{ width: 270 }}>
+          <MultiSelect options={props.meses} selected={props.mesesSel} onChange={props.setMesesSel} placeholderAll="Todos los meses" formatLabel={mesLabel} />
+        </div>
+        {props.modo === 'cliente' && (
+          <div style={{ width: 270 }}>
+            <MultiSelect options={props.clientes} selected={props.clientesSel} onChange={props.setClientesSel} placeholderAll="Elegí uno o más clientes" />
+          </div>
+        )}
+        {props.modo === 'cc' && (
+          <div style={{ width: 270 }}>
+            <MultiSelect options={props.centrosCosto} selected={props.ccsSel} onChange={props.setCcsSel} placeholderAll="Elegí uno o más CC" />
+          </div>
+        )}
+        {(props.mesesSel.length > 0 || props.clientesSel.length > 0 || props.ccsSel.length > 0) && (
+          <button style={clearBtn} onClick={() => { props.setMesesSel([]); props.setClientesSel([]); props.setCcsSel([]) }}>✕ Limpiar filtro</button>
+        )}
       </div>
 
       <div style={{ color: '#7286bd', fontSize: 13 }}>▦ Análisis hasta <strong>{ultimoMes ? mesLabel(ultimoMes) : 'el último período cargado'}</strong> — se excluye el mes en curso por estar incompleto.</div>
