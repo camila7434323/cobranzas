@@ -23,6 +23,7 @@ body,
 
 body {
   overflow: auto;
+  scrollbar-gutter: stable;
 }
 
 #root {
