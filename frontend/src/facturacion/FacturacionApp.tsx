@@ -50,6 +50,20 @@ const groupSum = (rows: FacturacionLinea[], key: (r: FacturacionLinea) => string
   return Array.from(map.entries()).sort((a, b) => b[1] - a[1])
 }
 
+const normalizar = (v: string) => v.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase()
+
+const camposBusqueda = (r: FacturacionLinea): string[] => [
+  r.cliente, r.cuit, r.ejecutivo, r.empresa, r.legajo, r.colaborador, r.otros_conceptos,
+  r.oc, r.leyenda, r.moneda, r.n_factura, r.cond_venta, r.articulo_codigo, r.articulo_descripcion,
+  r.cc_descripcion, r.periodo ? mesLabel(periodoKey(r)) : '', fmtFecha(r.fecha_factura),
+  String(r.cantidad ?? ''), r.precio_unitario?.toFixed(2), r.total_neto?.toFixed(2),
+]
+
+const coincideBusqueda = (r: FacturacionLinea, q: string) => {
+  const qn = normalizar(q)
+  return camposBusqueda(r).some(v => normalizar(String(v || '')).includes(qn))
+}
+
 const flagCode = (moneda: string) => moneda === 'USD' ? 'us' : moneda === 'EUR' ? 'es' : 'ar'
 
 const ORDEN_EMPRESAS = ['ASAP CONSULTING SA', 'ASAP CONSULTING LLC', 'IT ASAP CONSULTING SOLUTIONS, SL']
@@ -175,10 +189,7 @@ export function FacturacionApp({ session, onCambiarModulo }: { session: Session;
   )
   const filas = useMemo(() => {
     if (!busqueda.trim()) return rowsEmpresa
-    const q = busqueda.toLowerCase()
-    return rowsEmpresa.filter(r =>
-      [r.cliente, r.cuit, r.ejecutivo, r.n_factura, r.cc_descripcion, r.empresa].some(v => String(v || '').toLowerCase().includes(q))
-    )
+    return rowsEmpresa.filter(r => coincideBusqueda(r, busqueda))
   }, [rowsEmpresa, busqueda])
 
   const abrirDashboard = () => {
@@ -264,7 +275,7 @@ export function FacturacionApp({ session, onCambiarModulo }: { session: Session;
           ) : (
             <>
               <div style={{ marginBottom: 16 }}>
-                <input value={busqueda} onChange={e => setBusqueda(e.target.value)} placeholder="Buscar por cliente, CUIT, ejecutivo o factura..." style={inputStyle} />
+                <input value={busqueda} onChange={e => setBusqueda(e.target.value)} placeholder="Buscar en toda la facturación (cliente, CUIT, ejecutivo, factura, período, artículo, importe...)" style={inputStyle} />
               </div>
               <Detalle key={empresaActiva} filas={filas} empresaActiva={empresaActiva} />
             </>
@@ -539,7 +550,7 @@ function Detalle({ filas, empresaActiva }: { filas: FacturacionLinea[]; empresaA
     if (clientesSel.length && !clientesSel.includes(nombreCliente(r))) return false
     if (ejecutivosSel.length && !ejecutivosSel.includes(r.ejecutivo || '')) return false
     if (periodosSel.length && !periodosSel.includes(periodoKey(r))) return false
-    if (nFacturaText.trim() && !String(r.n_factura || '').toLowerCase().includes(nFacturaText.trim().toLowerCase())) return false
+    if (nFacturaText.trim() && !normalizar(String(r.n_factura || '')).includes(normalizar(nFacturaText.trim()))) return false
     return true
   }), [filas, clientesSel, ejecutivosSel, periodosSel, nFacturaText])
 
@@ -705,7 +716,7 @@ function MultiSelect({ options, selected, onChange, placeholderAll, formatLabel 
   if (selected.length === 1) { const l = fmt(selected[0]); label = l.length > 16 ? l.slice(0, 15) + '…' : l }
   else if (selected.length > 1) label = `${selected.length} seleccionados`
 
-  const visible = search ? options.filter(o => fmt(o).toLowerCase().includes(search.toLowerCase())) : options
+  const visible = search ? options.filter(o => normalizar(fmt(o)).includes(normalizar(search))) : options
   const toggle = (opt: string) => onChange(selected.includes(opt) ? selected.filter(v => v !== opt) : [...selected, opt])
 
   return (
