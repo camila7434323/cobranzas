@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import type { ManualFactura, SociedadKey } from '../types/sociedades'
+import { extraerTextoPdf, parsearFacturaTexto } from '../lib/extraerFactura'
 
 const parseNumeroES = (str: string): number => {
   const sinMiles = str.trim().replace(/\./g, '')
@@ -49,10 +50,39 @@ export function ManualFacturaForm({
 
   const totalCalculado = form.cantidad > 0 && form.valor_unitario > 0 ? form.cantidad * form.valor_unitario : null
 
+  const [extrayendo, setExtrayendo] = useState(false)
+  const [autocompletado, setAutocompletado] = useState(false)
+  const [errorExtraccion, setErrorExtraccion] = useState('')
+
   const handlePdf = (file: File | null) => {
     if (!file) return
+    setAutocompletado(false)
+    setErrorExtraccion('')
     const reader = new FileReader()
-    reader.onload = e => set({ pdf_base64: String(e.target?.result || ''), pdf_nombre: file.name })
+    reader.onload = async e => {
+      const dataUrl = String(e.target?.result || '')
+      set({ pdf_base64: dataUrl, pdf_nombre: file.name })
+      if (factura) return // no autocompletar al editar una factura existente
+      setExtrayendo(true)
+      try {
+        const texto = await extraerTextoPdf(dataUrl)
+        const datos = parsearFacturaTexto(texto, sociedad, condicionOpts)
+        if (datos.moneda && !monedas.includes(datos.moneda)) delete datos.moneda
+        if (Object.keys(datos).length === 0) {
+          setErrorExtraccion('No se pudo reconocer ningún dato en este PDF, completá el formulario a mano.')
+        } else {
+          if (datos.valor_unitario === undefined && datos.monto !== undefined) {
+            setMontoStr(formatNumeroES(datos.monto))
+          }
+          set(datos)
+          setAutocompletado(true)
+        }
+      } catch {
+        setErrorExtraccion('No se pudo leer el PDF automáticamente, completá el formulario a mano.')
+      } finally {
+        setExtrayendo(false)
+      }
+    }
     reader.readAsDataURL(file)
   }
 
@@ -187,6 +217,15 @@ export function ManualFacturaForm({
             </label>
             <span style={{ fontSize: '12px', color: '#7a8fbb', fontStyle: 'italic' }}>{form.pdf_nombre || 'Sin archivo seleccionado'}</span>
           </div>
+          {extrayendo && (
+            <div style={{ marginTop: '8px', fontSize: '12px', color: '#7a8fbb' }}>⏳ Leyendo el PDF para autocompletar los campos...</div>
+          )}
+          {!extrayendo && autocompletado && (
+            <div style={{ marginTop: '8px', fontSize: '12px', color: '#059669', fontWeight: 600 }}>✓ Datos autocompletados desde el PDF. Revisá antes de guardar.</div>
+          )}
+          {!extrayendo && errorExtraccion && (
+            <div style={{ marginTop: '8px', fontSize: '12px', color: '#d97706' }}>⚠ {errorExtraccion}</div>
+          )}
           <div style={{ marginTop: '8px' }}>
             <div style={{ fontSize: '10px', color: '#94a3b8', marginBottom: '4px' }}>...o pegar URL (SharePoint, etc.)</div>
             <input type="text" placeholder="https://..." value={form.pdf_url} onChange={e => set({ pdf_url: e.target.value })} style={INPUT} />
