@@ -214,10 +214,6 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
   const [pdfNoEncontrado, setPdfNoEncontrado] = useState('')
   const [perfil, setPerfil] = useState<{ rol: 'admin' | 'gerencia' | 'ejecutivo'; ejecutivo_nombre: string | null; nombre: string } | null | undefined>(undefined)
   const adminMode = perfil?.rol === 'admin'
-  const rolLabel = perfil?.rol === 'admin' ? 'Admin'
-    : perfil?.rol === 'gerencia' ? 'Gerencia · Solo lectura'
-    : perfil?.rol === 'ejecutivo' ? `${perfil.nombre} · Solo lectura`
-    : ''
   useEffect(() => {
     let activo = true
     supabase.from('perfiles').select('rol, ejecutivo_nombre, nombre').eq('id', session.user.id).single()
@@ -1237,9 +1233,6 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
                 ↗ Exportar .xlsx
               </button>
             )}
-            <span style={{ background: adminMode ? '#0a1628' : '#fff', color: adminMode ? '#fff' : '#0d1b38', border: '1px solid #dde3f0', padding: '8px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, whiteSpace: 'nowrap' }}>
-              ⚙ {rolLabel}
-            </span>
           </div>
         </div>
 
