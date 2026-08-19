@@ -78,5 +78,5 @@ export const ejecutivosPorCliente: Record<string, string> = {
 }
 
 export const EJECUTIVOS: string[] = [
-  ...new Set(Object.values(ejecutivosPorCliente)),
+  ...new Set([...Object.values(ejecutivosPorCliente), 'Agustina Soria']),
 ].sort()
