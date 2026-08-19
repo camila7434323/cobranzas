@@ -378,11 +378,12 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
     .filter(n => !clientesConMoraSet.has(n)).sort()
 
   const moraDist = [
-    {label: '1–7d',   color: '#d97706', bg: '#fef3c7', items: vencidasArr.filter(r => r.dias_mora >= 1 && r.dias_mora <= 7)},
-    {label: '8–15d',  color: '#ea580c', bg: '#ffedd5', items: vencidasArr.filter(r => r.dias_mora > 7 && r.dias_mora <= 15)},
-    {label: '16–30d', color: '#dc2626', bg: '#fee2e2', items: vencidasArr.filter(r => r.dias_mora > 15 && r.dias_mora <= 30)},
-    {label: '+30d',   color: '#7c3aed', bg: '#ede9fe', items: vencidasArr.filter(r => r.dias_mora > 30)},
+    {label: '1–7 días',   sub: 'Vencimiento reciente · Gestión de cobro estándar',  filterKey: 'recien',   color: '#92400e', bg: '#fef9c3', items: vencidasArr.filter(r => r.dias_mora >= 1 && r.dias_mora <= 7)},
+    {label: '8–15 días',  sub: 'Prioridad media',                                    filterKey: 'atencion', color: '#c2410c', bg: '#fed7aa', items: vencidasArr.filter(r => r.dias_mora > 7 && r.dias_mora <= 15)},
+    {label: '16–30 días', sub: 'Amerita gestión prioritaria e identificada',          filterKey: 'critica',  color: '#9a3412', bg: '#fdba74', items: vencidasArr.filter(r => r.dias_mora > 15 && r.dias_mora <= 30)},
+    {label: '+30 días',   sub: 'Requiere atención prioritaria e inmediata',           filterKey: 'urgente',  color: '#991b1b', bg: '#fecaca', items: vencidasArr.filter(r => r.dias_mora > 30)},
   ]
+  const clientesTotalDataSel = new Set(dataSel.map(r => r.nombre_cliente)).size
 
   const execPieMap = vencidasArr.reduce<Map<string, number>>((acc, r) => {
     const k = r.ejecutivo || 'Sin asignar'
@@ -1379,6 +1380,15 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
               <>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', paddingBottom: '24px' }}>
 
+              {/* TOTAL DE CARTERA */}
+              <div style={{ background: 'linear-gradient(135deg, #0a1e3d 0%, #1d4170 100%)', borderRadius: '14px', padding: '26px 30px', color: '#fff', position: 'relative', overflow: 'hidden', boxShadow: '0 10px 28px rgba(10,22,40,0.28)' }}>
+                <div style={{ position: 'absolute', right: '-40px', top: '-40px', width: '180px', height: '180px', background: 'rgba(255,255,255,0.06)', borderRadius: '50%' }} />
+                <div style={{ position: 'absolute', right: '40px', bottom: '-60px', width: '140px', height: '140px', background: 'rgba(255,255,255,0.05)', borderRadius: '50%' }} />
+                <div style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase', color: 'rgba(255,255,255,0.65)', marginBottom: '10px', position: 'relative' }}>💼 Total de cartera (impuestos incluidos)</div>
+                <div style={{ fontSize: '34px', fontWeight: 800, fontFamily: 'monospace', lineHeight: 1, position: 'relative' }}>{fmt(carteraTotal)}</div>
+                <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.62)', marginTop: '8px', position: 'relative' }}>{dataSel.length} facturas pendientes de cobro — vencidas y vigentes</div>
+              </div>
+
               {/* KPI CARDS */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '14px' }}>
                 <div style={{ background: '#fff', border: '1px solid #dde3f0', borderRadius: '12px', padding: '22px 24px', boxShadow: '0 2px 8px rgba(10,22,40,0.08)', borderLeft: '5px solid #dc2626', position: 'relative', overflow: 'hidden' }}>
@@ -1404,9 +1414,10 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
               {/* SLIM METRICS */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '10px' }}>
                 <div style={{ background: '#fff', border: '1px solid #dde3f0', borderRadius: '10px', padding: '14px 18px', boxShadow: '0 1px 4px rgba(10,22,40,0.06)', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: '#ede9fe', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', flexShrink: 0 }}>💹</div>
+                  <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: '#ede9fe', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', flexShrink: 0 }}>🎯</div>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: '10px', fontWeight: 700, color: '#7a8fbb', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '6px' }}>Cartera en mora</div>
+                    <div style={{ fontSize: '10px', fontWeight: 700, color: '#7a8fbb', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '4px' }}>% de la cartera vencido</div>
+                    <div style={{ fontSize: '11px', color: '#94a3b8', marginBottom: '4px' }}>porcentaje de la cartera total actualmente vencido</div>
                     <div style={{ height: '4px', background: '#eef2fa', borderRadius: '3px', overflow: 'hidden' }}>
                       <div style={{ width: `${porcentajeMora}%`, height: '100%', background: '#7c3aed', borderRadius: '3px', transition: 'width 0.5s' }} />
                     </div>
@@ -1416,18 +1427,18 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
                 <div style={{ background: '#fff', border: '1px solid #dde3f0', borderRadius: '10px', padding: '14px 18px', boxShadow: '0 1px 4px rgba(10,22,40,0.06)', display: 'flex', alignItems: 'center', gap: '12px' }}>
                   <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: '#fef3c7', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', flexShrink: 0 }}>⏱</div>
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: '10px', fontWeight: 700, color: '#7a8fbb', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '2px' }}>Mora promedio</div>
-                    <div style={{ fontSize: '11px', color: '#94a3b8' }}>{vencidasArr.length} facturas vencidas</div>
+                    <div style={{ fontSize: '10px', fontWeight: 700, color: '#7a8fbb', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '2px' }}>Atraso promedio de la deuda vencida</div>
+                    <div style={{ fontSize: '11px', color: '#94a3b8' }}>las facturas vencidas presentan, en promedio, {moraPromedio} días de atraso</div>
                   </div>
                   <div style={{ fontSize: '20px', fontWeight: 800, color: '#d97706', flexShrink: 0 }}>{moraPromedio}d</div>
                 </div>
                 <div style={{ background: '#fff', border: '1px solid #dde3f0', borderRadius: '10px', padding: '14px 18px', boxShadow: '0 1px 4px rgba(10,22,40,0.06)', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', flexShrink: 0 }}>📊</div>
+                  <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', flexShrink: 0 }}>👥</div>
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: '10px', fontWeight: 700, color: '#7a8fbb', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '2px' }}>Promedio de cobro</div>
-                    <div style={{ fontSize: '11px', color: '#94a3b8' }}>sin cobros aún</div>
+                    <div style={{ fontSize: '10px', fontWeight: 700, color: '#7a8fbb', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '2px' }}>Clientes con mora</div>
+                    <div style={{ fontSize: '11px', color: '#94a3b8' }}>sobre un total de {clientesTotalDataSel} clientes</div>
                   </div>
-                  <div style={{ fontSize: '20px', fontWeight: 800, color: '#94a3b8', flexShrink: 0 }}>—</div>
+                  <div style={{ fontSize: '20px', fontWeight: 800, color: '#4338ca', flexShrink: 0 }}>{clientDashList.length}</div>
                 </div>
               </div>
 
@@ -1435,7 +1446,7 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
               <div style={{ display: 'grid', gridTemplateColumns: '3fr 2fr', gap: '14px' }}>
                 <div style={{ background: '#fff', border: '1px solid #dde3f0', borderRadius: '12px', boxShadow: '0 2px 8px rgba(10,22,40,0.07)', overflow: 'hidden' }}>
                   <div style={{ padding: '14px 20px', borderBottom: '1px solid #eef2fa', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <span style={{ fontSize: '13px', fontWeight: 700, color: '#0d1b38' }}>Deuda por cliente</span>
+                    <span style={{ fontSize: '13px', fontWeight: 700, color: '#0d1b38' }}>Total vencido por cliente</span>
                     <span style={{ fontSize: '11px', color: '#7a8fbb' }}>clic para ver facturas</span>
                   </div>
                   <div style={{ padding: '12px 20px' }}>
@@ -1472,7 +1483,7 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
                 </div>
                 <div style={{ background: '#fff', border: '1px solid #dde3f0', borderRadius: '12px', boxShadow: '0 2px 8px rgba(10,22,40,0.07)', overflow: 'hidden' }}>
                   <div style={{ padding: '14px 20px', borderBottom: '1px solid #eef2fa' }}>
-                    <span style={{ fontSize: '13px', fontWeight: 700, color: '#0d1b38' }}>Deuda por ejecutivo</span>
+                    <span style={{ fontSize: '13px', fontWeight: 700, color: '#0d1b38' }}>Distribución deuda por ejecutivo</span>
                   </div>
                   <div style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
                     {execPieList.length > 0
@@ -1497,15 +1508,24 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
                 <div style={{ background: '#fff', border: '1px solid #dde3f0', borderRadius: '12px', boxShadow: '0 2px 8px rgba(10,22,40,0.07)', overflow: 'hidden' }}>
                   <div style={{ padding: '14px 20px', borderBottom: '1px solid #eef2fa' }}>
-                    <span style={{ fontSize: '13px', fontWeight: 700, color: '#0d1b38' }}>Distribución por mora</span>
+                    <div style={{ fontSize: '13px', fontWeight: 700, color: '#0d1b38' }}>Antigüedad de la deuda</div>
+                    <div style={{ fontSize: '11px', color: '#7a8fbb', marginTop: '3px' }}>La totalidad de este monto está vencida; la prioridad de gestión aumenta con la antigüedad. Seleccione una categoría para ver el detalle.</div>
                   </div>
-                  <div style={{ padding: '16px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                  <div style={{ padding: '16px', display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: '10px' }}>
                     {moraDist.map(b => (
-                      <div key={b.label} style={{ background: b.bg, border: '1px solid ' + b.color + '30', borderRadius: '10px', padding: '14px', borderLeft: '4px solid ' + b.color }}>
-                        <div style={{ fontSize: '10px', fontWeight: 700, color: b.color, textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '6px' }}>{b.label}</div>
-                        <div style={{ fontSize: '24px', fontWeight: 800, color: b.color, fontFamily: 'monospace', lineHeight: 1, marginBottom: '4px' }}>{b.items.length}</div>
-                        <div style={{ fontSize: '11px', color: '#6b7280' }}>facturas</div>
-                        <div style={{ fontSize: '12px', fontWeight: 600, color: '#374151', marginTop: '4px' }}>{fmt(b.items.reduce((s, r) => s + r.monto, 0))}</div>
+                      <div key={b.label} style={{ background: b.bg, borderRadius: '10px', padding: '12px', display: 'flex', flexDirection: 'column', minHeight: '150px' }}>
+                        <div style={{ fontSize: '10px', fontWeight: 700, color: b.color, textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: '2px' }}>{b.label}</div>
+                        <div style={{ fontSize: '10px', color: b.color, opacity: 0.85, marginBottom: '8px', lineHeight: 1.3 }}>{b.sub}</div>
+                        <div style={{ fontSize: '22px', fontWeight: 800, color: b.color, fontFamily: 'monospace', lineHeight: 1, marginBottom: '4px' }}>{b.items.length}</div>
+                        <div style={{ fontSize: '11px', color: b.color, opacity: 0.8, marginBottom: '4px' }}>facturas</div>
+                        <div style={{ fontSize: '12px', fontWeight: 700, color: b.color }}>{fmt(b.items.reduce((s, r) => s + r.monto, 0))}</div>
+                        <div style={{ flex: 1 }} />
+                        <div
+                          onClick={() => { setFiltroEstadoTabla('mora'); setFiltroMoraRange(b.filterKey); setVista('todos') }}
+                          style={{ fontSize: '11px', fontWeight: 700, color: b.color, cursor: 'pointer', marginTop: '8px', textDecoration: 'underline' }}
+                        >
+                          Ver facturas ⋯
+                        </div>
                       </div>
                     ))}
                   </div>
