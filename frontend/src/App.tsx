@@ -139,7 +139,7 @@ const COLORES_EXEC: Record<string, { bg: string; color: string; initials: string
   'Maria Cadarso':         { bg: '#831843', color: '#fff', initials: 'MC' },
   'Fernanda Dugini':       { bg: '#14532d', color: '#fff', initials: 'FD' },
   'Pablo Cruz':            { bg: '#7c2d12', color: '#fff', initials: 'PC' },
-  'Matias Gimenez':        { bg: '#0f4c75', color: '#fff', initials: 'MG' },
+  'Agustina Soria':        { bg: '#0f4c75', color: '#fff', initials: 'AS' },
 }
 
 type Vista = 'global' | 'dashboard' | 'todos' | 'historial' | 'clientes' | 'nueva'

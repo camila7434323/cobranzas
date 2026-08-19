@@ -39,7 +39,7 @@ export const CONDICIONES_CLIENTE: Record<string, string[]> = {
 }
 
 export const ejecutivosPorCliente: Record<string, string> = {
-  'AON':                    'Matias Gimenez',
+  'AON':                    'Agustina Soria',
   'Artear':                 'Julieta Salvucci',
   'Bayer Monsanto':         'Leonardo Nocera',
   'Boehringer':             'Emiliano Angelinetta',
