@@ -1,4 +1,4 @@
-import type { ManualFactura, SociedadKey } from '../types/sociedades'
+import type { ManualFactura, ManualFacturaItem, SociedadKey } from '../types/sociedades'
 
 const MESES_ES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre']
 const MESES_EN = ['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december']
@@ -56,6 +56,47 @@ function parsearMonto(texto: string): number | null {
   return isNaN(n) ? null : n
 }
 
+const numeroES = (str: string): number => {
+  const n = parseFloat(str.replace(/\./g, '').replace(',', '.'))
+  return isNaN(n) ? 0 : n
+}
+
+function parsearItemsIngles(texto: string): ManualFacturaItem[] {
+  const items: ManualFacturaItem[] = []
+  for (const linea of texto.split('\n')) {
+    const m = linea.match(/^\d+\.\s+(?:\d{1,2}\/\d{1,2}\/\d{4}\s+)?(.+?)\s+(\d+(?:\.\d+)?)\s+\$?([\d,]+\.\d{2})\s+\$?([\d,]+\.\d{2})\s*$/)
+    if (!m) continue
+    items.push({
+      descripcion: m[1].trim(),
+      unidad: '',
+      cantidad: Number(m[2]),
+      valor_unitario: Number(m[3].replace(/,/g, '')),
+    })
+  }
+  return items
+}
+
+function parsearItemsEspanol(texto: string): ManualFacturaItem[] {
+  const items: ManualFacturaItem[] = []
+  const lineas = texto.split('\n')
+  for (let i = 1; i < lineas.length; i++) {
+    const m = lineas[i].match(/cantidad\s+horas:\s*([\d.,]+)\s+coste\s+hora\s+en\s*€:\s*([\d.,]+)\s*€/i)
+    if (!m) continue
+    items.push({
+      descripcion: lineas[i - 1].trim(),
+      unidad: 'horas',
+      cantidad: numeroES(m[1]),
+      valor_unitario: numeroES(m[2]),
+    })
+  }
+  return items
+}
+
+function parsearItems(texto: string): ManualFacturaItem[] {
+  const es = parsearItemsEspanol(texto)
+  return es.length ? es : parsearItemsIngles(texto)
+}
+
 function parsearPeriodo(texto: string): string {
   const es = texto.match(/(Enero|Febrero|Marzo|Abril|Mayo|Junio|Julio|Agosto|Septiembre|Octubre|Noviembre|Diciembre)\s+(\d{4})/i)
   if (es) return `${es[1][0].toUpperCase()}${es[1].slice(1).toLowerCase()} ${es[2]}`
@@ -102,8 +143,14 @@ export function parsearFacturaTexto(texto: string, sociedad: SociedadKey, condic
   const oc = texto.match(/\bPO[\s#-]*(\d[\d-]*)/i) || texto.match(/(?:OC|HES|PEDIDO)\s*[:#]?\s*([\w-]+)/i)
   if (oc) resultado.oc_hes_pedido = oc[0].replace(/\s+/g, ' ').trim()
 
-  const monto = parsearMonto(texto)
-  if (monto !== null) resultado.monto = monto
+  const items = parsearItems(texto)
+  if (items.length) {
+    resultado.items = items
+    resultado.monto = items.reduce((s, it) => s + it.cantidad * it.valor_unitario, 0)
+  } else {
+    const monto = parsearMonto(texto)
+    if (monto !== null) resultado.monto = monto
+  }
 
   if (texto.includes('€')) resultado.moneda = 'EUR'
   else if (texto.includes('$') || /\bUSD\b/i.test(texto)) resultado.moneda = 'USD'

@@ -11,6 +11,13 @@ export const SOCIEDADES: Record<SociedadKey, { nombre: string; corto: string; fl
   sl:  { nombre: 'IT ASAP Solutions SL', corto: 'IT ASAP SL',  flag: '🇪🇸', flagCode: 'es', manual: true,  monedas: ['USD', 'EUR'] },
 }
 
+export type ManualFacturaItem = {
+  descripcion: string
+  unidad: string
+  cantidad: number
+  valor_unitario: number
+}
+
 export type ManualFactura = {
   id: string
   sociedad: Exclude<SociedadKey, 'sa'>
@@ -21,10 +28,7 @@ export type ManualFactura = {
   fecha_vencimiento: string
   condicion: string
   moneda: string
-  descripcion: string
-  unidad: string
-  cantidad: number
-  valor_unitario: number
+  items: ManualFacturaItem[]
   monto: number
   oc_hes_pedido: string
   periodo: string

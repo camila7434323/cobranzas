@@ -594,14 +594,20 @@ async function sincronizarComprobantes(
     }
   }
 
+  // No pisar el ejecutivo si el comprobante ya existe: puede haber sido
+  // reasignado manualmente desde la app, y no queremos que un reimport lo
+  // devuelva al valor "de fábrica" de ejecutivosPorCliente.
   const comprobantesActivos = comprobantes.map(c => {
+    const existente = todosMap.get(c.comprobante)
+    const ejecutivo = existente ? existente.ejecutivo : c.ejecutivo
     const override = overrideMap.get(c.comprobante)
     if (!override || override === c.condicion) {
-      return { ...c, estado: 'pendiente' as const, updated_at: ahora }
+      return { ...c, ejecutivo, estado: 'pendiente' as const, updated_at: ahora }
     }
     const fechaVencimiento = calcularVencimientoPorCondicion(c.fecha_emision, override) || c.fecha_vencimiento
     return {
       ...c,
+      ejecutivo,
       condicion: override,
       fecha_vencimiento: fechaVencimiento,
       dias_mora: calcularDiasMoraDesde(fechaVencimiento),

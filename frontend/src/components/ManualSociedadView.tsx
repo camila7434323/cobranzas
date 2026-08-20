@@ -48,10 +48,11 @@ export function ManualSociedadView({
   const [mostrarTodosClientes, setMostrarTodosClientes] = useState(false)
 
   const q = busqueda.toLowerCase()
-  const facturasFiltradas = facturas.filter(r =>
-    !q || [r.comprobante, r.cliente, r.ejecutivo, r.descripcion, r.unidad, r.oc_hes_pedido, r.colaborador, r.otros_conceptos, r.periodo, r.condicion]
+  const facturasFiltradas = facturas.filter(r => {
+    const items = r.items || []
+    return !q || [r.comprobante, r.cliente, r.ejecutivo, ...items.map(it => it.descripcion), ...items.map(it => it.unidad), r.oc_hes_pedido, r.colaborador, r.otros_conceptos, r.periodo, r.condicion]
       .some(v => v?.toLowerCase().includes(q))
-  )
+  })
 
   if (vista === 'nueva') {
     if (!adminMode) {
@@ -472,17 +473,40 @@ export function ManualSociedadView({
                     {isExp && (
                       <tr style={{ borderBottom: '1px solid #dde3f0' }}>
                         <td colSpan={adminMode ? 9 : 8} style={{ padding: 0 }}>
-                          <div style={{ padding: '14px 20px', background: '#f8faff', borderLeft: '3px solid #a8c4f5', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px', fontSize: '12px' }}>
-                            {[
-                              ['Descripción', r.descripcion], ['Centro/Unidad', r.unidad], ['OC/HES', r.oc_hes_pedido],
-                              ['Período', r.periodo], ['Colaborador', r.colaborador], ['Otros conceptos', r.otros_conceptos],
-                              ['Condición', r.condicion],
-                            ].map(([label, val]) => (
-                              <div key={label}>
-                                <div style={{ fontSize: '10px', fontWeight: 700, color: '#7a8fbb', textTransform: 'uppercase', marginBottom: '3px' }}>{label}</div>
-                                <div style={{ color: '#0d1b38' }}>{val || '—'}</div>
-                              </div>
-                            ))}
+                          <div style={{ padding: '14px 20px', background: '#f8faff', borderLeft: '3px solid #a8c4f5' }}>
+                            {(r.items || []).length > 0 && (
+                              <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '12px', fontSize: '12px' }}>
+                                <thead>
+                                  <tr>
+                                    {['Descripción', 'Unidad', 'Cant.', 'Valor unit.', 'Subtotal'].map(h => (
+                                      <th key={h} style={{ textAlign: h === 'Descripción' || h === 'Unidad' ? 'left' : 'right', padding: '4px 8px', fontSize: '10px', fontWeight: 700, color: '#7a8fbb', textTransform: 'uppercase' }}>{h}</th>
+                                    ))}
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {(r.items || []).map((it, i) => (
+                                    <tr key={i} style={{ borderTop: '1px solid #e2e8f0' }}>
+                                      <td style={{ padding: '5px 8px', color: '#0d1b38' }}>{it.descripcion || '—'}</td>
+                                      <td style={{ padding: '5px 8px', color: '#0d1b38' }}>{it.unidad || '—'}</td>
+                                      <td style={{ padding: '5px 8px', textAlign: 'right', color: '#0d1b38' }}>{it.cantidad}</td>
+                                      <td style={{ padding: '5px 8px', textAlign: 'right', color: '#0d1b38' }}>{fmtMonto(r.moneda, it.valor_unitario)}</td>
+                                      <td style={{ padding: '5px 8px', textAlign: 'right', fontWeight: 600, color: '#0d1b38' }}>{fmtMonto(r.moneda, it.cantidad * it.valor_unitario)}</td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            )}
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px', fontSize: '12px' }}>
+                              {[
+                                ['OC/HES', r.oc_hes_pedido], ['Período', r.periodo], ['Colaborador', r.colaborador],
+                                ['Otros conceptos', r.otros_conceptos], ['Condición', r.condicion],
+                              ].map(([label, val]) => (
+                                <div key={label}>
+                                  <div style={{ fontSize: '10px', fontWeight: 700, color: '#7a8fbb', textTransform: 'uppercase', marginBottom: '3px' }}>{label}</div>
+                                  <div style={{ color: '#0d1b38' }}>{val || '—'}</div>
+                                </div>
+                              ))}
+                            </div>
                           </div>
                         </td>
                       </tr>

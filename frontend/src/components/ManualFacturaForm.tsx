@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import type { ManualFactura, SociedadKey } from '../types/sociedades'
+import type { ManualFactura, ManualFacturaItem, SociedadKey } from '../types/sociedades'
 import { extraerTextoPdf, parsearFacturaTexto } from '../lib/extraerFactura'
 
 const parseNumeroES = (str: string): number => {
@@ -13,6 +13,7 @@ const formatNumeroES = (n: number): string => n ? n.toLocaleString('es-AR') : ''
 
 const LBL: React.CSSProperties = { fontSize: '10px', fontWeight: 700, color: '#7a8fbb', textTransform: 'uppercase', marginBottom: '4px' }
 const INPUT: React.CSSProperties = { width: '100%', padding: '8px 10px', borderRadius: '8px', border: '1px solid #dde3f0', fontSize: '13px', boxSizing: 'border-box', fontFamily: 'inherit' }
+const INPUT_SM: React.CSSProperties = { ...INPUT, padding: '6px 8px', fontSize: '12px' }
 
 type Props = {
   sociedad: Exclude<SociedadKey, 'sa'>
@@ -27,9 +28,11 @@ type Props = {
   onCancelar: () => void
 }
 
+const itemVacio = (): ManualFacturaItem => ({ descripcion: '', unidad: '', cantidad: 0, valor_unitario: 0 })
+
 const vacio = (sociedad: Exclude<SociedadKey, 'sa'>, moneda: string): ManualFactura => ({
   id: '', sociedad, comprobante: '', cliente: '', ejecutivo: '', fecha_emision: '', fecha_vencimiento: '',
-  condicion: '', moneda, descripcion: '', unidad: '', cantidad: 0, valor_unitario: 0, monto: 0,
+  condicion: '', moneda, items: [itemVacio()], monto: 0,
   oc_hes_pedido: '', periodo: '', colaborador: '', otros_conceptos: '',
   pdf_url: '', pdf_base64: '', pdf_nombre: '', creado_el: '',
 })
@@ -38,17 +41,25 @@ export function ManualFacturaForm({
   sociedad, nombreSociedad, monedas, condicionOpts, execsConocidos, clientesConocidos,
   factura, calcularVencimientoPorCondicion, onGuardar, onCancelar,
 }: Props) {
-  const [form, setForm] = useState<ManualFactura>(() => factura ?? vacio(sociedad, monedas[0]))
+  const [form, setForm] = useState<ManualFactura>(() => factura
+    ? { ...factura, items: factura.items?.length ? factura.items : [itemVacio()] }
+    : vacio(sociedad, monedas[0]))
   const set = (fields: Partial<ManualFactura>) => setForm(prev => ({ ...prev, ...fields }))
 
-  const [valorUnitarioStr, setValorUnitarioStr] = useState(() => formatNumeroES(form.valor_unitario))
   const [montoStr, setMontoStr] = useState(() => formatNumeroES(form.monto))
   useEffect(() => {
-    setValorUnitarioStr(formatNumeroES(factura?.valor_unitario ?? 0))
     setMontoStr(formatNumeroES(factura?.monto ?? 0))
   }, [factura?.id])
 
-  const totalCalculado = form.cantidad > 0 && form.valor_unitario > 0 ? form.cantidad * form.valor_unitario : null
+  const totalCalculado = form.items.some(it => it.cantidad > 0 && it.valor_unitario > 0)
+    ? form.items.reduce((s, it) => s + it.cantidad * it.valor_unitario, 0)
+    : null
+
+  const setItem = (idx: number, fields: Partial<ManualFacturaItem>) => {
+    setForm(prev => ({ ...prev, items: prev.items.map((it, i) => i === idx ? { ...it, ...fields } : it) }))
+  }
+  const agregarLinea = () => setForm(prev => ({ ...prev, items: [...prev.items, itemVacio()] }))
+  const quitarLinea = (idx: number) => setForm(prev => ({ ...prev, items: prev.items.filter((_, i) => i !== idx) }))
 
   const [extrayendo, setExtrayendo] = useState(false)
   const [autocompletado, setAutocompletado] = useState(false)
@@ -71,7 +82,7 @@ export function ManualFacturaForm({
         if (Object.keys(datos).length === 0) {
           setErrorExtraccion('No se pudo reconocer ningún dato en este PDF, completá el formulario a mano.')
         } else {
-          if (datos.valor_unitario === undefined && datos.monto !== undefined) {
+          if (!datos.items?.length && datos.monto !== undefined) {
             setMontoStr(formatNumeroES(datos.monto))
           }
           set(datos)
@@ -91,6 +102,7 @@ export function ManualFacturaForm({
   const guardar = () => {
     if (!puedeGuardar) return
     const monto = totalCalculado ?? form.monto
+    const items = form.items.filter(it => it.descripcion.trim() || it.cantidad || it.valor_unitario)
     const fecha_vencimiento = calcularVencimientoPorCondicion(form.fecha_emision, form.condicion) || form.fecha_vencimiento
     onGuardar({
       ...form,
@@ -98,6 +110,7 @@ export function ManualFacturaForm({
       comprobante: form.comprobante.trim(),
       cliente: form.cliente.trim(),
       ejecutivo: form.ejecutivo.trim() || 'Sin asignar',
+      items,
       monto,
       fecha_vencimiento,
       creado_el: form.creado_el || new Date().toISOString(),
@@ -154,34 +167,33 @@ export function ManualFacturaForm({
         </div>
 
         <div style={{ gridColumn: '1 / -1' }}>
-          <div style={LBL}>Desglose del ítem</div>
-          <div style={{ display: 'grid', gridTemplateColumns: '3fr 1fr 1fr 1fr', gap: '10px', alignItems: 'end' }}>
-            <div>
-              <div style={{ fontSize: '10px', color: '#94a3b8', marginBottom: '4px' }}>Descripción</div>
-              <input type="text" value={form.descripcion} onChange={e => set({ descripcion: e.target.value })} style={INPUT} />
-            </div>
-            <div>
-              <div style={{ fontSize: '10px', color: '#94a3b8', marginBottom: '4px' }}>Unidad</div>
-              <input type="text" value={form.unidad} onChange={e => set({ unidad: e.target.value })} style={INPUT} />
-            </div>
-            <div>
-              <div style={{ fontSize: '10px', color: '#94a3b8', marginBottom: '4px' }}>Cantidad</div>
-              <input type="number" min={0} value={form.cantidad || ''} onChange={e => set({ cantidad: Number(e.target.value) || 0 })} style={INPUT} />
-            </div>
-            <div>
-              <div style={{ fontSize: '10px', color: '#94a3b8', marginBottom: '4px' }}>Valor unitario</div>
-              <input
-                type="text" inputMode="decimal" placeholder="0,00"
-                value={valorUnitarioStr}
-                onChange={e => { setValorUnitarioStr(e.target.value); set({ valor_unitario: parseNumeroES(e.target.value) }) }}
-                onBlur={() => setValorUnitarioStr(formatNumeroES(form.valor_unitario))}
-                style={INPUT}
-              />
-            </div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+            <div style={LBL}>Detalle de ítems / servicios</div>
+            <button type="button" onClick={agregarLinea} style={{ background: '#eef2ff', color: '#2554a0', border: '1px solid #c7d3ea', borderRadius: '7px', padding: '5px 12px', fontSize: '11px', fontWeight: 700, cursor: 'pointer' }}>
+              + Agregar línea
+            </button>
           </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '3fr 1fr 0.7fr 1fr 28px', gap: '8px', marginBottom: '4px' }}>
+            <div style={{ fontSize: '10px', color: '#94a3b8' }}>Descripción</div>
+            <div style={{ fontSize: '10px', color: '#94a3b8' }}>Unidad</div>
+            <div style={{ fontSize: '10px', color: '#94a3b8' }}>Cant.</div>
+            <div style={{ fontSize: '10px', color: '#94a3b8' }}>Valor unit.</div>
+            <div />
+          </div>
+          {form.items.map((item, idx) => (
+            <div key={idx} style={{ display: 'grid', gridTemplateColumns: '3fr 1fr 0.7fr 1fr 28px', gap: '8px', alignItems: 'center', marginBottom: '6px' }}>
+              <input type="text" value={item.descripcion} onChange={e => setItem(idx, { descripcion: e.target.value })} style={INPUT_SM} />
+              <input type="text" value={item.unidad} onChange={e => setItem(idx, { unidad: e.target.value })} style={INPUT_SM} />
+              <input type="number" min={0} value={item.cantidad || ''} onChange={e => setItem(idx, { cantidad: Number(e.target.value) || 0 })} style={INPUT_SM} />
+              <input type="number" min={0} step="0.01" value={item.valor_unitario || ''} onChange={e => setItem(idx, { valor_unitario: Number(e.target.value) || 0 })} style={INPUT_SM} />
+              <button type="button" onClick={() => quitarLinea(idx)} disabled={form.items.length <= 1} style={{ width: '26px', height: '26px', borderRadius: '6px', border: '1px solid #fecaca', background: form.items.length <= 1 ? '#f8fafc' : '#fef2f2', color: form.items.length <= 1 ? '#cbd5e1' : '#dc2626', cursor: form.items.length <= 1 ? 'not-allowed' : 'pointer', fontSize: '12px', fontWeight: 700 }}>
+                ✕
+              </button>
+            </div>
+          ))}
           <div style={{ marginTop: '10px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <span style={{ fontSize: '11px', fontWeight: 600, color: '#7a8fbb' }}>Total {totalCalculado ? 'calculado' : '(manual)'}:</span>
-            {totalCalculado ? (
+            <span style={{ fontSize: '11px', fontWeight: 600, color: '#7a8fbb' }}>Total {totalCalculado !== null ? 'neto' : '(manual)'}:</span>
+            {totalCalculado !== null ? (
               <span style={{ fontSize: '16px', fontWeight: 700, color: '#2554a0', fontFamily: 'monospace' }}>{form.moneda} {totalCalculado.toLocaleString('es-AR')}</span>
             ) : (
               <input
@@ -218,7 +230,7 @@ export function ManualFacturaForm({
             <span style={{ fontSize: '12px', color: '#7a8fbb', fontStyle: 'italic' }}>{form.pdf_nombre || 'Sin archivo seleccionado'}</span>
           </div>
           {extrayendo && (
-            <div style={{ marginTop: '8px', fontSize: '12px', color: '#7a8fbb' }}>⏳ Leyendo el PDF para autocompletar los campos...</div>
+            <div style={{ marginTop: '8px', fontSize: '12px', color: '#7a8fbb' }}>⏳ Leyendo el PDF para autocompletar los campos e ítems...</div>
           )}
           {!extrayendo && autocompletado && (
             <div style={{ marginTop: '8px', fontSize: '12px', color: '#059669', fontWeight: 600 }}>✓ Datos autocompletados desde el PDF. Revisá antes de guardar.</div>

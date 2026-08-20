@@ -30,10 +30,10 @@ export const ejecutivosPorCliente: Record<string, string> = {
   'Red Link SA': 'Emiliano Angelinetta',
   'SCANIA ARGENTINA SAU': 'Julieta Salvucci',
   'Sanofi Aventis Argentina S.A.': 'Julieta Salvucci',
-  'Siderca S.A.I.C': 'Maria Fernanda Dugini',
+  'Siderca S.A.I.C': 'Fernanda Dugini',
   'Swiss Medical Group': 'Emiliano Angelinetta',
-  'TECHINT COMPAÑIA TECNICA INTERNACIONAL': 'Maria Fernanda Dugini',
-  'TERNIUM ARGENTINA S.A.': 'Maria Fernanda Dugini',
+  'TECHINT COMPAÑIA TECNICA INTERNACIONAL': 'Fernanda Dugini',
+  'TERNIUM ARGENTINA S.A.': 'Fernanda Dugini',
   'Toyota Compañia Financiera de Arg SA': 'Leonardo Nocera',
   'Zapviz Studio SRL': 'Joaquin Ramirez',
   // Compatibilidad con búsquedas parciales

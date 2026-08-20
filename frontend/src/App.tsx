@@ -18,6 +18,8 @@ import { useUltimoReporte } from './hooks/useUltimoReporte'
 import { CONDICION_OPTS, SOCIEDADES, type SociedadKey, type ManualFactura } from './types/sociedades'
 import { DASH_BAR_COLORS, EXEC_PIE_COLORS, svgPie } from './lib/dashboardUtils'
 
+const normalizar = (v: string) => v.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase()
+
 const MESES_ABREV = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic']
 function fmtPeriodo(v: string): string {
   const m = v.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/)
@@ -269,7 +271,9 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
 
   // filtros – clientes
   const [filtroEjecutivoClientes, setFiltroEjecutivoClientes] = useState('')
-  const [filtroEstadoClientes, setFiltroEstadoClientes] = useState('')
+  const [busquedaClientes, setBusquedaClientes] = useState('')
+  const [sortColClientes, setSortColClientes] = useState<'cliente' | 'ejecutivo' | null>(null)
+  const [sortDirClientes, setSortDirClientes] = useState<'asc' | 'desc'>('asc')
 
   const ejecutivos = Array.from(new Set(data.map(r => r.ejecutivo).filter(Boolean).filter(e => e !== 'Sin asignar'))) as string[]
 
@@ -340,15 +344,20 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
     return acc
   }, new Map<string, ClienteRow>())
 
+  const qClientes = normalizar(busquedaClientes.trim())
   const clientesFiltrados = Array.from(clientesMap.values())
     .filter(c => {
       if (filtroEjecutivoClientes && c.ejecutivo !== filtroEjecutivoClientes) return false
-      if (filtroEstadoClientes === 'sinmora'  && c.vencido > 0)    return false
-      if (filtroEstadoClientes === 'mora'     && c.vencido <= 0)   return false
-      if (filtroEstadoClientes === 'critica'  && c.moraMax <= 60)  return false
+      if (qClientes && ![c.cliente, c.ejecutivo, ...c.condiciones].some(v => normalizar(v).includes(qClientes))) return false
       return true
     })
-    .sort((a, b) => b.vencido - a.vencido)
+    .sort((a, b) => {
+      if (sortColClientes) {
+        const dir = sortDirClientes === 'asc' ? 1 : -1
+        return dir * a[sortColClientes].localeCompare(b[sortColClientes])
+      }
+      return b.vencido - a.vencido
+    })
 
   // ── métricas adicionales para nuevo dashboard ─────────────────────────────
   const proxAVencer = dataSel.filter(esProximaAVencer)
@@ -497,7 +506,7 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
     setFiltroEjecutivoHistorial('')
     setFiltroClienteHistorial('')
     setFiltroEjecutivoClientes('')
-    setFiltroEstadoClientes('')
+    setBusquedaClientes('')
     setSortCol(null)
     setSortDir('asc')
     setExpandedRows(new Set())
@@ -723,8 +732,10 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
   const camposExtra = (ex: Extra | undefined) => ex
     ? [ex.descripcion, ex.centro_costo, ex.tipo_servicio, ex.oc_hes_pedido, ex.colaborador, ex.otros_conceptos, ex.periodo, ex.nota, ex.condicion_override]
     : []
-  const camposManual = (r: ManualFactura) =>
-    [r.descripcion, r.unidad, r.oc_hes_pedido, r.colaborador, r.otros_conceptos, r.periodo, r.condicion]
+  const camposManual = (r: ManualFactura) => {
+    const items = r.items || []
+    return [...items.map(it => it.descripcion), ...items.map(it => it.unidad), r.oc_hes_pedido, r.colaborador, r.otros_conceptos, r.periodo, r.condicion]
+  }
 
   const globalRowsSinFiltrar = [
     ...data.map(r => ({
@@ -928,12 +939,12 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
 
   const hayFiltrosTabla     = !!(ejecutivoSeleccionado || filtroClienteTabla || filtroEstadoTabla)
   const hayFiltrosHistorial = !!(filtroEjecutivoHistorial || filtroClienteHistorial || filtroFechaDesde || filtroFechaHasta)
-  const hayFiltrosClientes  = !!(filtroEjecutivoClientes || filtroEstadoClientes)
+  const hayFiltrosClientes  = !!(filtroEjecutivoClientes || busquedaClientes)
   const esPanelEjecutivo    = esTabla && !!ejecutivoSeleccionado
 
   const limpiarFiltrosTabla     = () => { if (!esPanelEjecutivo) setEjecutivoSeleccionado(null); setFiltroClienteTabla(''); setFiltroEstadoTabla(''); setFiltroMoraRange(''); setSortCol(null); setSortDir('asc') }
   const limpiarFiltrosHistorial = () => { setFiltroEjecutivoHistorial(''); setFiltroClienteHistorial(''); setFiltroFechaDesde(''); setFiltroFechaHasta('') }
-  const limpiarFiltrosClientes  = () => { setFiltroEjecutivoClientes(''); setFiltroEstadoClientes('') }
+  const limpiarFiltrosClientes  = () => { setFiltroEjecutivoClientes(''); setBusquedaClientes('') }
 
   const handleSort = (col: string) => {
     if (sortCol === col) { setSortDir(d => d === 'asc' ? 'desc' : 'asc') }
@@ -1142,7 +1153,7 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
                   setEjecutivoSeleccionado(null)
                   setFiltroClienteTabla(''); setFiltroEstadoTabla(''); setFiltroMoraRange('')
                   setFiltroEjecutivoHistorial(''); setFiltroClienteHistorial('')
-                  setFiltroEjecutivoClientes(''); setFiltroEstadoClientes('')
+                  setFiltroEjecutivoClientes(''); setBusquedaClientes('')
                   setSortCol(null); setSortDir('asc'); setExpandedRows(new Set())
                   if (item.key === 'historial') refetchHistorial()
                   else refetch()
@@ -1391,23 +1402,35 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
 
               {/* KPI CARDS */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '14px' }}>
-                <div style={{ background: '#fff', border: '1px solid #dde3f0', borderRadius: '12px', padding: '22px 24px', boxShadow: '0 2px 8px rgba(10,22,40,0.08)', borderLeft: '5px solid #dc2626', position: 'relative', overflow: 'hidden' }}>
+                <div
+                  onClick={() => { setFiltroEstadoTabla('mora'); setFiltroMoraRange(''); setFiltroClienteTabla(''); setVista('todos') }}
+                  style={{ background: '#fff', border: '1px solid #dde3f0', borderRadius: '12px', padding: '22px 24px', boxShadow: '0 2px 8px rgba(10,22,40,0.08)', borderLeft: '5px solid #dc2626', position: 'relative', overflow: 'hidden', cursor: 'pointer' }}
+                >
                   <div style={{ position: 'absolute', right: '-10px', top: '-10px', width: '70px', height: '70px', background: '#fee2e2', borderRadius: '50%', opacity: 0.4 }} />
                   <div style={{ fontSize: '10px', fontWeight: 700, color: '#7a8fbb', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '10px' }}>💸 Total vencido</div>
                   <div style={{ fontSize: '28px', fontWeight: 800, color: '#dc2626', fontFamily: 'monospace', lineHeight: 1, marginBottom: '6px' }}>{fmt(totalVencido)}</div>
                   <div style={{ fontSize: '12px', color: '#7a8fbb' }}>{vencidasArr.length} facturas · {clientDashList.length} clientes</div>
+                  <div style={{ fontSize: '11px', fontWeight: 700, color: '#dc2626', marginTop: '8px', textDecoration: 'underline' }}>Ver facturas ⋯</div>
                 </div>
-                <div style={{ background: '#fff', border: '1px solid #dde3f0', borderRadius: '12px', padding: '22px 24px', boxShadow: '0 2px 8px rgba(10,22,40,0.08)', borderLeft: '5px solid #d97706', position: 'relative', overflow: 'hidden' }}>
+                <div
+                  onClick={() => { setFiltroEstadoTabla('proximas'); setFiltroMoraRange(''); setFiltroClienteTabla(''); setVista('todos') }}
+                  style={{ background: '#fff', border: '1px solid #dde3f0', borderRadius: '12px', padding: '22px 24px', boxShadow: '0 2px 8px rgba(10,22,40,0.08)', borderLeft: '5px solid #d97706', position: 'relative', overflow: 'hidden', cursor: 'pointer' }}
+                >
                   <div style={{ position: 'absolute', right: '-10px', top: '-10px', width: '70px', height: '70px', background: '#fef3c7', borderRadius: '50%', opacity: 0.4 }} />
                   <div style={{ fontSize: '10px', fontWeight: 700, color: '#7a8fbb', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '10px' }}>⏳ Vence en 7 días</div>
                   <div style={{ fontSize: '28px', fontWeight: 800, color: '#d97706', fontFamily: 'monospace', lineHeight: 1, marginBottom: '6px' }}>{fmt(totalProxAVencer)}</div>
                   <div style={{ fontSize: '12px', color: '#7a8fbb' }}>{proxAVencer.length} facturas próximas a vencer</div>
+                  <div style={{ fontSize: '11px', fontWeight: 700, color: '#d97706', marginTop: '8px', textDecoration: 'underline' }}>Ver facturas ⋯</div>
                 </div>
-                <div style={{ background: '#fff', border: '1px solid #dde3f0', borderRadius: '12px', padding: '22px 24px', boxShadow: '0 2px 8px rgba(10,22,40,0.08)', borderLeft: '5px solid #059669', position: 'relative', overflow: 'hidden' }}>
+                <div
+                  onClick={() => { setFiltroEstadoTabla('sinvencer'); setFiltroMoraRange(''); setFiltroClienteTabla(''); setVista('todos') }}
+                  style={{ background: '#fff', border: '1px solid #dde3f0', borderRadius: '12px', padding: '22px 24px', boxShadow: '0 2px 8px rgba(10,22,40,0.08)', borderLeft: '5px solid #059669', position: 'relative', overflow: 'hidden', cursor: 'pointer' }}
+                >
                   <div style={{ position: 'absolute', right: '-10px', top: '-10px', width: '70px', height: '70px', background: '#d1fae5', borderRadius: '50%', opacity: 0.4 }} />
                   <div style={{ fontSize: '10px', fontWeight: 700, color: '#7a8fbb', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '10px' }}>✅ Sin vencer</div>
                   <div style={{ fontSize: '28px', fontWeight: 800, color: '#059669', fontFamily: 'monospace', lineHeight: 1, marginBottom: '6px' }}>{fmt(totalSinVencer)}</div>
                   <div style={{ fontSize: '12px', color: '#7a8fbb' }}>{sinVencerArr.length} facturas al día</div>
+                  <div style={{ fontSize: '11px', fontWeight: 700, color: '#059669', marginTop: '8px', textDecoration: 'underline' }}>Ver facturas ⋯</div>
                 </div>
               </div>
 
@@ -1668,15 +1691,14 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
               </div>
             )}
             <div style={{ display: 'flex', gap: '8px', marginBottom: '14px', alignItems: 'center', flexWrap: 'wrap' }}>
+              <input
+                type="text" placeholder="Buscar cliente o ejecutivo..." value={busquedaClientes}
+                onChange={e => setBusquedaClientes(e.target.value)}
+                style={{ ...SEL, cursor: 'text', minWidth: '220px' }}
+              />
               <select value={filtroEjecutivoClientes} onChange={e => setFiltroEjecutivoClientes(e.target.value)} style={SEL}>
                 <option value="">Todos los ejecutivos</option>
                 {EJECUTIVOS.map(e => <option key={e} value={e}>{e}</option>)}
-              </select>
-              <select value={filtroEstadoClientes} onChange={e => setFiltroEstadoClientes(e.target.value)} style={SEL}>
-                <option value="">Todos los estados</option>
-                <option value="sinmora">Sin mora</option>
-                <option value="mora">Con mora</option>
-                <option value="critica">Crítica (+60d)</option>
               </select>
               {hayFiltrosClientes && <button onClick={limpiarFiltrosClientes} style={BTN_LIMPIAR}>✕ Limpiar</button>}
             </div>
@@ -1694,8 +1716,22 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
                   <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                     <thead>
                       <tr style={{ background: '#f8faff', borderBottom: '1px solid #dde3f0' }}>
-                        {['Cliente', 'Ejecutivo asignado', 'Condición habitual', 'Cambiar ejecutivo'].map(h => (
-                          <th key={h} style={{ padding: '10px 16px', textAlign: 'left', fontSize: '10px', fontWeight: 700, color: '#7a8fbb', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>{h}</th>
+                        {([
+                          { label: 'Cliente', col: 'cliente' as const },
+                          { label: 'Ejecutivo asignado', col: 'ejecutivo' as const },
+                          { label: 'Condición habitual', col: null },
+                          { label: 'Cambiar ejecutivo', col: null },
+                        ]).map(({ label, col }) => (
+                          <th
+                            key={label}
+                            onClick={col ? () => {
+                              setSortDirClientes(d => sortColClientes === col && d === 'asc' ? 'desc' : 'asc')
+                              setSortColClientes(col)
+                            } : undefined}
+                            style={{ padding: '10px 16px', textAlign: 'left', fontSize: '10px', fontWeight: 700, color: '#7a8fbb', textTransform: 'uppercase', whiteSpace: 'nowrap', cursor: col ? 'pointer' : 'default', userSelect: 'none' }}
+                          >
+                            {label}{col && sortColClientes === col ? (sortDirClientes === 'asc' ? ' ▲' : ' ▼') : ''}
+                          </th>
                         ))}
                       </tr>
                     </thead>
