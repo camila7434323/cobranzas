@@ -1728,9 +1728,21 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
                               setSortDirClientes(d => sortColClientes === col && d === 'asc' ? 'desc' : 'asc')
                               setSortColClientes(col)
                             } : undefined}
-                            style={{ padding: '10px 16px', textAlign: 'left', fontSize: '10px', fontWeight: 700, color: '#7a8fbb', textTransform: 'uppercase', whiteSpace: 'nowrap', cursor: col ? 'pointer' : 'default', userSelect: 'none' }}
+                            style={{
+                              padding: '10px 16px', textAlign: 'left', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', whiteSpace: 'nowrap',
+                              cursor: col ? 'pointer' : 'default', userSelect: 'none',
+                              color: col && sortColClientes === col ? '#2554a0' : '#7a8fbb',
+                              background: col && sortColClientes === col ? '#eef2ff' : 'transparent',
+                            }}
                           >
-                            {label}{col && sortColClientes === col ? (sortDirClientes === 'asc' ? ' ▲' : ' ▼') : ''}
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+                              {label}
+                              {col && (
+                                <span style={{ fontSize: sortColClientes === col ? '12px' : '11px', color: sortColClientes === col ? '#2554a0' : '#b6c2dc' }}>
+                                  {sortColClientes === col ? (sortDirClientes === 'asc' ? '▲' : '▼') : '⇅'}
+                                </span>
+                              )}
+                            </span>
                           </th>
                         ))}
                       </tr>
