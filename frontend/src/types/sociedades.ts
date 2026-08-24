@@ -29,6 +29,7 @@ export type ManualFactura = {
   condicion: string
   moneda: string
   items: ManualFacturaItem[]
+  iva: number
   monto: number
   oc_hes_pedido: string
   periodo: string

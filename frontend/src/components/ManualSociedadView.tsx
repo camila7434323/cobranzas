@@ -27,6 +27,7 @@ type Props = {
   onCancelarFactura: () => void
   onMarcarCobrada: (factura: ManualFactura) => void
   onDeshacerCobro: (factura: ManualFactura) => void
+  onEliminar: (factura: ManualFactura) => void
   onReasignarEjecutivo: (cliente: string, nuevoEjecutivo: string) => void
   onAbrirPdf: (factura: ManualFactura) => void
   onVerFacturasCliente: (cliente: string) => void
@@ -42,7 +43,7 @@ export function ManualSociedadView({
   execsConocidos, clientesConocidos, busqueda, editando, fmtFecha,
   calcularVencimientoPorCondicion, calcularDiasMora,
   onIrANueva, onEditar, onGuardarFactura, onCancelarFactura,
-  onMarcarCobrada, onDeshacerCobro, onReasignarEjecutivo, onAbrirPdf, onVerFacturasCliente,
+  onMarcarCobrada, onDeshacerCobro, onEliminar, onReasignarEjecutivo, onAbrirPdf, onVerFacturasCliente,
 }: Props) {
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set())
   const [mostrarTodosClientes, setMostrarTodosClientes] = useState(false)
@@ -465,7 +466,8 @@ export function ManualSociedadView({
                         <td style={{ padding: '11px 16px' }}>
                           <div style={{ display: 'flex', gap: '6px' }}>
                             <button onClick={() => onEditar(r)} style={{ background: '#f0f4ff', color: '#2554a0', border: 'none', borderRadius: '6px', padding: '5px 10px', fontSize: '11px', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}>Editar</button>
-                            <button onClick={() => onMarcarCobrada(r)} style={{ background: '#f0fdf4', color: '#065f46', border: '1px solid #6ee7b7', borderRadius: '6px', padding: '5px 10px', fontSize: '11px', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}>✓ Cobrada</button>
+                            <button onClick={() => onMarcarCobrada(r)} style={{ background: '#f0fdf4', color: '#065f46', border: '1px solid #6ee7b7', borderRadius: '6px', padding: '5px 10px', fontSize: '11px', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}>✓ Marcar cobrada</button>
+                            <button onClick={() => onEliminar(r)} style={{ background: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca', borderRadius: '6px', padding: '5px 10px', fontSize: '11px', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}>✕ Eliminar</button>
                           </div>
                         </td>
                       )}
@@ -495,6 +497,13 @@ export function ManualSociedadView({
                                   ))}
                                 </tbody>
                               </table>
+                            )}
+                            {!!r.iva && (
+                              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '18px', marginBottom: '12px', fontSize: '12px' }}>
+                                <span style={{ color: '#7a8fbb' }}>Base imponible: <strong style={{ color: '#0d1b38' }}>{fmtMonto(r.moneda, (r.items || []).reduce((s, it) => s + it.cantidad * it.valor_unitario, 0))}</strong></span>
+                                <span style={{ color: '#7a8fbb' }}>IVA: <strong style={{ color: '#0d1b38' }}>{fmtMonto(r.moneda, r.iva)}</strong></span>
+                                <span style={{ color: '#7a8fbb' }}>Total factura: <strong style={{ color: '#2554a0' }}>{fmtMonto(r.moneda, r.monto)}</strong></span>
+                              </div>
                             )}
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px', fontSize: '12px' }}>
                               {[

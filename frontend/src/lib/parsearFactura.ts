@@ -44,16 +44,24 @@ function condicionMasCercana(textoTerms: string, opciones: string[]): string {
   return mejor
 }
 
+function numeroFlexible(valor: string): number | null {
+  const usaComaDecimal = /,\d{2}\s*(?:€|\$)?\s*$/.test(valor) || (valor.includes(',') && !valor.includes('.'))
+  const limpio = usaComaDecimal
+    ? valor.replace(/\./g, '').replace(',', '.')
+    : valor.replace(/,/g, '')
+  const n = parseFloat(limpio)
+  return isNaN(n) ? null : n
+}
+
 function parsearMonto(texto: string): number | null {
   const matches = [...texto.matchAll(/\bTOTAL\b[^\d\n]{0,15}([\d][\d.,]*\d|\d)/gi)]
   if (!matches.length) return null
-  const ultimo = matches[matches.length - 1][1]
-  const usaComaDecimal = /,\d{2}\s*(?:€|\$)?\s*$/.test(ultimo) || (ultimo.includes(',') && !ultimo.includes('.'))
-  const limpio = usaComaDecimal
-    ? ultimo.replace(/\./g, '').replace(',', '.')
-    : ultimo.replace(/,/g, '')
-  const n = parseFloat(limpio)
-  return isNaN(n) ? null : n
+  return numeroFlexible(matches[matches.length - 1][1])
+}
+
+function parsearIva(texto: string): number | null {
+  const m = texto.match(/\bIVA\b\s*(?:\d{1,2}(?:[.,]\d+)?\s*%)?[^\d\n]{0,10}(\d[\d.,]*\d|\d)/i)
+  return m ? numeroFlexible(m[1]) : null
 }
 
 const numeroES = (str: string): number => {
@@ -142,6 +150,9 @@ export function parsearFacturaTexto(texto: string, sociedad: SociedadKey, condic
 
   const oc = texto.match(/\bPO[\s#-]*(\d[\d-]*)/i) || texto.match(/(?:OC|HES|PEDIDO)\s*[:#]?\s*([\w-]+)/i)
   if (oc) resultado.oc_hes_pedido = oc[0].replace(/\s+/g, ' ').trim()
+
+  const iva = parsearIva(texto)
+  if (iva !== null) resultado.iva = iva
 
   const items = parsearItems(texto)
   if (items.length) {

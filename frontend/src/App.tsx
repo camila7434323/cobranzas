@@ -201,7 +201,7 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
     facturas: manualFacturas, historial: manualHistorial, execsConocidos: manualExecs, clientesConocidos: manualClients,
     error: errorFacturasManuales,
     guardarFactura: guardarFacturaManualDb, marcarCobrada: marcarCobradaManualDb,
-    deshacerCobro: deshacerCobroManualDb, reasignarEjecutivo: reasignarEjecutivoManualDb,
+    deshacerCobro: deshacerCobroManualDb, eliminarFactura: eliminarFacturaManualDb, reasignarEjecutivo: reasignarEjecutivoManualDb,
   } = useFacturasManuales()
   const { buscarPdf } = usePdfsStorage()
   const { fecha: fechaUltimoReporte } = useUltimoReporte()
@@ -581,6 +581,16 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
       setToastExito('Cobro deshecho ✓')
     } catch {
       setErrorCarga('No se pudo deshacer el cobro. Intentá de nuevo.')
+    }
+  }
+
+  const eliminarFacturaManual = async (factura: ManualFactura) => {
+    if (!confirm(`¿Eliminar la factura ${factura.comprobante} de ${factura.cliente}? Esta acción no se puede deshacer.`)) return
+    try {
+      await eliminarFacturaManualDb(factura)
+      setToastExito('Factura eliminada ✓')
+    } catch {
+      setErrorCarga('No se pudo eliminar la factura. Intentá de nuevo.')
     }
   }
 
@@ -1375,6 +1385,7 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
             onCancelarFactura={() => { setEditandoManual(null); setVista('todos') }}
             onMarcarCobrada={marcarCobradaManual}
             onDeshacerCobro={deshacerCobroManual}
+            onEliminar={eliminarFacturaManual}
             onReasignarEjecutivo={(cliente, nuevo) => reasignarEjecutivoManual(sociedadActiva, cliente, nuevo)}
             onAbrirPdf={f => abrirPdf({ comprobante: f.comprobante, nombre_cliente: f.cliente, ejecutivo: f.ejecutivo, fecha_emision: f.fecha_emision, fecha_vencimiento: f.fecha_vencimiento, monto: f.monto, dias_mora: calcularDiasMora(f.fecha_vencimiento) }, f.pdf_base64 || f.pdf_url || undefined)}
             onVerFacturasCliente={cliente => { setBusqueda(cliente); setVista('todos') }}

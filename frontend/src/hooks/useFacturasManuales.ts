@@ -72,6 +72,12 @@ export function useFacturasManuales() {
     await cargar()
   }
 
+  const eliminarFactura = async (factura: ManualFactura) => {
+    const { error: err } = await supabase.from('facturas_manuales').delete().eq('id', factura.id)
+    if (err) throw new Error(err.message)
+    await cargar()
+  }
+
   const reasignarEjecutivo = async (sociedad: SociedadKey, cliente: string, nuevoEjecutivo: string) => {
     const { error: err } = await supabase.from('facturas_manuales').update({ ejecutivo: nuevoEjecutivo }).eq('sociedad', sociedad).eq('cliente', cliente)
     if (err) throw new Error(err.message)
@@ -81,6 +87,6 @@ export function useFacturasManuales() {
   return {
     loading, error, refetch: cargar,
     facturas, historial, execsConocidos, clientesConocidos,
-    guardarFactura, marcarCobrada, deshacerCobro, reasignarEjecutivo,
+    guardarFactura, marcarCobrada, deshacerCobro, eliminarFactura, reasignarEjecutivo,
   }
 }

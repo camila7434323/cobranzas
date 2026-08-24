@@ -32,7 +32,7 @@ const itemVacio = (): ManualFacturaItem => ({ descripcion: '', unidad: '', canti
 
 const vacio = (sociedad: Exclude<SociedadKey, 'sa'>, moneda: string): ManualFactura => ({
   id: '', sociedad, comprobante: '', cliente: '', ejecutivo: '', fecha_emision: '', fecha_vencimiento: '',
-  condicion: '', moneda, items: [itemVacio()], monto: 0,
+  condicion: '', moneda, items: [itemVacio()], iva: 0, monto: 0,
   oc_hes_pedido: '', periodo: '', colaborador: '', otros_conceptos: '',
   pdf_url: '', pdf_base64: '', pdf_nombre: '', creado_el: '',
 })
@@ -42,13 +42,15 @@ export function ManualFacturaForm({
   factura, calcularVencimientoPorCondicion, onGuardar, onCancelar,
 }: Props) {
   const [form, setForm] = useState<ManualFactura>(() => factura
-    ? { ...factura, items: factura.items?.length ? factura.items : [itemVacio()] }
+    ? { ...factura, items: factura.items?.length ? factura.items : [itemVacio()], iva: factura.iva || 0 }
     : vacio(sociedad, monedas[0]))
   const set = (fields: Partial<ManualFactura>) => setForm(prev => ({ ...prev, ...fields }))
 
   const [montoStr, setMontoStr] = useState(() => formatNumeroES(form.monto))
+  const [ivaStr, setIvaStr] = useState(() => formatNumeroES(form.iva))
   useEffect(() => {
     setMontoStr(formatNumeroES(factura?.monto ?? 0))
+    setIvaStr(formatNumeroES(factura?.iva ?? 0))
   }, [factura?.id])
 
   const totalCalculado = form.items.some(it => it.cantidad > 0 && it.valor_unitario > 0)
@@ -85,6 +87,7 @@ export function ManualFacturaForm({
           if (!datos.items?.length && datos.monto !== undefined) {
             setMontoStr(formatNumeroES(datos.monto))
           }
+          if (datos.iva !== undefined) setIvaStr(formatNumeroES(datos.iva))
           set(datos)
           setAutocompletado(true)
         }
@@ -97,11 +100,11 @@ export function ManualFacturaForm({
     reader.readAsDataURL(file)
   }
 
-  const puedeGuardar = form.comprobante.trim() && form.cliente.trim() && form.fecha_emision && (form.monto > 0 || totalCalculado)
+  const puedeGuardar = form.comprobante.trim() && form.cliente.trim() && form.fecha_emision && (form.monto > 0 || totalCalculado !== null)
 
   const guardar = () => {
     if (!puedeGuardar) return
-    const monto = totalCalculado ?? form.monto
+    const monto = totalCalculado !== null ? totalCalculado + (form.iva || 0) : form.monto
     const items = form.items.filter(it => it.descripcion.trim() || it.cantidad || it.valor_unitario)
     const fecha_vencimiento = calcularVencimientoPorCondicion(form.fecha_emision, form.condicion) || form.fecha_vencimiento
     onGuardar({
@@ -191,11 +194,30 @@ export function ManualFacturaForm({
               </button>
             </div>
           ))}
-          <div style={{ marginTop: '10px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <span style={{ fontSize: '11px', fontWeight: 600, color: '#7a8fbb' }}>Total {totalCalculado !== null ? 'neto' : '(manual)'}:</span>
-            {totalCalculado !== null ? (
-              <span style={{ fontSize: '16px', fontWeight: 700, color: '#2554a0', fontFamily: 'monospace' }}>{form.moneda} {totalCalculado.toLocaleString('es-AR')}</span>
-            ) : (
+          {totalCalculado !== null ? (
+            <div style={{ marginTop: '10px', display: 'flex', flexDirection: 'column', gap: '5px', maxWidth: '280px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: '#7a8fbb' }}>
+                <span>Base imponible</span>
+                <span style={{ fontFamily: 'monospace' }}>{form.moneda} {totalCalculado.toLocaleString('es-AR')}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px', color: '#7a8fbb' }}>
+                <span>IVA</span>
+                <input
+                  type="text" inputMode="decimal" placeholder="0,00"
+                  value={ivaStr}
+                  onChange={e => { setIvaStr(e.target.value); set({ iva: parseNumeroES(e.target.value) }) }}
+                  onBlur={() => setIvaStr(formatNumeroES(form.iva))}
+                  style={{ ...INPUT_SM, width: '110px', textAlign: 'right' }}
+                />
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '6px', borderTop: '1px solid #dde3f0' }}>
+                <span style={{ fontSize: '12px', fontWeight: 700, color: '#0d1b38' }}>Total factura</span>
+                <span style={{ fontSize: '16px', fontWeight: 700, color: '#2554a0', fontFamily: 'monospace' }}>{form.moneda} {(totalCalculado + (form.iva || 0)).toLocaleString('es-AR')}</span>
+              </div>
+            </div>
+          ) : (
+            <div style={{ marginTop: '10px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <span style={{ fontSize: '11px', fontWeight: 600, color: '#7a8fbb' }}>Total (manual):</span>
               <input
                 type="text" inputMode="decimal" placeholder="Monto"
                 value={montoStr}
@@ -203,8 +225,8 @@ export function ManualFacturaForm({
                 onBlur={() => setMontoStr(formatNumeroES(form.monto))}
                 style={{ ...INPUT, width: '160px' }}
               />
-            )}
-          </div>
+            </div>
+          )}
         </div>
 
         <div>
