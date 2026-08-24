@@ -69,16 +69,21 @@ const numeroES = (str: string): number => {
   return isNaN(n) ? 0 : n
 }
 
+// Las descripciones largas suelen partirse en varias líneas al extraer el
+// texto del PDF (el pie de la fila con cantidad/precio queda en otra línea
+// que la descripción). Por eso agrupamos por "bloques" que arrancan en cada
+// número de ítem, en vez de exigir que todo esté en una sola línea.
 function parsearItemsIngles(texto: string): ManualFacturaItem[] {
   const items: ManualFacturaItem[] = []
-  for (const linea of texto.split('\n')) {
-    const m = linea.match(/^\d+\.\s+(?:\d{1,2}\/\d{1,2}\/\d{4}\s+)?(.+?)\s+(\d+(?:\.\d+)?)\s+\$?([\d,]+\.\d{2})\s+\$?([\d,]+\.\d{2})\s*$/)
+  const bloques = texto.split(/\n(?=\d+\.\s)/)
+  for (const bloque of bloques) {
+    const m = bloque.match(/^(\d+)\.\s+(?:\d{1,2}\/\d{1,2}\/\d{4}\s+)?([\s\S]+?)\s+(\d+(?:\.\d+)?)\s+\$?([\d,]+\.\d{2})\s+\$?([\d,]+\.\d{2})/)
     if (!m) continue
     items.push({
-      descripcion: m[1].trim(),
+      descripcion: m[2].replace(/\s+/g, ' ').trim(),
       unidad: '',
-      cantidad: Number(m[2]),
-      valor_unitario: Number(m[3].replace(/,/g, '')),
+      cantidad: Number(m[3]),
+      valor_unitario: Number(m[4].replace(/,/g, '')),
     })
   }
   return items
@@ -87,15 +92,17 @@ function parsearItemsIngles(texto: string): ManualFacturaItem[] {
 function parsearItemsEspanol(texto: string): ManualFacturaItem[] {
   const items: ManualFacturaItem[] = []
   const lineas = texto.split('\n')
-  for (let i = 1; i < lineas.length; i++) {
+  let inicioBloque = 0
+  for (let i = 0; i < lineas.length; i++) {
     const m = lineas[i].match(/cantidad\s+horas:\s*([\d.,]+)\s+coste\s+hora\s+en\s*€:\s*([\d.,]+)\s*€/i)
     if (!m) continue
     items.push({
-      descripcion: lineas[i - 1].trim(),
+      descripcion: lineas.slice(inicioBloque, i).join(' ').replace(/\s+/g, ' ').trim(),
       unidad: 'horas',
       cantidad: numeroES(m[1]),
       valor_unitario: numeroES(m[2]),
     })
+    inicioBloque = i + 1
   }
   return items
 }
