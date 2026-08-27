@@ -151,11 +151,27 @@ export function ManualFacturaForm({
 
         <div>
           <div style={LBL}>Fecha emisión</div>
-          <input type="date" value={form.fecha_emision} onChange={e => set({ fecha_emision: e.target.value })} style={INPUT} />
+          <input
+            type="date" value={form.fecha_emision}
+            onChange={e => {
+              const fecha_emision = e.target.value
+              const fecha_vencimiento = calcularVencimientoPorCondicion(fecha_emision, form.condicion) || form.fecha_vencimiento
+              set({ fecha_emision, fecha_vencimiento })
+            }}
+            style={INPUT}
+          />
         </div>
         <div>
           <div style={LBL}>Condición de pago</div>
-          <select value={form.condicion} onChange={e => set({ condicion: e.target.value })} style={INPUT}>
+          <select
+            value={form.condicion}
+            onChange={e => {
+              const condicion = e.target.value
+              const fecha_vencimiento = calcularVencimientoPorCondicion(form.fecha_emision, condicion) || form.fecha_vencimiento
+              set({ condicion, fecha_vencimiento })
+            }}
+            style={INPUT}
+          >
             <option value="">— Seleccionar —</option>
             {condicionOpts.map(o => <option key={o} value={o}>{o}</option>)}
           </select>
