@@ -5,6 +5,8 @@ import { DASH_BAR_COLORS, EXEC_PIE_COLORS, svgPie } from '../lib/dashboardUtils'
 
 type Vista = 'global' | 'dashboard' | 'todos' | 'historial' | 'clientes' | 'nueva'
 
+const normalizar = (v: string) => v.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase()
+
 type Props = {
   vista: Vista
   sociedad: Exclude<SociedadKey, 'sa'>
@@ -270,6 +272,7 @@ export function ManualSociedadView({
 }: Props) {
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set())
   const [clientesExpandidos, setClientesExpandidos] = useState<Record<string, boolean>>({})
+  const [busquedaHistorial, setBusquedaHistorial] = useState('')
 
   const q = busqueda.toLowerCase()
   const facturasFiltradas = facturas.filter(r => {
@@ -303,14 +306,25 @@ export function ManualSociedadView({
   }
 
   if (vista === 'historial') {
+    const qHist = normalizar(busquedaHistorial.trim())
+    const historialFiltrado = historial.filter(r =>
+      !qHist || [r.comprobante, r.cliente, r.ejecutivo].some(v => normalizar(v || '').includes(qHist))
+    )
     return (
       <div style={{ background: '#fff', border: '1px solid #dde3f0', borderRadius: '10px', overflow: 'hidden' }}>
-        <div style={{ padding: '12px 16px', borderBottom: '1px solid #dde3f0', display: 'flex', alignItems: 'center', gap: '8px', background: '#f8faff' }}>
+        <div style={{ padding: '12px 16px', borderBottom: '1px solid #dde3f0', display: 'flex', alignItems: 'center', gap: '10px', background: '#f8faff', flexWrap: 'wrap' }}>
           <span style={{ fontSize: '13px', fontWeight: 600, color: '#0d1b38' }}>Historial de cobros</span>
-          <span style={{ fontSize: '12px', color: '#7a8fbb' }}>{historial.length} registros</span>
+          <span style={{ fontSize: '12px', color: '#7a8fbb' }}>{historialFiltrado.length} registros</span>
+          <input
+            type="text" placeholder="Buscar comprobante, cliente, ejecutivo..." value={busquedaHistorial}
+            onChange={e => setBusquedaHistorial(e.target.value)}
+            style={{ marginLeft: 'auto', padding: '6px 10px', borderRadius: '8px', border: '1px solid #dde3f0', fontSize: '12px', minWidth: '220px', outline: 'none', color: '#0d1b38', background: '#fff' }}
+          />
         </div>
         {historial.length === 0 ? (
           <div style={{ padding: '48px', textAlign: 'center', color: '#7a8fbb' }}>Sin cobros registrados aún.</div>
+        ) : historialFiltrado.length === 0 ? (
+          <div style={{ padding: '48px', textAlign: 'center', color: '#7a8fbb' }}>Sin resultados para esa búsqueda.</div>
         ) : (
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -322,7 +336,7 @@ export function ManualSociedadView({
                 </tr>
               </thead>
               <tbody>
-                {historial.map(r => (
+                {historialFiltrado.map(r => (
                   <tr key={r.id} style={{ borderBottom: '1px solid #dde3f0' }}>
                     <td style={{ padding: '12px 16px', fontSize: '12px', fontFamily: 'monospace', color: '#3d5278' }}>{r.comprobante}</td>
                     <td style={{ padding: '12px 16px', fontSize: '13px', fontWeight: 600, color: '#0d1b38' }}>{r.cliente}</td>
@@ -435,7 +449,7 @@ export function ManualSociedadView({
             {/* TOTAL DE CARTERA — separado por moneda, nunca se suman entre sí */}
             <div style={{ background: 'linear-gradient(135deg, #0a1e3d 0%, #1d4170 100%)', borderRadius: '14px', padding: '26px 30px', color: '#fff', position: 'relative', overflow: 'hidden', boxShadow: '0 10px 28px rgba(10,22,40,0.28)' }}>
               <div style={{ position: 'absolute', right: '-40px', top: '-40px', width: '180px', height: '180px', background: 'rgba(255,255,255,0.06)', borderRadius: '50%' }} />
-              <div style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase', color: 'rgba(255,255,255,0.65)', marginBottom: '10px', position: 'relative' }}>💼 Total de cartera</div>
+              <div style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase', color: 'rgba(255,255,255,0.65)', marginBottom: '10px', position: 'relative' }}>💼 Total de cartera{sociedad === 'sl' ? ' (impuestos incluidos)' : ''}</div>
               <div style={{ display: 'flex', gap: '32px', flexWrap: 'wrap', position: 'relative' }}>
                 {carteraPorMoneda.map(c => (
                   <div key={c.moneda}>

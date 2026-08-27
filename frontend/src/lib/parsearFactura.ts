@@ -92,8 +92,13 @@ function parsearItemsIngles(texto: string): ManualFacturaItem[] {
 function parsearItemsEspanol(texto: string): ManualFacturaItem[] {
   const items: ManualFacturaItem[] = []
   const lineas = texto.split('\n')
-  let inicioBloque = 0
-  for (let i = 0; i < lineas.length; i++) {
+  // El encabezado (razón social, CIF, cliente, domicilio) no forma parte de
+  // ningún ítem: arrancamos a buscar recién después de la fila "CONCEPTO
+  // IMPORTE" si existe, para no arrastrar todo eso como descripción del
+  // primer ítem.
+  const inicioTabla = lineas.findIndex(l => /^concepto\b.*importe\b/i.test(l.trim()))
+  let inicioBloque = inicioTabla >= 0 ? inicioTabla + 1 : 0
+  for (let i = inicioBloque; i < lineas.length; i++) {
     const m = lineas[i].match(/cantidad\s+horas:\s*([\d.,]+)\s+coste\s+hora\s+en\s*€:\s*([\d.,]+)\s*€/i)
     if (!m) continue
     items.push({

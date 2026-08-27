@@ -264,6 +264,7 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
   const [filtroEstadoTabla, setFiltroEstadoTabla] = useState('')
 
   // filtros – historial
+  const [busquedaHistorial, setBusquedaHistorial] = useState('')
   const [filtroEjecutivoHistorial, setFiltroEjecutivoHistorial] = useState('')
   const [filtroClienteHistorial,   setFiltroClienteHistorial]   = useState('')
   const [filtroFechaDesde,         setFiltroFechaDesde]         = useState('')
@@ -405,11 +406,13 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
     })).sort((a, b) => b.monto - a.monto)
 
   // ── historial filtrado ────────────────────────────────────────────────────
+  const qHistorial = normalizar(busquedaHistorial.trim())
   const historialFiltrado = historial.filter(r => {
     if (filtroEjecutivoHistorial && r.ejecutivo !== filtroEjecutivoHistorial) return false
     if (filtroClienteHistorial   && r.cliente   !== filtroClienteHistorial)   return false
     if (filtroFechaDesde && r.fecha_cobro < filtroFechaDesde) return false
     if (filtroFechaHasta && r.fecha_cobro > filtroFechaHasta + 'T23:59:59') return false
+    if (qHistorial && ![r.comprobante_numero, r.cliente, r.ejecutivo, r.cobrado_por].some(v => normalizar(String(v || '')).includes(qHistorial))) return false
     return true
   })
 
@@ -948,12 +951,12 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
   const clientesHistorialOpts = [...new Set(historial.map(r => r.cliente).filter(Boolean))].sort() as string[]
 
   const hayFiltrosTabla     = !!(ejecutivoSeleccionado || filtroClienteTabla || filtroEstadoTabla)
-  const hayFiltrosHistorial = !!(filtroEjecutivoHistorial || filtroClienteHistorial || filtroFechaDesde || filtroFechaHasta)
+  const hayFiltrosHistorial = !!(busquedaHistorial || filtroEjecutivoHistorial || filtroClienteHistorial || filtroFechaDesde || filtroFechaHasta)
   const hayFiltrosClientes  = !!(filtroEjecutivoClientes || busquedaClientes)
   const esPanelEjecutivo    = esTabla && !!ejecutivoSeleccionado
 
   const limpiarFiltrosTabla     = () => { if (!esPanelEjecutivo) setEjecutivoSeleccionado(null); setFiltroClienteTabla(''); setFiltroEstadoTabla(''); setFiltroMoraRange(''); setSortCol(null); setSortDir('asc') }
-  const limpiarFiltrosHistorial = () => { setFiltroEjecutivoHistorial(''); setFiltroClienteHistorial(''); setFiltroFechaDesde(''); setFiltroFechaHasta('') }
+  const limpiarFiltrosHistorial = () => { setBusquedaHistorial(''); setFiltroEjecutivoHistorial(''); setFiltroClienteHistorial(''); setFiltroFechaDesde(''); setFiltroFechaHasta('') }
   const limpiarFiltrosClientes  = () => { setFiltroEjecutivoClientes(''); setBusquedaClientes('') }
 
   const handleSort = (col: string) => {
@@ -1590,6 +1593,11 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
           <>
             {/* ── Filtros ── */}
             <div style={{ display: 'flex', gap: '8px', marginBottom: '14px', alignItems: 'center', flexWrap: 'wrap' }}>
+              <input
+                type="text" placeholder="Buscar comprobante, cliente, ejecutivo..." value={busquedaHistorial}
+                onChange={e => setBusquedaHistorial(e.target.value)}
+                style={{ ...SEL, cursor: 'text', minWidth: '240px' }}
+              />
               <select value={filtroEjecutivoHistorial} onChange={e => setFiltroEjecutivoHistorial(e.target.value)} style={SEL}>
                 <option value="">Todos los ejecutivos</option>
                 {EJECUTIVOS.map(e => <option key={e} value={e}>{e}</option>)}
