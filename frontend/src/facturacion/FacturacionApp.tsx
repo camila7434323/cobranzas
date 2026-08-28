@@ -426,11 +426,15 @@ function PanelVentas(props: {
 
       <div style={{ color: '#7286bd', fontSize: 13 }}>▦ Análisis hasta <strong>{ultimoMes ? mesLabel(ultimoMes) : 'el último período cargado'}</strong> — se excluye el mes en curso por estar incompleto.</div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))', gap: 14, minHeight: 89 }}>
-        {monedas.map(m => <Kpi key={m} label={`Facturación del ${props.anio === 'all' ? 'período' : props.anio} (${m})`} value={fmtMoney((rowsByMoneda.get(m) || []).reduce((s, r) => s + r.total_neto, 0), m)} />)}
-      </div>
+      {monedas.length === 0 ? <div style={emptyStyle}>Sin datos para esta selección.</div> : (
+        <>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))', gap: 14, minHeight: 89 }}>
+            {monedas.map(m => <Kpi key={m} label={`Facturación del ${props.anio === 'all' ? 'período' : props.anio} (${m})`} value={fmtMoney((rowsByMoneda.get(m) || []).reduce((s, r) => s + r.total_neto, 0), m)} />)}
+          </div>
 
-      {monedas.map(m => <MonedaSection key={m} rows={rowsByMoneda.get(m) || []} moneda={m} />)}
+          {monedas.map(m => <MonedaSection key={m} rows={rowsByMoneda.get(m) || []} moneda={m} />)}
+        </>
+      )}
     </div>
   )
 }
