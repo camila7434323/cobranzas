@@ -47,8 +47,24 @@ const moraBadge = (dias: number) => {
   return           { label: `🔴 ${dias}d`,      color: '#ffffff', bg: '#dc2626' }
 }
 
-function SeccionMonedaLLC({ moneda, rows, diasMora, mostrarTodosClientes, onToggleMostrarTodos, onVerFacturasCliente }: {
-  moneda: string
+// Tarjetas por moneda: cada monto se calcula y muestra por separado por
+// moneda (nunca se suman entre sí), pero comparten una sola fila de
+// tarjetas / una sola lista en vez de repetir toda la sección por moneda.
+function MontosPorMoneda({ monedas, rows }: { monedas: string[]; rows: ManualFactura[] }) {
+  return (
+    <>
+      {monedas.map(m => (
+        <div key={m}>
+          <div style={{ fontSize: '11px', fontWeight: 700, color: '#7a8fbb', marginBottom: '2px' }}>{m}</div>
+          <div>{fmtMonto(m, rows.filter(r => r.moneda === m).reduce((s, r) => s + r.monto, 0))}</div>
+        </div>
+      ))}
+    </>
+  )
+}
+
+function SeccionMonedaLLC({ monedas, rows, diasMora, mostrarTodosClientes, onToggleMostrarTodos, onVerFacturasCliente }: {
+  monedas: string[]
   rows: ManualFactura[]
   diasMora: (r: ManualFactura) => number
   mostrarTodosClientes: boolean
@@ -64,18 +80,16 @@ function SeccionMonedaLLC({ moneda, rows, diasMora, mostrarTodosClientes, onTogg
     return v >= hoy && v <= en7
   })
   const sinVencer = rows.filter(r => !vencidas.includes(r) && !proximas.includes(r))
-  const totalVencido = vencidas.reduce((s, r) => s + r.monto, 0)
-  const totalProximas = proximas.reduce((s, r) => s + r.monto, 0)
-  const totalSinVencer = sinVencer.reduce((s, r) => s + r.monto, 0)
 
-  const clientDashMap = vencidas.reduce<Map<string, { monto: number; facturas: number }>>((acc, r) => {
-    const cur = acc.get(r.cliente) || { monto: 0, facturas: 0 }
-    cur.monto += r.monto; cur.facturas++
+  const clientDashMap = vencidas.reduce<Map<string, { montos: Map<string, number>; facturas: number }>>((acc, r) => {
+    const cur = acc.get(r.cliente) || { montos: new Map<string, number>(), facturas: 0 }
+    cur.montos.set(r.moneda, (cur.montos.get(r.moneda) || 0) + r.monto)
+    cur.facturas++
     acc.set(r.cliente, cur); return acc
   }, new Map())
   const clientDashList = Array.from(clientDashMap.entries())
-    .map(([name, d]) => ({ name, monto: d.monto, facturas: d.facturas }))
-    .sort((a, b) => b.monto - a.monto)
+    .map(([name, d]) => ({ name, montos: Array.from(d.montos.entries()), facturas: d.facturas }))
+    .sort((a, b) => b.facturas - a.facturas || a.name.localeCompare(b.name))
 
   const clientesConMoraSet = new Set(vencidas.map(r => r.cliente))
   const clientesAlDia = [...new Set(rows.filter(r => diasMora(r) <= 0).map(r => r.cliente))]
@@ -83,29 +97,30 @@ function SeccionMonedaLLC({ moneda, rows, diasMora, mostrarTodosClientes, onTogg
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-        <span style={{ fontSize: '13px', fontWeight: 800, color: '#0d1b38', background: '#eef2ff', border: '1px solid #c7d3ea', borderRadius: '20px', padding: '3px 12px' }}>{moneda}</span>
-        <span style={{ height: '1px', flex: 1, background: '#dde3f0' }} />
-      </div>
-
       {/* KPI CARDS */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '14px' }}>
         <div style={{ background: '#fff', border: '1px solid #dde3f0', borderRadius: '12px', padding: '22px 24px', boxShadow: '0 2px 8px rgba(10,22,40,0.08)', borderLeft: '5px solid #dc2626', position: 'relative', overflow: 'hidden' }}>
           <div style={{ position: 'absolute', right: '-10px', top: '-10px', width: '70px', height: '70px', background: '#fee2e2', borderRadius: '50%', opacity: 0.4 }} />
           <div style={{ fontSize: '10px', fontWeight: 700, color: '#7a8fbb', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '10px' }}>💸 Total vencido</div>
-          <div style={{ fontSize: '28px', fontWeight: 800, color: '#dc2626', fontFamily: 'monospace', lineHeight: 1, marginBottom: '6px' }}>{fmtMonto(moneda, totalVencido)}</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '22px', fontWeight: 800, color: '#dc2626', fontFamily: 'monospace', lineHeight: 1.15, marginBottom: '6px' }}>
+            <MontosPorMoneda monedas={monedas} rows={vencidas} />
+          </div>
           <div style={{ fontSize: '12px', color: '#7a8fbb' }}>{vencidas.length} factura{vencidas.length !== 1 ? 's' : ''}</div>
         </div>
         <div style={{ background: '#fff', border: '1px solid #dde3f0', borderRadius: '12px', padding: '22px 24px', boxShadow: '0 2px 8px rgba(10,22,40,0.08)', borderLeft: '5px solid #d97706', position: 'relative', overflow: 'hidden' }}>
           <div style={{ position: 'absolute', right: '-10px', top: '-10px', width: '70px', height: '70px', background: '#fef3c7', borderRadius: '50%', opacity: 0.4 }} />
           <div style={{ fontSize: '10px', fontWeight: 700, color: '#7a8fbb', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '10px' }}>⏳ Vence en 7 días</div>
-          <div style={{ fontSize: '28px', fontWeight: 800, color: '#d97706', fontFamily: 'monospace', lineHeight: 1, marginBottom: '6px' }}>{fmtMonto(moneda, totalProximas)}</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '22px', fontWeight: 800, color: '#d97706', fontFamily: 'monospace', lineHeight: 1.15, marginBottom: '6px' }}>
+            <MontosPorMoneda monedas={monedas} rows={proximas} />
+          </div>
           <div style={{ fontSize: '12px', color: '#7a8fbb' }}>{proximas.length} factura{proximas.length !== 1 ? 's' : ''}</div>
         </div>
         <div style={{ background: '#fff', border: '1px solid #dde3f0', borderRadius: '12px', padding: '22px 24px', boxShadow: '0 2px 8px rgba(10,22,40,0.08)', borderLeft: '5px solid #059669', position: 'relative', overflow: 'hidden' }}>
           <div style={{ position: 'absolute', right: '-10px', top: '-10px', width: '70px', height: '70px', background: '#d1fae5', borderRadius: '50%', opacity: 0.4 }} />
           <div style={{ fontSize: '10px', fontWeight: 700, color: '#7a8fbb', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '10px' }}>✅ Sin vencer</div>
-          <div style={{ fontSize: '28px', fontWeight: 800, color: '#059669', fontFamily: 'monospace', lineHeight: 1, marginBottom: '6px' }}>{fmtMonto(moneda, totalSinVencer)}</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '22px', fontWeight: 800, color: '#059669', fontFamily: 'monospace', lineHeight: 1.15, marginBottom: '6px' }}>
+            <MontosPorMoneda monedas={monedas} rows={sinVencer} />
+          </div>
           <div style={{ fontSize: '12px', color: '#7a8fbb' }}>{sinVencer.length} factura{sinVencer.length !== 1 ? 's' : ''}</div>
         </div>
       </div>
@@ -123,7 +138,9 @@ function SeccionMonedaLLC({ moneda, rows, diasMora, mostrarTodosClientes, onTogg
                 <div style={{ fontSize: '13px', fontWeight: 700, color: '#0d1b38' }}>{c.name}</div>
                 <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '2px' }}>{c.facturas} factura{c.facturas !== 1 ? 's' : ''} vencida{c.facturas !== 1 ? 's' : ''}</div>
               </div>
-              <div style={{ fontFamily: 'monospace', fontSize: '14px', fontWeight: 700, color: '#dc2626' }}>{fmtMonto(moneda, c.monto)}</div>
+              <div style={{ textAlign: 'right' }}>
+                {c.montos.map(([m, v]) => <div key={m} style={{ fontFamily: 'monospace', fontSize: '14px', fontWeight: 700, color: '#dc2626' }}>{fmtMonto(m, v)}</div>)}
+              </div>
             </div>
           ))}
           {clientDashList.length === 0 && <div style={{ color: '#7a8fbb', fontSize: '13px', padding: '20px 0', textAlign: 'center' }}>Sin clientes con mora</div>}
@@ -132,9 +149,7 @@ function SeccionMonedaLLC({ moneda, rows, diasMora, mostrarTodosClientes, onTogg
               onClick={onToggleMostrarTodos}
               style={{ width: '100%', margin: '8px 0', padding: '8px', fontSize: '12px', fontWeight: 700, color: '#1d4170', background: '#f8faff', border: '1px dashed #c7d3ea', borderRadius: '8px', cursor: 'pointer' }}
             >
-              {mostrarTodosClientes
-                ? '▲ Ver menos'
-                : `▼ Ver ${clientDashList.length - 10} clientes más (${fmtMonto(moneda, clientDashList.slice(10).reduce((s, c) => s + c.monto, 0))})`}
+              {mostrarTodosClientes ? '▲ Ver menos' : `▼ Ver ${clientDashList.length - 10} clientes más`}
             </button>
           )}
         </div>
@@ -167,7 +182,7 @@ export function ManualSociedadView({
   onMarcarCobrada, onDeshacerCobro, onEliminar, onReasignarEjecutivo, onAbrirPdf, onVerFacturasCliente,
 }: Props) {
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set())
-  const [clientesExpandidos, setClientesExpandidos] = useState<Record<string, boolean>>({})
+  const [mostrarTodosClientes, setMostrarTodosClientes] = useState(false)
   const [busquedaHistorial, setBusquedaHistorial] = useState('')
 
   const q = busqueda.toLowerCase()
@@ -357,17 +372,14 @@ export function ManualSociedadView({
               <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.62)', marginTop: '10px', position: 'relative' }}>{facturas.length} facturas pendientes de cobro — vencidas y vigentes</div>
             </div>
 
-            {monedasPresentes.map(moneda => (
-              <SeccionMonedaLLC
-                key={moneda}
-                moneda={moneda}
-                rows={facturas.filter(r => r.moneda === moneda)}
-                diasMora={diasMora}
-                mostrarTodosClientes={!!clientesExpandidos[moneda]}
-                onToggleMostrarTodos={() => setClientesExpandidos(prev => ({ ...prev, [moneda]: !prev[moneda] }))}
-                onVerFacturasCliente={onVerFacturasCliente}
-              />
-            ))}
+            <SeccionMonedaLLC
+              monedas={monedasPresentes}
+              rows={facturas}
+              diasMora={diasMora}
+              mostrarTodosClientes={mostrarTodosClientes}
+              onToggleMostrarTodos={() => setMostrarTodosClientes(v => !v)}
+              onVerFacturasCliente={onVerFacturasCliente}
+            />
           </>
         )}
       </div>
