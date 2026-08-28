@@ -98,12 +98,15 @@ function parsearItemsEspanol(texto: string): ManualFacturaItem[] {
   // primer ítem.
   const inicioTabla = lineas.findIndex(l => /^concepto\b.*importe\b/i.test(l.trim()))
   let inicioBloque = inicioTabla >= 0 ? inicioTabla + 1 : 0
+  // Distintos clientes de SL facturan por hora ("Cantidad horas: X Coste
+  // hora en €: Y€") o por día ("Dias: X V/D Y€"); ambos formatos son
+  // cantidad + valor unitario, solo cambia la etiqueta.
   for (let i = inicioBloque; i < lineas.length; i++) {
-    const m = lineas[i].match(/cantidad\s+horas:\s*([\d.,]+)\s+coste\s+hora\s+en\s*€:\s*([\d.,]+)\s*€/i)
+    const m = lineas[i].match(/(?:cantidad\s+horas|d[ií]as)\s*:?\s*([\d.,]+)\s+(?:coste\s+hora\s+en\s*€\s*:?|v\/?d)\s*([\d.,]+)\s*€/i)
     if (!m) continue
     items.push({
       descripcion: lineas.slice(inicioBloque, i).join(' ').replace(/\s+/g, ' ').trim(),
-      unidad: 'horas',
+      unidad: /d[ií]as/i.test(lineas[i]) ? 'días' : 'horas',
       cantidad: numeroES(m[1]),
       valor_unitario: numeroES(m[2]),
     })
