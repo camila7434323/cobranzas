@@ -206,6 +206,8 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
   const { buscarPdf } = usePdfsStorage()
   const { fecha: fechaUltimoReporte } = useUltimoReporte()
   const [editandoManual, setEditandoManual] = useState<ManualFactura | null>(null)
+  const [marcandoCobroManual, setMarcandoCobroManual] = useState<ManualFactura | null>(null)
+  const [fechaPagoManual, setFechaPagoManual] = useState('')
   const [tableKey] = useState(0)
   const [busqueda, setBusqueda] = useState('')
   const [ejecutivoSeleccionado, setEjecutivoSeleccionado] = useState<string | null>(null)
@@ -567,11 +569,17 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
     }
   }
 
-  const marcarCobradaManual = async (factura: ManualFactura) => {
-    if (!confirm(`¿Marcar la factura ${factura.comprobante} como cobrada?`)) return
+  const marcarCobradaManual = (factura: ManualFactura) => {
+    setFechaPagoManual(new Date().toISOString().slice(0, 10))
+    setMarcandoCobroManual(factura)
+  }
+
+  const confirmarMarcarCobradaManual = async () => {
+    if (!marcandoCobroManual || !fechaPagoManual) return
     try {
-      await marcarCobradaManualDb(factura)
+      await marcarCobradaManualDb(marcandoCobroManual, fechaPagoManual)
       setToastExito('Factura movida al historial ✓')
+      setMarcandoCobroManual(null)
     } catch {
       setErrorCarga('No se pudo marcar como cobrada. Intentá de nuevo.')
     }
@@ -1014,6 +1022,25 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
         </div>
       )}
 
+
+      {/* ── MODAL FECHA DE PAGO (marcar cobrada manual) ─────────────────────── */}
+      {marcandoCobroManual && (
+        <div onClick={() => setMarcandoCobroManual(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: '16px', width: '100%', maxWidth: '380px', boxShadow: '0 20px 60px rgba(0,0,0,0.3)', padding: '24px' }}>
+            <div style={{ fontSize: '16px', fontWeight: 700, color: '#0d1b38', marginBottom: '6px' }}>Marcar como cobrada</div>
+            <div style={{ fontSize: '13px', color: '#7a8fbb', marginBottom: '18px' }}>Factura {marcandoCobroManual.comprobante} — indicá la fecha real en la que se recibió el pago.</div>
+            <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: '#7a8fbb', textTransform: 'uppercase', marginBottom: '6px' }}>Fecha de pago</label>
+            <input
+              type="date" value={fechaPagoManual} onChange={e => setFechaPagoManual(e.target.value)}
+              style={{ width: '100%', padding: '9px 12px', borderRadius: '8px', border: '1px solid #dde3f0', fontSize: '13px', color: '#0d1b38', outline: 'none', marginBottom: '18px' }}
+            />
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button onClick={() => setMarcandoCobroManual(null)} style={{ flex: 1, background: '#f1f5f9', color: '#374151', border: 'none', borderRadius: '10px', padding: '10px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}>Cancelar</button>
+              <button onClick={confirmarMarcarCobradaManual} disabled={!fechaPagoManual} style={{ flex: 1, background: fechaPagoManual ? '#059669' : '#94a3b8', color: '#fff', border: 'none', borderRadius: '10px', padding: '10px', fontSize: '13px', fontWeight: 700, cursor: fechaPagoManual ? 'pointer' : 'not-allowed' }}>✓ Confirmar</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── TOAST ÉXITO ───────────────────────────────────────────────────── */}
       {toastExito && (

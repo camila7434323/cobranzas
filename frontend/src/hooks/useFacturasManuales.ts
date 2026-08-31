@@ -59,9 +59,8 @@ export function useFacturasManuales() {
     await cargar()
   }
 
-  const marcarCobrada = async (factura: ManualFactura) => {
-    const cobrado_el = new Date().toISOString()
-    const { error: err } = await supabase.from('facturas_manuales').update({ estado: 'cobrado', cobrado_el }).eq('id', factura.id)
+  const marcarCobrada = async (factura: ManualFactura, fechaPago: string) => {
+    const { error: err } = await supabase.from('facturas_manuales').update({ estado: 'cobrado', cobrado_el: fechaPago }).eq('id', factura.id)
     if (err) throw new Error(err.message)
     await cargar()
   }

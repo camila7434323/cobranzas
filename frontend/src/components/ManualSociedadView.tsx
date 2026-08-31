@@ -1,10 +1,18 @@
 import { useState, Fragment } from 'react'
+import * as XLSX from 'xlsx-js-style'
 import type { ManualFactura, SociedadKey } from '../types/sociedades'
 import { ManualFacturaForm } from './ManualFacturaForm'
 
 type Vista = 'global' | 'dashboard' | 'todos' | 'historial' | 'clientes' | 'nueva'
 
 const normalizar = (v: string) => v.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase()
+
+const exportXlsx = (filename: string, rows: Record<string, string | number>[]) => {
+  const ws = XLSX.utils.json_to_sheet(rows)
+  const wb = XLSX.utils.book_new()
+  XLSX.utils.book_append_sheet(wb, ws, 'Datos')
+  XLSX.writeFile(wb, filename)
+}
 
 type Props = {
   vista: Vista
@@ -184,6 +192,27 @@ export function ManualSociedadView({
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set())
   const [mostrarTodosClientes, setMostrarTodosClientes] = useState(false)
   const [busquedaHistorial, setBusquedaHistorial] = useState('')
+  const [sortCol, setSortCol] = useState<string | null>(null)
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
+  const [sortColHist, setSortColHist] = useState<string | null>(null)
+  const [sortDirHist, setSortDirHist] = useState<'asc' | 'desc'>('asc')
+
+  const handleSort = (col: string) => {
+    if (sortCol === col) setSortDir(d => d === 'asc' ? 'desc' : 'asc')
+    else { setSortCol(col); setSortDir('asc') }
+  }
+  const handleSortHist = (col: string) => {
+    if (sortColHist === col) setSortDirHist(d => d === 'asc' ? 'desc' : 'asc')
+    else { setSortColHist(col); setSortDirHist('asc') }
+  }
+  const ordenarPor = <T,>(rows: T[], col: string | null, dir: 'asc' | 'desc', valorDe: (r: T, col: string) => unknown) => {
+    if (!col) return rows
+    return [...rows].sort((a, b) => {
+      const av = valorDe(a, col); const bv = valorDe(b, col)
+      const cmp = typeof av === 'number' && typeof bv === 'number' ? av - bv : String(av ?? '').localeCompare(String(bv ?? ''))
+      return dir === 'asc' ? cmp : -cmp
+    })
+  }
 
   const q = busqueda.toLowerCase()
   const facturasFiltradas = facturas.filter(r => {
@@ -218,18 +247,38 @@ export function ManualSociedadView({
 
   if (vista === 'historial') {
     const qHist = normalizar(busquedaHistorial.trim())
-    const historialFiltrado = historial.filter(r =>
-      !qHist || [r.comprobante, r.cliente, r.ejecutivo].some(v => normalizar(v || '').includes(qHist))
+    const historialFiltrado = ordenarPor(
+      historial.filter(r => !qHist || [r.comprobante, r.cliente, r.ejecutivo].some(v => normalizar(v || '').includes(qHist))),
+      sortColHist, sortDirHist,
+      (r, col) => col === 'cobrado_el' ? (r.cobrado_el || '') : (r as any)[col]
     )
+    const COLS_HIST = [
+      { key: 'comprobante', label: 'Comprobante', sortable: true },
+      { key: 'cliente', label: 'Cliente', sortable: true },
+      { key: 'ejecutivo', label: 'Ejecutivo', sortable: true },
+      { key: 'monto', label: 'Monto', sortable: true },
+      { key: 'cobrado_el', label: 'Cobrado el', sortable: true },
+      { key: '', label: 'PDF', sortable: false },
+      ...(adminMode ? [{ key: '', label: '', sortable: false }] : []),
+    ]
     return (
       <div style={{ background: '#fff', border: '1px solid #dde3f0', borderRadius: '10px', overflow: 'hidden' }}>
         <div style={{ padding: '12px 16px', borderBottom: '1px solid #dde3f0', display: 'flex', alignItems: 'center', gap: '10px', background: '#f8faff', flexWrap: 'wrap' }}>
           <span style={{ fontSize: '13px', fontWeight: 600, color: '#0d1b38' }}>Historial de cobros</span>
           <span style={{ fontSize: '12px', color: '#7a8fbb' }}>{historialFiltrado.length} registros</span>
+          <button
+            onClick={() => exportXlsx(`historial_${nombreSociedad}_${new Date().toISOString().slice(0, 10)}.xlsx`, historialFiltrado.map(r => ({
+              'Comprobante': r.comprobante, 'Cliente': r.cliente, 'Ejecutivo': r.ejecutivo || 'Sin asignar',
+              'Monto': r.monto, 'Moneda': r.moneda, 'Cobrado el': r.cobrado_el ? r.cobrado_el.slice(0, 10) : '',
+            })))}
+            style={{ marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: '6px', background: '#2554a0', color: '#fff', border: 'none', borderRadius: '8px', padding: '6px 12px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}
+          >
+            ↓ .xlsx
+          </button>
           <input
             type="text" placeholder="Buscar comprobante, cliente, ejecutivo..." value={busquedaHistorial}
             onChange={e => setBusquedaHistorial(e.target.value)}
-            style={{ marginLeft: 'auto', padding: '6px 10px', borderRadius: '8px', border: '1px solid #dde3f0', fontSize: '12px', minWidth: '220px', outline: 'none', color: '#0d1b38', background: '#fff' }}
+            style={{ padding: '6px 10px', borderRadius: '8px', border: '1px solid #dde3f0', fontSize: '12px', minWidth: '220px', outline: 'none', color: '#0d1b38', background: '#fff' }}
           />
         </div>
         {historial.length === 0 ? (
@@ -241,33 +290,101 @@ export function ManualSociedadView({
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ background: '#f8faff', borderBottom: '1px solid #dde3f0' }}>
-                  {['Comprobante', 'Cliente', 'Ejecutivo', 'Monto', 'Cobrado el', 'PDF', ...(adminMode ? [''] : [])].map((h, i) => (
-                    <th key={h || `a-${i}`} style={{ padding: '10px 16px', textAlign: 'left', fontSize: '10px', fontWeight: 600, color: '#7a8fbb', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>{h}</th>
+                  <th style={{ width: '32px' }} />
+                  {COLS_HIST.map((col, i) => (
+                    <th key={col.key || `a-${i}`}
+                      onClick={col.sortable ? () => handleSortHist(col.key) : undefined}
+                      style={{ padding: '10px 16px', textAlign: 'left', fontSize: '10px', fontWeight: 600, color: sortColHist === col.key ? '#2554a0' : '#7a8fbb', textTransform: 'uppercase', whiteSpace: 'nowrap', cursor: col.sortable ? 'pointer' : 'default', userSelect: 'none' }}
+                    >
+                      {col.label}{col.sortable && sortColHist === col.key ? (sortDirHist === 'asc' ? ' ▲' : ' ▼') : ''}
+                    </th>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                {historialFiltrado.map(r => (
-                  <tr key={r.id} style={{ borderBottom: '1px solid #dde3f0' }}>
-                    <td style={{ padding: '12px 16px', fontSize: '12px', fontFamily: 'monospace', color: '#3d5278' }}>{r.comprobante}</td>
-                    <td style={{ padding: '12px 16px', fontSize: '13px', fontWeight: 600, color: '#0d1b38' }}>{r.cliente}</td>
-                    <td style={{ padding: '12px 16px', fontSize: '12px', color: '#7a8fbb' }}>{r.ejecutivo}</td>
-                    <td style={{ padding: '12px 16px', fontSize: '13px', fontWeight: 600, fontFamily: 'monospace', color: '#059669' }}>{fmtMonto(r.moneda, r.monto)}</td>
-                    <td style={{ padding: '12px 16px', fontSize: '12px', color: '#7a8fbb' }}>{r.cobrado_el ? fmtFecha(r.cobrado_el.slice(0, 10)) : '-'}</td>
-                    <td style={{ padding: '12px 16px' }}>
-                      <button onClick={() => onAbrirPdf(r)} style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', background: '#f0f4ff', color: '#2554a0', padding: '5px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, border: 'none', cursor: 'pointer', whiteSpace: 'nowrap' }}>
-                        📄 Abrir PDF
-                      </button>
-                    </td>
-                    {adminMode && (
-                      <td style={{ padding: '12px 16px' }}>
-                        <button onClick={() => onDeshacerCobro(r)} style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', background: '#fff5f5', color: '#dc2626', border: '1px solid #fca5a5', borderRadius: '8px', padding: '5px 12px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}>
-                          ↩ Deshacer
-                        </button>
-                      </td>
-                    )}
-                  </tr>
-                ))}
+                {historialFiltrado.map(r => {
+                  const isExp = expandedRows.has(r.id)
+                  return (
+                    <Fragment key={r.id}>
+                      <tr style={{ borderBottom: isExp ? 'none' : '1px solid #dde3f0' }}>
+                        <td style={{ padding: '8px 4px 8px 12px' }}>
+                          <button
+                            onClick={() => setExpandedRows(prev => { const next = new Set(prev); if (next.has(r.id)) next.delete(r.id); else next.add(r.id); return next })}
+                            style={{ width: '22px', height: '22px', border: '1px solid #dde3f0', borderRadius: '4px', background: isExp ? '#2554a0' : '#f1f5f9', color: isExp ? '#fff' : '#374151', fontSize: '14px', fontWeight: 700, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: 0, lineHeight: 1 }}
+                          >
+                            {isExp ? '−' : '+'}
+                          </button>
+                        </td>
+                        <td style={{ padding: '12px 16px', fontSize: '12px', fontFamily: 'monospace', color: '#3d5278' }}>{r.comprobante}</td>
+                        <td style={{ padding: '12px 16px', fontSize: '13px', fontWeight: 600, color: '#0d1b38' }}>{r.cliente}</td>
+                        <td style={{ padding: '12px 16px', fontSize: '12px', color: '#7a8fbb' }}>{r.ejecutivo}</td>
+                        <td style={{ padding: '12px 16px', fontSize: '13px', fontWeight: 600, fontFamily: 'monospace', color: '#059669' }}>{fmtMonto(r.moneda, r.monto)}</td>
+                        <td style={{ padding: '12px 16px', fontSize: '12px', color: '#7a8fbb' }}>{r.cobrado_el ? fmtFecha(r.cobrado_el.slice(0, 10)) : '-'}</td>
+                        <td style={{ padding: '12px 16px' }}>
+                          <button onClick={() => onAbrirPdf(r)} style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', background: '#f0f4ff', color: '#2554a0', padding: '5px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, border: 'none', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                            📄 Abrir PDF
+                          </button>
+                        </td>
+                        {adminMode && (
+                          <td style={{ padding: '12px 16px' }}>
+                            <button onClick={() => onDeshacerCobro(r)} style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', background: '#fff5f5', color: '#dc2626', border: '1px solid #fca5a5', borderRadius: '8px', padding: '5px 12px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                              ↩ Deshacer
+                            </button>
+                          </td>
+                        )}
+                      </tr>
+                      {isExp && (
+                        <tr style={{ borderBottom: '1px solid #dde3f0' }}>
+                          <td colSpan={adminMode ? 7 : 6} style={{ padding: 0 }}>
+                            <div style={{ padding: '14px 20px', background: '#f8faff', borderLeft: '3px solid #a8c4f5' }}>
+                              {(r.items || []).length > 0 && (
+                                <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '12px', fontSize: '12px' }}>
+                                  <thead>
+                                    <tr>
+                                      {['Descripción', 'Unidad', 'Cant.', 'Valor unit.', 'Subtotal'].map(h => (
+                                        <th key={h} style={{ textAlign: h === 'Descripción' || h === 'Unidad' ? 'left' : 'right', padding: '4px 8px', fontSize: '10px', fontWeight: 700, color: '#7a8fbb', textTransform: 'uppercase' }}>{h}</th>
+                                      ))}
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {(r.items || []).map((it, i) => (
+                                      <tr key={i} style={{ borderTop: '1px solid #e2e8f0' }}>
+                                        <td style={{ padding: '5px 8px', color: '#0d1b38' }}>{it.descripcion || '—'}</td>
+                                        <td style={{ padding: '5px 8px', color: '#0d1b38' }}>{it.unidad || '—'}</td>
+                                        <td style={{ padding: '5px 8px', textAlign: 'right', color: '#0d1b38' }}>{it.cantidad}</td>
+                                        <td style={{ padding: '5px 8px', textAlign: 'right', color: '#0d1b38' }}>{fmtMonto(r.moneda, it.valor_unitario)}</td>
+                                        <td style={{ padding: '5px 8px', textAlign: 'right', fontWeight: 600, color: '#0d1b38' }}>{fmtMonto(r.moneda, it.cantidad * it.valor_unitario)}</td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              )}
+                              {!!r.iva && (
+                                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '18px', marginBottom: '12px', fontSize: '12px' }}>
+                                  <span style={{ color: '#7a8fbb' }}>Base imponible: <strong style={{ color: '#0d1b38' }}>{fmtMonto(r.moneda, (r.items || []).reduce((s, it) => s + it.cantidad * it.valor_unitario, 0))}</strong></span>
+                                  <span style={{ color: '#7a8fbb' }}>IVA: <strong style={{ color: '#0d1b38' }}>{fmtMonto(r.moneda, r.iva)}</strong></span>
+                                  <span style={{ color: '#7a8fbb' }}>Total factura: <strong style={{ color: '#2554a0' }}>{fmtMonto(r.moneda, r.monto)}</strong></span>
+                                </div>
+                              )}
+                              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px', fontSize: '12px' }}>
+                                {[
+                                  ['OC/HES', r.oc_hes_pedido], ['Período', r.periodo], ['Colaborador', r.colaborador],
+                                  ['Otros conceptos', r.otros_conceptos], ['Condición', r.condicion],
+                                  ['Emisión', r.fecha_emision ? fmtFecha(r.fecha_emision) : null], ['Vencimiento', r.fecha_vencimiento ? fmtFecha(r.fecha_vencimiento) : null],
+                                ].map(([label, val]) => (
+                                  <div key={label}>
+                                    <div style={{ fontSize: '10px', fontWeight: 700, color: '#7a8fbb', textTransform: 'uppercase', marginBottom: '3px' }}>{label}</div>
+                                    <div style={{ color: '#0d1b38' }}>{val || '—'}</div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </Fragment>
+                  )
+                })}
               </tbody>
             </table>
           </div>
@@ -387,6 +504,21 @@ export function ManualSociedadView({
   }
 
   // vista === 'todos'
+  const COLS_TODOS = [
+    { key: 'comprobante', label: 'Comprobante', sortable: true },
+    { key: 'cliente', label: 'Cliente', sortable: true },
+    { key: 'ejecutivo', label: 'Ejecutivo', sortable: true },
+    { key: 'fecha_emision', label: 'Emisión', sortable: true },
+    { key: 'fecha_vencimiento', label: 'Vencimiento', sortable: true },
+    { key: 'monto', label: 'Monto', sortable: true },
+    { key: 'mora', label: 'Mora', sortable: true },
+    { key: '', label: 'PDF', sortable: false },
+    ...(adminMode ? [{ key: '', label: 'Acciones', sortable: false }] : []),
+  ]
+  const facturasOrdenadas = ordenarPor(
+    facturasFiltradas, sortCol, sortDir,
+    (r, col) => col === 'mora' ? calcularDiasMora(r.fecha_vencimiento) : (r as any)[col]
+  )
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
       {facturasFiltradas.length === 0 ? (
@@ -407,18 +539,34 @@ export function ManualSociedadView({
           <div style={{ padding: '14px 18px', background: '#f8faff', borderBottom: '1px solid #dde3f0', display: 'flex', gap: '8px', alignItems: 'center' }}>
             <strong>Comprobantes por cobrar</strong>
             <span style={{ color: '#7a8fbb' }}>{facturasFiltradas.length} comprobantes</span>
+            <button
+              onClick={() => exportXlsx(`comprobantes_${nombreSociedad}_${new Date().toISOString().slice(0, 10)}.xlsx`, facturasOrdenadas.map(r => ({
+                'Comprobante': r.comprobante, 'Cliente': r.cliente, 'Ejecutivo': r.ejecutivo || 'Sin asignar',
+                'Emisión': fmtFecha(r.fecha_emision), 'Vencimiento': fmtFecha(r.fecha_vencimiento),
+                'Monto': r.monto, 'Moneda': r.moneda, 'Mora (días)': calcularDiasMora(r.fecha_vencimiento),
+                'OC/HES': r.oc_hes_pedido || '', 'Período': r.periodo || '', 'Colaborador': r.colaborador || '', 'Condición': r.condicion || '',
+              })))}
+              style={{ marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: '6px', background: '#2554a0', color: '#fff', border: 'none', borderRadius: '8px', padding: '6px 12px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}
+            >
+              ↓ .xlsx
+            </button>
           </div>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
             <thead>
               <tr>
                 <th style={{ width: '32px' }} />
-                {['Comprobante', 'Cliente', 'Ejecutivo', 'Emisión', 'Vencimiento', 'Monto', 'Mora', 'PDF', ...(adminMode ? ['Acciones'] : [])].map(h => (
-                  <th key={h} style={{ padding: '10px 16px', textAlign: h === 'Monto' ? 'right' : 'left', fontSize: '10px', fontWeight: 600, color: '#7a8fbb', textTransform: 'uppercase', borderBottom: '1px solid #dde3f0' }}>{h}</th>
+                {COLS_TODOS.map((col, i) => (
+                  <th key={col.key || `c-${i}`}
+                    onClick={col.sortable ? () => handleSort(col.key) : undefined}
+                    style={{ padding: '10px 16px', textAlign: col.key === 'monto' ? 'right' : 'left', fontSize: '10px', fontWeight: 600, color: sortCol === col.key ? '#2554a0' : '#7a8fbb', textTransform: 'uppercase', borderBottom: '1px solid #dde3f0', cursor: col.sortable ? 'pointer' : 'default', userSelect: 'none' }}
+                  >
+                    {col.label}{col.sortable && sortCol === col.key ? (sortDir === 'asc' ? ' ▲' : ' ▼') : ''}
+                  </th>
                 ))}
               </tr>
             </thead>
             <tbody>
-              {facturasFiltradas.map(r => {
+              {facturasOrdenadas.map(r => {
                 const isExp = expandedRows.has(r.id)
                 const diasMora = calcularDiasMora(r.fecha_vencimiento)
                 const badge = moraBadge(diasMora)
