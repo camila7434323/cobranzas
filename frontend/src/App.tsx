@@ -231,6 +231,11 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
     if (perfil?.rol === 'ejecutivo' && perfil.ejecutivo_nombre) {
       const propioNombre = perfil.ejecutivo_nombre
       setEjecutivoSeleccionado(prev => prev ?? propioNombre)
+      // Además del panel de cards, hay que sacarlo de la vista "global" (Todos
+      // los comprobantes) donde arranca por defecto cualquier sesión, porque
+      // esa pantalla ni siquiera pasa por el panel por ejecutivo.
+      setVista(prev => prev === 'global' ? 'todos' : prev)
+      setSociedadesAbiertas(prev => ({ ...prev, sa: true }))
     }
   }, [perfil])
   const [expandedRows, setExpandedRows]       = useState<Set<string>>(new Set())
