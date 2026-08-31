@@ -285,6 +285,12 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
   const [filtroClienteHistorial,   setFiltroClienteHistorial]   = useState('')
   const [filtroFechaDesde,         setFiltroFechaDesde]         = useState('')
   const [filtroFechaHasta,         setFiltroFechaHasta]         = useState('')
+  const [sortColHistorial, setSortColHistorial] = useState<string | null>(null)
+  const [sortDirHistorial, setSortDirHistorial] = useState<'asc' | 'desc'>('asc')
+  const handleSortHistorial = (col: string) => {
+    if (sortColHistorial === col) setSortDirHistorial(d => d === 'asc' ? 'desc' : 'asc')
+    else { setSortColHistorial(col); setSortDirHistorial('asc') }
+  }
 
   // filtros – clientes
   const [filtroEjecutivoClientes, setFiltroEjecutivoClientes] = useState('')
@@ -423,7 +429,7 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
 
   // ── historial filtrado ────────────────────────────────────────────────────
   const qHistorial = normalizar(busquedaHistorial.trim())
-  const historialFiltrado = historial.filter(r => {
+  const historialFiltradoSinOrden = historial.filter(r => {
     if (filtroEjecutivoHistorial && r.ejecutivo !== filtroEjecutivoHistorial) return false
     if (filtroClienteHistorial   && r.cliente   !== filtroClienteHistorial)   return false
     if (filtroFechaDesde && r.fecha_cobro < filtroFechaDesde) return false
@@ -431,6 +437,13 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
     if (qHistorial && ![r.comprobante_numero, r.cliente, r.ejecutivo, r.cobrado_por].some(v => normalizar(String(v || '')).includes(qHistorial))) return false
     return true
   })
+  const historialFiltrado = sortColHistorial
+    ? [...historialFiltradoSinOrden].sort((a: any, b: any) => {
+        const av = a[sortColHistorial]; const bv = b[sortColHistorial]
+        const cmp = typeof av === 'number' && typeof bv === 'number' ? av - bv : String(av ?? '').localeCompare(String(bv ?? ''))
+        return sortDirHistorial === 'asc' ? cmp : -cmp
+      })
+    : historialFiltradoSinOrden
 
   // ── helpers ───────────────────────────────────────────────────────────────
   const fmt = (n: number) => '$' + Math.round(n).toLocaleString('es-AR')
@@ -1673,8 +1686,23 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
                   <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                     <thead>
                       <tr style={{ background: '#f8faff', borderBottom: '1px solid #dde3f0' }}>
-                        {['', ...['Comprobante', 'Cliente', 'Ejecutivo', 'Fecha cobro', 'Monto', 'Estado', 'PDF'], ...(adminMode ? [''] : [])].map((h, i) => (
-                          <th key={h || `acc-${i}`} style={{ padding: '10px 16px', textAlign: 'left', fontSize: '10px', fontWeight: 600, color: '#7a8fbb', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>{h}</th>
+                        {[
+                          { key: '', label: '', sortable: false },
+                          { key: 'comprobante_numero', label: 'Comprobante', sortable: true },
+                          { key: 'cliente', label: 'Cliente', sortable: true },
+                          { key: 'ejecutivo', label: 'Ejecutivo', sortable: true },
+                          { key: 'fecha_cobro', label: 'Fecha cobro', sortable: true },
+                          { key: 'monto', label: 'Monto', sortable: true },
+                          { key: '', label: 'Estado', sortable: false },
+                          { key: '', label: 'PDF', sortable: false },
+                          ...(adminMode ? [{ key: '', label: '', sortable: false }] : []),
+                        ].map((col, i) => (
+                          <th key={col.label || `acc-${i}`}
+                            onClick={col.sortable ? () => handleSortHistorial(col.key) : undefined}
+                            style={{ padding: '10px 16px', textAlign: 'left', fontSize: '10px', fontWeight: 600, color: sortColHistorial === col.key ? '#2554a0' : '#7a8fbb', textTransform: 'uppercase', whiteSpace: 'nowrap', cursor: col.sortable ? 'pointer' : 'default', userSelect: 'none' }}
+                          >
+                            {col.label}{col.sortable && sortColHistorial === col.key ? (sortDirHistorial === 'asc' ? ' ▲' : ' ▼') : ''}
+                          </th>
                         ))}
                       </tr>
                     </thead>
