@@ -224,6 +224,15 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
       .then(({ data }) => { if (activo) setPerfil(data ?? null) })
     return () => { activo = false }
   }, [session.user.id])
+  // Un ejecutivo no ve el listado "Por ejecutivo" del sidebar (solo admin/gerencia),
+  // así que nunca podría seleccionarse a sí mismo ahí. Sin esto, su propia cuenta
+  // caía en la tabla plana en vez del panel con cards de vencidas/próximas/al día.
+  useEffect(() => {
+    if (perfil?.rol === 'ejecutivo' && perfil.ejecutivo_nombre) {
+      const propioNombre = perfil.ejecutivo_nombre
+      setEjecutivoSeleccionado(prev => prev ?? propioNombre)
+    }
+  }, [perfil])
   const [expandedRows, setExpandedRows]       = useState<Set<string>>(new Set())
   const [expandedGlobalRows, setExpandedGlobalRows] = useState<Set<string>>(new Set())
   const [sortCol, setSortCol]                 = useState<string | null>(null)
@@ -1766,7 +1775,7 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
                           { label: 'Cliente', col: 'cliente' as const },
                           { label: 'Ejecutivo asignado', col: 'ejecutivo' as const },
                           { label: 'Condición habitual', col: null },
-                          { label: 'Cambiar ejecutivo', col: null },
+                          ...(adminMode ? [{ label: 'Cambiar ejecutivo', col: null }] : []),
                         ]).map(({ label, col }) => (
                           <th
                             key={label}
@@ -1821,23 +1830,25 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
                                   : <span style={{ color: '#94a3b8', fontSize: '12px' }}>---</span>}
                               </div>
                             </td>
-                            <td style={{ padding: '14px 16px' }}>
-                              <select
-                                value=""
-                                onChange={e => {
-                                  const nuevo = e.target.value
-                                  if (!nuevo) return
-                                  const viejo = execEfectivo
-                                  setLocalEjecutivos(prev => ({ ...prev, [c.cliente]: nuevo }))
-                                  updateEjecutivoLocal(c.cliente, nuevo)
-                                  handleAsignarEjecutivo(c.cliente, nuevo, viejo)
-                                }}
-                                style={{ padding: '5px 10px', borderRadius: '8px', border: '1px solid #dde3f0', fontSize: '12px', color: '#374151', background: '#fff', cursor: 'pointer', outline: 'none' }}
-                              >
-                                <option value="">— cambiar —</option>
-                                {EJECUTIVOS.map(e => <option key={e} value={e}>{e}</option>)}
-                              </select>
-                            </td>
+                            {adminMode && (
+                              <td style={{ padding: '14px 16px' }}>
+                                <select
+                                  value=""
+                                  onChange={e => {
+                                    const nuevo = e.target.value
+                                    if (!nuevo) return
+                                    const viejo = execEfectivo
+                                    setLocalEjecutivos(prev => ({ ...prev, [c.cliente]: nuevo }))
+                                    updateEjecutivoLocal(c.cliente, nuevo)
+                                    handleAsignarEjecutivo(c.cliente, nuevo, viejo)
+                                  }}
+                                  style={{ padding: '5px 10px', borderRadius: '8px', border: '1px solid #dde3f0', fontSize: '12px', color: '#374151', background: '#fff', cursor: 'pointer', outline: 'none' }}
+                                >
+                                  <option value="">— cambiar —</option>
+                                  {EJECUTIVOS.map(e => <option key={e} value={e}>{e}</option>)}
+                                </select>
+                              </td>
+                            )}
                           </tr>
                         )
                       })}

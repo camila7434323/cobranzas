@@ -408,7 +408,7 @@ export function ManualSociedadView({
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ background: '#f8faff', borderBottom: '1px solid #dde3f0' }}>
-                  {['Cliente', 'Ejecutivo asignado', 'Cambiar ejecutivo'].map(h => (
+                  {['Cliente', 'Ejecutivo asignado', ...(adminMode ? ['Cambiar ejecutivo'] : [])].map(h => (
                     <th key={h} style={{ padding: '10px 16px', textAlign: 'left', fontSize: '10px', fontWeight: 700, color: '#7a8fbb', textTransform: 'uppercase' }}>{h}</th>
                   ))}
                 </tr>
@@ -423,16 +423,18 @@ export function ManualSociedadView({
                       <td style={{ padding: '14px 16px' }}>
                         <span style={{ background: '#ddeafd', color: '#1d4170', padding: '4px 10px', borderRadius: '20px', fontSize: '12px', fontWeight: 600 }}>{ejecutivo}</span>
                       </td>
-                      <td style={{ padding: '14px 16px' }}>
-                        <select
-                          value=""
-                          onChange={e => { if (e.target.value) onReasignarEjecutivo(cliente, e.target.value) }}
-                          style={{ padding: '5px 10px', borderRadius: '8px', border: '1px solid #dde3f0', fontSize: '12px', color: '#374151', background: '#fff', cursor: 'pointer', outline: 'none' }}
-                        >
-                          <option value="">— cambiar —</option>
-                          {execsConocidos.map(e => <option key={e} value={e}>{e}</option>)}
-                        </select>
-                      </td>
+                      {adminMode && (
+                        <td style={{ padding: '14px 16px' }}>
+                          <select
+                            value=""
+                            onChange={e => { if (e.target.value) onReasignarEjecutivo(cliente, e.target.value) }}
+                            style={{ padding: '5px 10px', borderRadius: '8px', border: '1px solid #dde3f0', fontSize: '12px', color: '#374151', background: '#fff', cursor: 'pointer', outline: 'none' }}
+                          >
+                            <option value="">— cambiar —</option>
+                            {execsConocidos.map(e => <option key={e} value={e}>{e}</option>)}
+                          </select>
+                        </td>
+                      )}
                     </tr>
                   )
                 })}
