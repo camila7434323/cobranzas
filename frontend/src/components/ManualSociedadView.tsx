@@ -44,7 +44,7 @@ type Props = {
 
 const fmtMonto = (moneda: string, n: number) => {
   const simbolo = moneda === 'EUR' ? '€' : moneda === 'USD' ? 'US$' : '$'
-  return `${simbolo} ${Math.round(n).toLocaleString('es-AR')}`
+  return `${simbolo} ${n.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 }
 
 const moraBadge = (dias: number) => {

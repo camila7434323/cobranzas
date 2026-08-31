@@ -214,7 +214,7 @@ export function ManualFacturaForm({
             <div style={{ marginTop: '10px', display: 'flex', flexDirection: 'column', gap: '5px', maxWidth: '280px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: '#7a8fbb' }}>
                 <span>Base imponible</span>
-                <span style={{ fontFamily: 'monospace' }}>{form.moneda} {totalCalculado.toLocaleString('es-AR')}</span>
+                <span style={{ fontFamily: 'monospace' }}>{form.moneda} {totalCalculado.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px', color: '#7a8fbb' }}>
                 <span>IVA</span>
@@ -228,7 +228,7 @@ export function ManualFacturaForm({
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '6px', borderTop: '1px solid #dde3f0' }}>
                 <span style={{ fontSize: '12px', fontWeight: 700, color: '#0d1b38' }}>Total factura</span>
-                <span style={{ fontSize: '16px', fontWeight: 700, color: '#2554a0', fontFamily: 'monospace' }}>{form.moneda} {(totalCalculado + (form.iva || 0)).toLocaleString('es-AR')}</span>
+                <span style={{ fontSize: '16px', fontWeight: 700, color: '#2554a0', fontFamily: 'monospace' }}>{form.moneda} {(totalCalculado + (form.iva || 0)).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
               </div>
             </div>
           ) : (
