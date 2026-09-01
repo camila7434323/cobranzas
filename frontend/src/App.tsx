@@ -132,6 +132,59 @@ function DescPanel({ comprobante, extra, adminMode, onUpdate, condicionActual = 
   )
 }
 
+function ManualDetallePanel({ factura, fmtFecha }: { factura: ManualFactura; fmtFecha: (fecha: string) => string }) {
+  const fmtMonto = (moneda: string, n: number) => {
+    const simbolo = moneda === 'EUR' ? '€' : moneda === 'USD' ? 'US$' : '$'
+    return `${simbolo} ${n.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+  }
+  const r = factura
+  return (
+    <div style={{ padding: '14px 20px', background: '#f8faff', borderLeft: '3px solid #a8c4f5' }}>
+      {(r.items || []).length > 0 && (
+        <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '12px', fontSize: '12px' }}>
+          <thead>
+            <tr>
+              {['Descripción', 'Unidad', 'Cant.', 'Valor unit.', 'Subtotal'].map(h => (
+                <th key={h} style={{ textAlign: h === 'Descripción' || h === 'Unidad' ? 'left' : 'right', padding: '4px 8px', fontSize: '10px', fontWeight: 700, color: '#7a8fbb', textTransform: 'uppercase' }}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {(r.items || []).map((it, i) => (
+              <tr key={i} style={{ borderTop: '1px solid #e2e8f0' }}>
+                <td style={{ padding: '5px 8px', color: '#0d1b38' }}>{it.descripcion || '—'}</td>
+                <td style={{ padding: '5px 8px', color: '#0d1b38' }}>{it.unidad || '—'}</td>
+                <td style={{ padding: '5px 8px', textAlign: 'right', color: '#0d1b38' }}>{it.cantidad}</td>
+                <td style={{ padding: '5px 8px', textAlign: 'right', color: '#0d1b38' }}>{fmtMonto(r.moneda, it.valor_unitario)}</td>
+                <td style={{ padding: '5px 8px', textAlign: 'right', fontWeight: 600, color: '#0d1b38' }}>{fmtMonto(r.moneda, it.cantidad * it.valor_unitario)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+      {!!r.iva && (
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '18px', marginBottom: '12px', fontSize: '12px' }}>
+          <span style={{ color: '#7a8fbb' }}>Base imponible: <strong style={{ color: '#0d1b38' }}>{fmtMonto(r.moneda, (r.items || []).reduce((s, it) => s + it.cantidad * it.valor_unitario, 0))}</strong></span>
+          <span style={{ color: '#7a8fbb' }}>IVA: <strong style={{ color: '#0d1b38' }}>{fmtMonto(r.moneda, r.iva)}</strong></span>
+          <span style={{ color: '#7a8fbb' }}>Total factura: <strong style={{ color: '#2554a0' }}>{fmtMonto(r.moneda, r.monto)}</strong></span>
+        </div>
+      )}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px', fontSize: '12px' }}>
+        {[
+          ['OC/HES', r.oc_hes_pedido], ['Período', r.periodo], ['Colaborador', r.colaborador],
+          ['Otros conceptos', r.otros_conceptos], ['Condición', r.condicion],
+          ['Emisión', r.fecha_emision ? fmtFecha(r.fecha_emision) : null], ['Vencimiento', r.fecha_vencimiento ? fmtFecha(r.fecha_vencimiento) : null],
+        ].map(([label, val]) => (
+          <div key={label}>
+            <div style={{ fontSize: '10px', fontWeight: 700, color: '#7a8fbb', textTransform: 'uppercase', marginBottom: '3px' }}>{label}</div>
+            <div style={{ color: '#0d1b38' }}>{val || '—'}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 const COLORES_EXEC: Record<string, { bg: string; color: string; initials: string }> = {
   'Lucas Roca':            { bg: '#1d4170', color: '#fff', initials: 'LR' },
   'Joaquin Ramirez':       { bg: '#065f46', color: '#fff', initials: 'JR' },
@@ -796,6 +849,7 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
       diasMora: r.dias_mora || 0,
       estado: 'Pendiente' as const,
       pdfDirecta: '',
+      manual: null as ManualFactura | null,
       buscable: [r.comprobante, r.nombre_cliente, r.ejecutivo, ...camposExtra(extras.get(r.comprobante))].filter(Boolean).join(' ').toLowerCase(),
     })),
     ...historial.map(r => ({
@@ -808,6 +862,7 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
       diasMora: 0,
       estado: 'Cobrada' as const,
       pdfDirecta: '',
+      manual: null as ManualFactura | null,
       buscable: [r.comprobante_numero, r.cliente, r.ejecutivo, ...camposExtra(extras.get(r.comprobante_numero))].filter(Boolean).join(' ').toLowerCase(),
     })),
     ...manualFacturas.map(r => ({
@@ -820,6 +875,7 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
       diasMora: calcularDiasMora(r.fecha_vencimiento || null),
       estado: 'Pendiente' as const,
       pdfDirecta: r.pdf_base64 || r.pdf_url || '',
+      manual: r as ManualFactura | null,
       buscable: [r.comprobante, r.cliente, r.ejecutivo, ...camposManual(r)].filter(Boolean).join(' ').toLowerCase(),
     })),
     ...(['llc', 'sl'] as const).flatMap(key => manualHistorial[key].map(r => ({
@@ -832,6 +888,7 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
       diasMora: 0,
       estado: 'Cobrada' as const,
       pdfDirecta: r.pdf_base64 || r.pdf_url || '',
+      manual: r as ManualFactura | null,
       buscable: [r.comprobante, r.cliente, r.ejecutivo, ...camposManual(r)].filter(Boolean).join(' ').toLowerCase(),
     }))),
   ]
@@ -1406,7 +1463,9 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
                           {isExp && (
                             <tr style={{ borderBottom: '1px solid #dde3f0' }}>
                               <td colSpan={10} style={{ padding: 0 }}>
-                                <DescPanel comprobante={r.comprobante} extra={extra} adminMode={adminMode} onUpdate={handleUpdateExtra} />
+                                {r.manual
+                                  ? <ManualDetallePanel factura={r.manual} fmtFecha={fmtFecha} />
+                                  : <DescPanel comprobante={r.comprobante} extra={extra} adminMode={adminMode} onUpdate={handleUpdateExtra} />}
                               </td>
                             </tr>
                           )}
