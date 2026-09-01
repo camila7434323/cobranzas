@@ -2024,19 +2024,20 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
                            : filtroMoraRange === 'urgente'  ? base.filter(r => r.dias_mora > 30)
                            : base
 
-              const vencidas  = !sortCol ? ranged.filter(r => r.dias_mora > 0)  : []
-              const proximasTabla = !sortCol && esPanelEjecutivo ? ranged.filter(esProximaAVencer) : []
+              const vencidas  = ranged.filter(r => r.dias_mora > 0)
+              const proximasTabla = esPanelEjecutivo ? ranged.filter(esProximaAVencer) : []
               const proximasTablaSet = new Set(proximasTabla.map(rowKey))
-              const sinVencer = !sortCol
-                ? ranged.filter(r => r.dias_mora <= 0 && (!esPanelEjecutivo || !proximasTablaSet.has(rowKey(r))))
-                : []
-              const ordenados = sortCol
-                ? [...ranged].sort((a: any, b: any) => {
+              const sinVencer = ranged.filter(r => r.dias_mora <= 0 && (!esPanelEjecutivo || !proximasTablaSet.has(rowKey(r))))
+
+              const ordenarGrupo = (arr: typeof ranged) => sortCol
+                ? [...arr].sort((a: any, b: any) => {
                     const av = a[sortCol]; const bv = b[sortCol]
                     const cmp = typeof av === 'number' ? av - bv : String(av ?? '').localeCompare(String(bv ?? ''))
                     return sortDir === 'asc' ? cmp : -cmp
                   })
-                : [...vencidas, ...proximasTabla, ...sinVencer]
+                : arr
+
+              const ordenados = [...ordenarGrupo(vencidas), ...ordenarGrupo(proximasTabla), ...ordenarGrupo(sinVencer)]
 
               const COLS = [
                 { key: '',                  label: '',            sortable: false },
@@ -2101,10 +2102,10 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
                         <tbody>
                           {ordenados.map((r, idx) => {
                             const badge = moraBadge(r.dias_mora)
-                            const showSep = !esPanelEjecutivo && !sortCol && vencidas.length > 0 && sinVencer.length > 0 && idx === vencidas.length
-                            const showRevision = esPanelEjecutivo && !sortCol && vencidas.length > 0 && idx === 0
-                            const showProximas = esPanelEjecutivo && !sortCol && proximasTabla.length > 0 && idx === vencidas.length
-                            const showSinVencer = esPanelEjecutivo && !sortCol && sinVencer.length > 0 && idx === vencidas.length + proximasTabla.length
+                            const showSep = !esPanelEjecutivo && vencidas.length > 0 && sinVencer.length > 0 && idx === vencidas.length
+                            const showRevision = esPanelEjecutivo && vencidas.length > 0 && idx === 0
+                            const showProximas = esPanelEjecutivo && proximasTabla.length > 0 && idx === vencidas.length
+                            const showSinVencer = esPanelEjecutivo && sinVencer.length > 0 && idx === vencidas.length + proximasTabla.length
                             const rowKey = r.id ? String(r.id) : r.comprobante
                             const isExp  = expandedRows.has(rowKey)
                             const extra  = extras.get(r.comprobante)
