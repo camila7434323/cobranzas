@@ -62,8 +62,11 @@ const camposBusqueda = (r: FacturacionLinea): string[] => [
 ]
 
 const coincideBusqueda = (r: FacturacionLinea, q: string) => {
-  const qn = normalizar(q)
-  return camposBusqueda(r).some(v => normalizar(String(v || '')).includes(qn))
+  const campos = camposBusqueda(r).map(v => normalizar(String(v || '')))
+  // Cada palabra clave puede matchear en un campo distinto (colaborador + mes,
+  // cliente + importe, etc.); todas tienen que aparecer en algún lado.
+  const tokens = normalizar(q).split(/\s+/).filter(Boolean)
+  return tokens.every(t => campos.some(c => c.includes(t)))
 }
 
 const flagCode = (moneda: string) => moneda === 'USD' ? 'us' : moneda === 'EUR' ? 'es' : 'ar'
@@ -95,26 +98,37 @@ const execColor = (name: string) => {
 }
 
 const estilizarComoTabla = (ws: XLSX.WorkSheet, numRows: number, numCols: number) => {
-  const thinBorder = { style: 'thin', color: { rgb: 'DDE3F0' } }
+  // Colores en ARGB de 8 dígitos para que Excel siempre los renderice.
+  const HEADER_BG = 'FF1F7A44'   // verde tabla
+  const BANDA_BG  = 'FFEAF4EE'   // verde muy claro (filas impares)
+  const BLANCO    = 'FFFFFFFF'
+  const TEXTO     = 'FF1F2937'
+  const LINEA     = 'FFBFD9C7'
+  const borde = { style: 'thin', color: { rgb: LINEA } }
+  const bordes = { top: borde, bottom: borde, left: borde, right: borde }
+
   for (let ci = 0; ci < numCols; ci++) {
     const cell = ws[XLSX.utils.encode_cell({ r: 0, c: ci })]
     if (!cell) continue
     cell.s = {
-      fill: { patternType: 'solid', fgColor: { rgb: '1D4170' } },
-      font: { bold: true, color: { rgb: 'FFFFFF' }, sz: 11 },
+      fill: { patternType: 'solid', fgColor: { rgb: HEADER_BG } },
+      font: { bold: true, color: { rgb: BLANCO }, sz: 11 },
       alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
-      border: { top: thinBorder, bottom: thinBorder, left: thinBorder, right: thinBorder },
+      border: bordes,
     }
   }
   for (let ri = 1; ri <= numRows; ri++) {
     for (let ci = 0; ci < numCols; ci++) {
       const cell = ws[XLSX.utils.encode_cell({ r: ri, c: ci })]
       if (!cell) continue
+      const esNumero = typeof cell.v === 'number'
       cell.s = {
-        fill: { patternType: 'solid', fgColor: { rgb: ri % 2 ? 'F8FAFF' : 'FFFFFF' } },
-        font: { color: { rgb: '0F172A' }, sz: 10 },
-        border: { top: thinBorder, bottom: thinBorder, left: thinBorder, right: thinBorder },
+        fill: { patternType: 'solid', fgColor: { rgb: ri % 2 ? BANDA_BG : BLANCO } },
+        font: { color: { rgb: TEXTO }, sz: 10 },
+        alignment: { horizontal: esNumero ? 'right' : 'left', vertical: 'center' },
+        border: bordes,
       }
+      if (esNumero) cell.z = '#,##0.00'
     }
   }
   ws['!cols'] = Array.from({ length: numCols }, (_, ci) => {
@@ -123,8 +137,9 @@ const estilizarComoTabla = (ws: XLSX.WorkSheet, numRows: number, numCols: number
       const cell = ws[XLSX.utils.encode_cell({ r: ri, c: ci })]
       if (cell) max = Math.max(max, String(cell.v ?? '').length)
     }
-    return { wch: Math.min(40, max + 2) }
+    return { wch: Math.min(42, max + 2) }
   })
+  ws['!rows'] = Array.from({ length: numRows + 1 }, (_, ri) => ({ hpt: ri === 0 ? 24 : 18 }))
   ws['!autofilter'] = { ref: XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: numRows, c: Math.max(numCols - 1, 0) } }) }
 }
 
@@ -210,12 +225,14 @@ export function FacturacionApp({ session, onCambiarModulo }: { session: Session;
   const abrirDashboard = () => {
     setVista('dashboard')
     setEmpresaActiva('all')
+    setBusqueda('')
     window.scrollTo({ top: 0 })
   }
 
   const irEmpresa = (empresa: string) => {
     setEmpresaActiva(empresa)
     setVista('detalle')
+    setBusqueda('')
     window.scrollTo({ top: 0 })
   }
 
@@ -669,12 +686,15 @@ function Detalle({ filas, empresaActiva, onAbrirPdf }: { filas: FacturacionLinea
           ...sorted.map(r => [
             nombreCliente(r), r.cuit || '', r.ejecutivo || '', r.periodo ? mesLabel(periodoKey(r)) : '',
             fmtFecha(r.fecha_factura), r.n_factura || '', r.cond_venta || '', r.colaborador || '', r.legajo || '',
-            nombreCc(r), monedaFila(r), r.cantidad || 0, r.precio_unitario.toFixed(2), r.total_neto.toFixed(2),
+            nombreCc(r), monedaFila(r), r.cantidad || 0, r.precio_unitario, r.total_neto,
             r.oc || '', r.leyenda || '',
           ]),
         ])}>↓ Excel</button>
         <button style={clearBtn} onClick={clearFilters}>✕ Limpiar filtros</button>
       </CardHeader>
+      <div style={{ padding: '12px 16px 0' }}>
+        <div style={notice}>ℹ️ <strong>Facturación desglosada por línea</strong> (una factura puede tener varias filas). Filtrá lo que necesites — los indicadores de arriba se recalculan automáticamente con tu selección.</div>
+      </div>
       {filas.length === 0 ? <div style={emptyStyle}>Sin datos para esta selección.</div> : (
         <div style={{ overflowX: 'auto' }}>
           <table style={{ ...tableStyle, minWidth: 980 }}>
@@ -723,7 +743,12 @@ function Detalle({ filas, empresaActiva, onAbrirPdf }: { filas: FacturacionLinea
                       <Td>{fmtFecha(r.fecha_factura)}</Td>
                       <Td>{r.n_factura || '-'}</Td>
                       <Td>{nombreCc(r)}</Td>
-                      <Td right><strong>{fmtMoney(r.total_neto, moneda)}</strong></Td>
+                      <Td right>
+                        <strong>{fmtMoney(r.total_neto, moneda)}</strong>
+                        <div style={{ fontSize: 10, color: '#7a8fbb', marginTop: 2, whiteSpace: 'nowrap' }}>
+                          {r.cantidad.toLocaleString('es-AR', { maximumFractionDigits: 2 })} u. × {fmtMoney(r.precio_unitario, moneda)}
+                        </div>
+                      </Td>
                       <Td style={{ cursor: 'default' }} onClick={e => e.stopPropagation()}>
                         <button style={pdfBtnStyle(!!r.n_factura)} disabled={!r.n_factura} onClick={() => onAbrirPdf(r)}>PDF Factura</button>
                       </Td>
