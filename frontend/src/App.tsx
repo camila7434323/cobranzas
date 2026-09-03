@@ -588,8 +588,12 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
     setFiltroClienteTabla('')
     setFiltroEstadoTabla('')
     setFiltroMoraRange('')
+    setBusqueda('')
+    setBusquedaHistorial('')
     setFiltroEjecutivoHistorial('')
     setFiltroClienteHistorial('')
+    setFiltroFechaDesde('')
+    setFiltroFechaHasta('')
     setFiltroEjecutivoClientes('')
     setBusquedaClientes('')
     setSortCol(null)
@@ -1194,7 +1198,7 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
             return (
               <div key={key} style={{ marginBottom: '8px' }}>
                 <button
-                  onClick={() => { setSociedadActiva(key); setSociedadesAbiertas(prev => ({ sa: false, llc: false, sl: false, [key]: !prev[key] })); if (vista === 'global') setVista(perfil?.rol === 'ejecutivo' ? 'todos' : 'dashboard') }}
+                  onClick={() => { setSociedadActiva(key); setSociedadesAbiertas(prev => ({ sa: false, llc: false, sl: false, [key]: !prev[key] })); setBusqueda(''); setBusquedaHistorial(''); setBusquedaClientes(''); if (vista === 'global') setVista(perfil?.rol === 'ejecutivo' ? 'todos' : 'dashboard') }}
                   style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', padding: '10px 12px', borderRadius: '9px', border: activa ? '1px solid #3b6bc9' : '1px solid rgba(255,255,255,0.12)', background: activa ? '#2554a0' : 'rgba(255,255,255,0.06)', color: '#fff', cursor: 'pointer', fontSize: '13px', fontWeight: 700 }}
                 >
                   <span style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
@@ -1235,7 +1239,7 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
                           const moraCount = data.filter(r => (sinAsignar ? esSinAsignar(r.ejecutivo) : r.ejecutivo === exec) && r.dias_mora > 0).length
                           const isActive  = sociedadActiva === 'sa' && ejecutivoSeleccionado === exec
                           return (
-                            <div key={`sa-exec-${exec}`} onClick={() => { setSociedadActiva('sa'); setEjecutivoSeleccionado(exec); setVista('todos'); setFiltroClienteTabla(''); setFiltroEstadoTabla(''); setFiltroMoraRange(''); setSortCol(null); setSortDir('asc'); setExpandedRows(new Set()) }} style={{ display: 'flex', alignItems: 'center', gap: '9px', padding: '7px 10px', borderRadius: '9px', cursor: 'pointer', background: isActive ? 'rgba(255,255,255,0.1)' : 'transparent', marginBottom: '2px', transition: 'background 0.15s' }}>
+                            <div key={`sa-exec-${exec}`} onClick={() => { setSociedadActiva('sa'); setEjecutivoSeleccionado(exec); setVista('todos'); setBusqueda(''); setBusquedaHistorial(''); setBusquedaClientes(''); setFiltroClienteTabla(''); setFiltroEstadoTabla(''); setFiltroMoraRange(''); setSortCol(null); setSortDir('asc'); setExpandedRows(new Set()) }} style={{ display: 'flex', alignItems: 'center', gap: '9px', padding: '7px 10px', borderRadius: '9px', cursor: 'pointer', background: isActive ? 'rgba(255,255,255,0.1)' : 'transparent', marginBottom: '2px', transition: 'background 0.15s' }}>
                               <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: ec.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: 700, color: ec.color, flexShrink: 0, boxShadow: '0 2px 8px rgba(0,0,0,0.3)' }}>{ec.initials}</div>
                               <span style={{ color: isActive ? '#fff' : 'rgba(255,255,255,0.55)', fontSize: '12px', flex: 1, fontWeight: isActive ? 600 : 400, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{exec}</span>
                               {moraCount > 0 && <div style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#f87171', flexShrink: 0 }} />}
