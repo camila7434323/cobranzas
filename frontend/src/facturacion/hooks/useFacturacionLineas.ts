@@ -61,20 +61,37 @@ export function useFacturacionLineas() {
 
   useEffect(() => { cargar() }, [cargar])
 
-  const CLAVE_NATURAL = ['empresa', 'n_factura', 'articulo_codigo', 'cc_descripcion', 'oc', 'periodo'] as const
-
   const insertarLote = async (filas: Omit<FacturacionLinea, 'id' | 'creado_el'>[]) => {
-    // Si el mismo Excel trae dos filas con la misma clave natural (ej. una
-    // línea recurrente repetida), nos quedamos con la última: un solo
-    // comando de upsert no puede actualizar la misma fila dos veces.
-    const porClave = new Map<string, Omit<FacturacionLinea, 'id' | 'creado_el'>>()
-    for (const f of filas) porClave.set(CLAVE_NATURAL.map(k => f[k] ?? '').join('|'), f)
-    const filasUnicas = Array.from(porClave.values())
-
-    for (let i = 0; i < filasUnicas.length; i += 500) {
+    // El Excel es la fuente de verdad de las facturas que contiene. Reimportar
+    // no debe duplicar ni colapsar líneas: borramos las líneas existentes de
+    // esas facturas y reinsertamos el desglose completo tal cual viene el Excel
+    // (una misma factura puede tener muchas líneas que comparten cliente,
+    // artículo y centro de costo, y solo cambian el colaborador o el importe).
+    const facturas = Array.from(new Set(filas.map(f => f.n_factura).filter(Boolean)))
+    for (let i = 0; i < facturas.length; i += 200) {
       const { error } = await supabase
         .from('facturacion_lineas')
-        .upsert(filasUnicas.slice(i, i + 500), { onConflict: CLAVE_NATURAL.join(',') })
+        .delete()
+        .in('n_factura', facturas.slice(i, i + 200))
+      if (error) throw error
+    }
+
+    // Líneas sin número de factura: se limpian por empresa para no acumularlas
+    // entre reimportaciones del mismo archivo.
+    const empresasSinFactura = Array.from(new Set(filas.filter(f => !f.n_factura).map(f => f.empresa).filter(Boolean)))
+    if (empresasSinFactura.length) {
+      const { error } = await supabase
+        .from('facturacion_lineas')
+        .delete()
+        .eq('n_factura', '')
+        .in('empresa', empresasSinFactura)
+      if (error) throw error
+    }
+
+    for (let i = 0; i < filas.length; i += 500) {
+      const { error } = await supabase
+        .from('facturacion_lineas')
+        .insert(filas.slice(i, i + 500))
       if (error) throw error
     }
     await cargar()

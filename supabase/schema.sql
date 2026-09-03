@@ -187,8 +187,10 @@ create table if not exists public.facturacion_lineas (
   articulo_descripcion text not null default '',
   cc_descripcion text not null default '',
   reporte_id uuid references public.facturacion_reportes(id) on delete set null,
-  creado_el timestamptz not null default now(),
-  constraint facturacion_lineas_natural_key unique (empresa, n_factura, articulo_codigo, cc_descripcion, oc, periodo)
+  creado_el timestamptz not null default now()
+  -- Sin clave natural: una factura puede tener muchas líneas que comparten
+  -- empresa/artículo/CC/OC/período y solo cambian colaborador o importe. La
+  -- reimportación reemplaza por número de factura (ver useFacturacionLineas).
 );
 
 create index if not exists facturacion_lineas_empresa_idx  on public.facturacion_lineas (empresa);
