@@ -27,6 +27,18 @@ export type FacturacionLinea = {
   creado_el: string
 }
 
+const PAGE_SIZE = 1000
+
+// Corre `fn` sobre los trozos de `items` en tandas paralelas (hasta
+// `concurrencia` requests a la vez) en lugar de una por una.
+async function enTandas<T>(items: T[], tam: number, fn: (trozo: T[]) => Promise<void>, concurrencia = 6) {
+  const trozos: T[][] = []
+  for (let i = 0; i < items.length; i += tam) trozos.push(items.slice(i, i + tam))
+  for (let i = 0; i < trozos.length; i += concurrencia) {
+    await Promise.all(trozos.slice(i, i + concurrencia).map(fn))
+  }
+}
+
 export function useFacturacionLineas() {
   const [data, setData] = useState<FacturacionLinea[]>([])
   const [loading, setLoading] = useState(true)
@@ -35,28 +47,35 @@ export function useFacturacionLineas() {
   const cargar = useCallback(async () => {
     setLoading(true)
     setError(null)
-    const PAGE_SIZE = 1000
-    const todas: FacturacionLinea[] = []
-    let desde = 0
-    while (true) {
-      const { data: result, error: dbError } = await supabase
+    try {
+      const { count, error: countError } = await supabase
         .from('facturacion_lineas')
-        .select('*')
-        .order('fecha_factura', { ascending: false })
-        .order('id', { ascending: true })
-        .range(desde, desde + PAGE_SIZE - 1)
+        .select('id', { count: 'exact', head: true })
+      if (countError) throw countError
 
-      if (dbError) {
-        setError(dbError.message)
-        setLoading(false)
-        return
+      const paginas = Math.max(1, Math.ceil((count ?? 0) / PAGE_SIZE))
+      const respuestas = await Promise.all(
+        Array.from({ length: paginas }, (_, i) =>
+          supabase
+            .from('facturacion_lineas')
+            .select('*')
+            .order('fecha_factura', { ascending: false })
+            .order('id', { ascending: true })
+            .range(i * PAGE_SIZE, i * PAGE_SIZE + PAGE_SIZE - 1),
+        ),
+      )
+
+      const todas: FacturacionLinea[] = []
+      for (const { data: result, error: dbError } of respuestas) {
+        if (dbError) throw dbError
+        todas.push(...(result || []))
       }
-      todas.push(...(result || []))
-      if (!result || result.length < PAGE_SIZE) break
-      desde += PAGE_SIZE
+      setData(todas)
+    } catch (e: any) {
+      setError(e?.message ?? 'Error al cargar la facturación.')
+    } finally {
+      setLoading(false)
     }
-    setData(todas)
-    setLoading(false)
   }, [])
 
   useEffect(() => { cargar() }, [cargar])
@@ -68,13 +87,10 @@ export function useFacturacionLineas() {
     // (una misma factura puede tener muchas líneas que comparten cliente,
     // artículo y centro de costo, y solo cambian el colaborador o el importe).
     const facturas = Array.from(new Set(filas.map(f => f.n_factura).filter(Boolean)))
-    for (let i = 0; i < facturas.length; i += 200) {
-      const { error } = await supabase
-        .from('facturacion_lineas')
-        .delete()
-        .in('n_factura', facturas.slice(i, i + 200))
+    await enTandas(facturas, 500, async trozo => {
+      const { error } = await supabase.from('facturacion_lineas').delete().in('n_factura', trozo)
       if (error) throw error
-    }
+    })
 
     // Líneas sin número de factura: se limpian por empresa para no acumularlas
     // entre reimportaciones del mismo archivo.
@@ -88,12 +104,10 @@ export function useFacturacionLineas() {
       if (error) throw error
     }
 
-    for (let i = 0; i < filas.length; i += 500) {
-      const { error } = await supabase
-        .from('facturacion_lineas')
-        .insert(filas.slice(i, i + 500))
+    await enTandas(filas, PAGE_SIZE, async trozo => {
+      const { error } = await supabase.from('facturacion_lineas').insert(trozo)
       if (error) throw error
-    }
+    })
     await cargar()
   }
 
