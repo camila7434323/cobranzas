@@ -282,7 +282,26 @@ export function FacturacionApp({ session, onCambiarModulo }: { session: Session;
           {loading ? (
             <div style={{ flex: 1, display: 'grid', placeItems: 'center' }}><div style={emptyStyle}>Cargando facturación...</div></div>
           ) : data.length === 0 ? (
-            <div style={{ flex: 1, display: 'grid', placeItems: 'center' }}><div style={emptyStyle}>Sin datos aún. Cargá el Excel para empezar.</div></div>
+            <div style={{ flex: 1, display: 'grid', placeItems: 'center' }}>
+              <div style={{ width: '100%', maxWidth: 680, background: '#fff', border: '1.5px dashed #b7dcf0', borderRadius: 12, padding: '64px 40px', textAlign: 'center' }}>
+                <div style={{ width: 64, height: 64, margin: '0 auto', borderRadius: 14, background: '#eaf6fd', display: 'grid', placeItems: 'center' }}>
+                  <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#4aa8d8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                    <polyline points="14 2 14 8 20 8" />
+                    <line x1="8" y1="13" x2="16" y2="13" />
+                    <line x1="8" y1="17" x2="16" y2="17" />
+                    <line x1="8" y1="9" x2="10" y2="9" />
+                  </svg>
+                </div>
+                <div style={{ marginTop: 18, fontSize: 18, fontWeight: 800, color: '#0d1b38' }}>Todavía no cargaste ningún archivo</div>
+                <div style={{ margin: '8px auto 22px', maxWidth: 420, fontSize: 13.5, color: '#7286bd', lineHeight: 1.5 }}>
+                  Subí el Excel de desglose de facturación para poder filtrar por cliente, ejecutivo, período y centro de costo.
+                </div>
+                <div style={{ display: 'inline-block', minWidth: 190 }}>
+                  <SubirFacturacionExcel insertarLote={insertarLote} compact />
+                </div>
+              </div>
+            </div>
           ) : vista === 'dashboard' ? (
             <PanelVentas
               rows={dashboardRows}
