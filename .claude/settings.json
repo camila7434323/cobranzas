@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git -C \"c:/Users/Usuario/Desktop/ASAP/Cobranzas\" add frontend/src/hooks/usePdfsStorage.ts frontend/src/components/SubirReporte.tsx)",
+      "Bash(git -C c:/Users/Usuario/Desktop/ASAP/Cobranzas commit -m ' *)"
+    ]
+  }
+}

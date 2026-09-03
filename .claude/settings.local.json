@@ -24,7 +24,9 @@
       "Bash(git commit -m ' *)",
       "Bash(tasklist //FI \"IMAGENAME eq node.exe\")",
       "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5173)",
-      "Bash(npx tsc *)"
+      "Bash(npx tsc *)",
+      "Bash(git -C \"c:/Users/Usuario/Desktop/ASAP/Cobranzas\" add frontend/src/facturacion/FacturacionApp.tsx)",
+      "Bash(git -C c:/Users/Usuario/Desktop/ASAP/Cobranzas commit -m ' *)"
     ]
   }
 }
