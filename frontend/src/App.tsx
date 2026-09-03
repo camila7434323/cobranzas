@@ -271,6 +271,9 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
   const [pdfNoEncontrado, setPdfNoEncontrado] = useState('')
   const [perfil, setPerfil] = useState<{ rol: 'admin' | 'gerencia' | 'ejecutivo'; ejecutivo_nombre: string | null; nombre: string } | null | undefined>(undefined)
   const adminMode = perfil?.rol === 'admin'
+  // Un ejecutivo solo ve sus propios datos (RLS), así que los selectores de
+  // "ejecutivo" no deben ofrecer toda la lista: únicamente su propio nombre.
+  const soloMiEjecutivo = perfil?.rol === 'ejecutivo' && perfil.ejecutivo_nombre ? [perfil.ejecutivo_nombre] : null
   useEffect(() => {
     let activo = true
     supabase.from('perfiles').select('rol, ejecutivo_nombre, nombre').eq('id', session.user.id).single()
@@ -897,7 +900,7 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
     }))),
   ]
 
-  const globalEjecutivoOpts = [...new Set(globalRowsSinFiltrar.map(r => r.ejecutivo).filter(Boolean))].sort() as string[]
+  const globalEjecutivoOpts = soloMiEjecutivo ?? ([...new Set(globalRowsSinFiltrar.map(r => r.ejecutivo).filter(Boolean))].sort() as string[])
   const globalClienteOpts   = [...new Set(globalRowsSinFiltrar.filter(r => !globalFiltroEjecutivo || r.ejecutivo === globalFiltroEjecutivo).map(r => r.cliente).filter(Boolean))].sort() as string[]
 
   const globalRows = globalRowsSinFiltrar.filter(r => {
@@ -1717,7 +1720,7 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
               />
               <select value={filtroEjecutivoHistorial} onChange={e => setFiltroEjecutivoHistorial(e.target.value)} style={SEL}>
                 <option value="">Todos los ejecutivos</option>
-                {EJECUTIVOS.map(e => <option key={e} value={e}>{e}</option>)}
+                {(soloMiEjecutivo ?? EJECUTIVOS).map(e => <option key={e} value={e}>{e}</option>)}
               </select>
               <select value={filtroClienteHistorial} onChange={e => setFiltroClienteHistorial(e.target.value)} style={SEL}>
                 <option value="">Todos los clientes</option>
@@ -1849,7 +1852,7 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
               />
               <select value={filtroEjecutivoClientes} onChange={e => setFiltroEjecutivoClientes(e.target.value)} style={SEL}>
                 <option value="">Todos los ejecutivos</option>
-                {EJECUTIVOS.map(e => <option key={e} value={e}>{e}</option>)}
+                {(soloMiEjecutivo ?? EJECUTIVOS).map(e => <option key={e} value={e}>{e}</option>)}
               </select>
               {hayFiltrosClientes && <button onClick={limpiarFiltrosClientes} style={BTN_LIMPIAR}>✕ Limpiar</button>}
             </div>
@@ -1982,7 +1985,7 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
             {!esPanelEjecutivo && <div style={{ display: 'flex', gap: '8px', marginBottom: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
               <select value={ejecutivoSeleccionado || ''} onChange={e => setEjecutivoSeleccionado(e.target.value || null)} style={SEL}>
                 <option value="">Todos los ejecutivos</option>
-                {EJECUTIVOS.map(e => <option key={e} value={e}>{e}</option>)}
+                {(soloMiEjecutivo ?? EJECUTIVOS).map(e => <option key={e} value={e}>{e}</option>)}
               </select>
               <select value={filtroClienteTabla} onChange={e => setFiltroClienteTabla(e.target.value)} style={SEL}>
                 <option value="">Todos los clientes</option>
