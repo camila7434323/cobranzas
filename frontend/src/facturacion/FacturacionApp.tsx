@@ -139,7 +139,7 @@ const exportXlsx = (filename: string, rows: Array<Array<string | number>>) => {
 export function FacturacionApp({ session, onCambiarModulo }: { session: Session; onCambiarModulo: () => void }) {
   const { data, loading, error, insertarLote } = useFacturacionLineas()
   const { buscarPdf } = usePdfsStorage()
-  const [vista, setVista] = useState<Vista>('dashboard')
+  const [vista, setVista] = useState<Vista>('detalle')
   const [empresaActiva, setEmpresaActiva] = useState('all')
   const [busqueda, setBusqueda] = useState('')
   const [modo, setModo] = useState<Modo>('compania')
@@ -233,7 +233,7 @@ export function FacturacionApp({ session, onCambiarModulo }: { session: Session;
         </div>
 
         <SideTitle>Vistas</SideTitle>
-        <button onClick={abrirDashboard} style={navStyle(vista === 'dashboard')}>▥ <span>Panel de Ventas</span></button>
+        <button onClick={abrirDashboard} disabled title="Panel de Ventas deshabilitado" style={{ ...navStyle(false), opacity: 0.35, cursor: 'not-allowed' }}>▥ <span>Panel de Ventas</span></button>
         <div style={{ height: 1, background: 'rgba(255,255,255,.08)', margin: '10px 20px' }} />
         <SideTitle>Compañías</SideTitle>
         <button onClick={() => irEmpresa('all')} style={navStyle(vista === 'detalle' && empresaActiva === 'all')}><span style={dot} /> Todas las compañías</button>
