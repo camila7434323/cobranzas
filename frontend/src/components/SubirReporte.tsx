@@ -237,9 +237,11 @@ function Overlay({ state, onClose, onContinue }: {
 interface Props {
   batchUpsert?: (rows: Extra[]) => Promise<void>
   onExport?: () => void
+  /** Modo solo lectura (gerencia): oculta la carga de XML, deja únicamente Exportar Excel. */
+  soloExport?: boolean
 }
 
-export function SubirReporte({ batchUpsert, onExport }: Props) {
+export function SubirReporte({ batchUpsert, onExport, soloExport = false }: Props) {
   const inputRef        = useRef<HTMLInputElement | null>(null)
   const xmlRef          = useRef<HTMLInputElement | null>(null)
   const pendingRowsRef  = useRef<Extra[]>([])
@@ -355,9 +357,9 @@ export function SubirReporte({ batchUpsert, onExport }: Props) {
       />
 
       <div
-        onDragOver={e => { e.preventDefault(); setDragOver(true) }}
-        onDragLeave={() => setDragOver(false)}
-        onDrop={handleDrop}
+        onDragOver={soloExport ? undefined : e => { e.preventDefault(); setDragOver(true) }}
+        onDragLeave={soloExport ? undefined : () => setDragOver(false)}
+        onDrop={soloExport ? undefined : handleDrop}
         style={{
           background: '#fff', border: dragOver ? '2px dashed #2554a0' : '1px solid #d9e2f1',
           borderRadius: '10px', padding: '16px 20px', marginBottom: '20px',
@@ -373,19 +375,19 @@ export function SubirReporte({ batchUpsert, onExport }: Props) {
             </svg>
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: '14px', fontWeight: 700, color: '#0d1b38', marginBottom: '2px' }}>Actualizar datos</div>
-            <div style={{ fontSize: '12px', color: '#7a8fbb' }}>Arrastrá el XML acá o hacé clic — detecta cobros automáticamente</div>
+            <div style={{ fontSize: '14px', fontWeight: 700, color: '#0d1b38', marginBottom: '2px' }}>{soloExport ? 'Exportar a Excel' : 'Actualizar datos'}</div>
+            <div style={{ fontSize: '12px', color: '#7a8fbb' }}>{soloExport ? 'Descargá el detalle actual de la cartera' : 'Arrastrá el XML acá o hacé clic — detecta cobros automáticamente'}</div>
           </div>
           <div style={{ display: 'flex', gap: '8px', flexShrink: 0, flexWrap: 'wrap' }}>
-            <label style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', background: cargando ? '#7a8fbb' : '#2554a0', color: '#fff', padding: '9px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, cursor: cargando ? 'not-allowed' : 'pointer', userSelect: 'none', whiteSpace: 'nowrap' }}>
+            {!soloExport && <label style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', background: cargando ? '#7a8fbb' : '#2554a0', color: '#fff', padding: '9px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, cursor: cargando ? 'not-allowed' : 'pointer', userSelect: 'none', whiteSpace: 'nowrap' }}>
               {/* always render both icon and spinner — toggle display to avoid insertBefore */}
               <span style={{ width: '13px', height: '13px', border: '2px solid rgba(255,255,255,0.35)', borderTopColor: '#fff', borderRadius: '50%', display: cargando ? 'inline-block' : 'none', animation: 'spin 0.8s linear infinite', flexShrink: 0 }} />
               <svg style={{ display: cargando ? 'none' : '' }} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
               {cargando ? 'Procesando...' : 'Cargar XML cobranzas'}
               <input ref={inputRef} type="file" accept=".xls,.xlsx,.csv,.xml" onChange={handleArchivo} disabled={cargando} style={{ display: 'none' }} />
-            </label>
+            </label>}
 
-            {batchUpsert && (
+            {batchUpsert && !soloExport && (
               <label style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', background: cargandoXml ? '#7a8fbb' : '#0f766e', color: '#fff', padding: '9px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, cursor: cargandoXml ? 'not-allowed' : 'pointer', userSelect: 'none', whiteSpace: 'nowrap' }}>
               <span style={{ width: '13px', height: '13px', border: '2px solid rgba(255,255,255,0.35)', borderTopColor: '#fff', borderRadius: '50%', display: cargandoXml ? 'inline-block' : 'none', animation: 'spin 0.8s linear infinite', flexShrink: 0 }} />
               <svg style={{ display: cargandoXml ? 'none' : '' }} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
