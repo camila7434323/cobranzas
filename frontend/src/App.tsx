@@ -293,6 +293,12 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
       setVista(prev => prev === 'global' ? 'todos' : prev)
       setSociedadesAbiertas(prev => ({ ...prev, sa: true }))
     }
+    // Gerencia arranca directamente en el Dashboard de ASAP SA (solo desde la
+    // vista inicial por defecto; si ya navegó a otro lado, no lo movemos).
+    if (perfil?.rol === 'gerencia') {
+      setVista(prev => prev === 'global' ? 'dashboard' : prev)
+      setSociedadesAbiertas(prev => ({ ...prev, sa: true }))
+    }
   }, [perfil])
   const [expandedRows, setExpandedRows]       = useState<Set<string>>(new Set())
   const [expandedGlobalRows, setExpandedGlobalRows] = useState<Set<string>>(new Set())
