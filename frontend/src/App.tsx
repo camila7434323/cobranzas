@@ -1201,7 +1201,20 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
             return (
               <div key={key} style={{ marginBottom: '8px' }}>
                 <button
-                  onClick={() => { setSociedadActiva(key); setSociedadesAbiertas(prev => ({ sa: false, llc: false, sl: false, [key]: !prev[key] })); setBusqueda(''); setBusquedaHistorial(''); setBusquedaClientes(''); if (vista === 'global') setVista(perfil?.rol === 'ejecutivo' ? 'todos' : 'dashboard') }}
+                  onClick={() => {
+                    setSociedadActiva(key)
+                    setSociedadesAbiertas(prev => ({ sa: false, llc: false, sl: false, [key]: !prev[key] }))
+                    setBusqueda(''); setBusquedaHistorial(''); setBusquedaClientes('')
+                    // Admin/gerencia vuelven a la vista general de la sociedad: si venían de
+                    // mirar el panel de un ejecutivo puntual, no debe quedar pegado.
+                    // Un ejecutivo sí necesita conservar su propia selección (ver efecto arriba).
+                    if (perfil?.rol !== 'ejecutivo') {
+                      setEjecutivoSeleccionado(null)
+                      setFiltroClienteTabla(''); setFiltroEstadoTabla(''); setFiltroMoraRange('')
+                      setSortCol(null); setSortDir('asc')
+                    }
+                    if (vista === 'global') setVista(perfil?.rol === 'ejecutivo' ? 'todos' : 'dashboard')
+                  }}
                   style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', padding: '10px 12px', borderRadius: '9px', border: activa ? '1px solid #3b6bc9' : '1px solid rgba(255,255,255,0.12)', background: activa ? '#2554a0' : 'rgba(255,255,255,0.06)', color: '#fff', cursor: 'pointer', fontSize: '13px', fontWeight: 700 }}
                 >
                   <span style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
