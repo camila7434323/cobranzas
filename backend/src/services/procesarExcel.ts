@@ -597,9 +597,12 @@ async function sincronizarComprobantes(
   // No pisar el ejecutivo si el comprobante ya existe: puede haber sido
   // reasignado manualmente desde la app, y no queremos que un reimport lo
   // devuelva al valor "de fábrica" de ejecutivosPorCliente.
-  const comprobantesActivos = comprobantes.map(c => {
-    const existente = todosMap.get(c.comprobante)
-    const ejecutivo = existente ? existente.ejecutivo : c.ejecutivo
+  const comprobantesActivos = comprobantes.map(cRaw => {
+    const existente = todosMap.get(cRaw.comprobante)
+    const ejecutivo = existente ? existente.ejecutivo : cRaw.ejecutivo
+    // Si este XML no trajo condición pero el comprobante ya tenía una, no la
+    // borramos: un reimport parcial no debe dejar la condición vacía.
+    const c = { ...cRaw, condicion: cRaw.condicion || existente?.condicion || '' }
     const override = overrideMap.get(c.comprobante)
     if (!override || override === c.condicion) {
       return { ...c, ejecutivo, estado: 'pendiente' as const, updated_at: ahora }
@@ -772,7 +775,14 @@ function parsearCrystalReportsXML(xmlText: string): ComprobanteImportado[] {
     }
     if (on === 'Fecha11')         pending.emision   = parsearFecha(val) || undefined
     if (on === 'Fecha21')         pending.fecha21   = parsearFecha(val) || undefined
-    if (on === 'CondicionVenta1') pending.condicion = val.replace(/^\d+\s*/, '').trim()
+    if (on === 'CondicionVenta1') {
+      // El XML trae la condición como "<código> <texto>" (ej. "08 CTA CTE 30 DIAS").
+      // Sacamos el código, pero si al hacerlo queda vacío (el valor era solo un
+      // número, ej. "30") conservamos el original: la condición nunca debe
+      // terminar vacía si el XML trae algo.
+      const bruto = (fv || val || '').trim()
+      pending.condicion = bruto.replace(/^\d+\s*/, '').trim() || bruto
+    }
     if (on === 'Simbolo2')        pending.moneda    = val.toLowerCase().trim()
     if (on === 'acSaldo1' && val) pending.monto_ars = val
     if (on === 'cveSaldoMonCC1')  pending.monto     = val
