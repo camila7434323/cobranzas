@@ -2061,7 +2061,8 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
                     const cmp = typeof av === 'number' ? av - bv : String(av ?? '').localeCompare(String(bv ?? ''))
                     return sortDir === 'asc' ? cmp : -cmp
                   })
-                : arr
+                // Sin orden manual: de la factura más atrasada a la más nueva (mayor mora primero)
+                : [...arr].sort((a, b) => b.dias_mora - a.dias_mora)
 
               const ordenados = [...ordenarGrupo(vencidas), ...ordenarGrupo(proximasTabla), ...ordenarGrupo(sinVencer)]
 
