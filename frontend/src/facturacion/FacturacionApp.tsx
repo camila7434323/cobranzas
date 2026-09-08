@@ -324,12 +324,15 @@ export function FacturacionApp({ session, onCambiarModulo }: { session: Session;
               setCcsSel={setCcsSel}
             />
           ) : (
-            <>
+            // flexShrink:0 evita que <main> (flex column) achique este bloque por
+            // debajo de su contenido: sin esto la tabla larga queda recortada y
+            // no se puede scrollear hasta el final del listado.
+            <div style={{ flexShrink: 0 }}>
               <div style={{ marginBottom: 16 }}>
                 <input value={busqueda} onChange={e => setBusqueda(e.target.value)} placeholder="Buscar en toda la facturación (cliente, CUIT, ejecutivo, factura, período, artículo, importe...)" style={inputStyle} />
               </div>
               <Detalle key={empresaActiva} filas={filas} empresaActiva={empresaActiva} onAbrirPdf={abrirPdf} />
-            </>
+            </div>
           )}
         </main>
       </section>
@@ -652,8 +655,23 @@ function Detalle({ filas, empresaActiva, onAbrirPdf }: { filas: FacturacionLinea
     return true
   }), [filas, clientesSel, ejecutivosSel, periodosSel, nFacturaText])
 
-  const ccsOpts = useMemo(() => Array.from(new Set(baseFiltered.map(nombreCc))).sort((a, b) => a.localeCompare(b)), [baseFiltered])
-  const ccFiltered = useMemo(() => baseFiltered.filter(r => !ccsSel.length || ccsSel.includes(nombreCc(r))), [baseFiltered, ccsSel])
+  // Clave canónica de CC: sin acentos, sin espacios de más, minúsculas. Evita que
+  // "Salesforce - Salesforce" y variantes con doble espacio / mayúsculas queden
+  // como opciones distintas y que la selección no matchee las filas.
+  const ccKey = (r: FacturacionLinea) => normalizar(nombreCc(r).replace(/\s+/g, ' ').trim())
+  const ccsOpts = useMemo(() => {
+    const porClave = new Map<string, string>()
+    for (const r of baseFiltered) {
+      const k = ccKey(r)
+      if (!porClave.has(k)) porClave.set(k, nombreCc(r).replace(/\s+/g, ' ').trim())
+    }
+    return Array.from(porClave.values()).sort((a, b) => a.localeCompare(b))
+  }, [baseFiltered])
+  const ccFiltered = useMemo(() => {
+    if (!ccsSel.length) return baseFiltered
+    const sel = new Set(ccsSel.map(v => normalizar(v.replace(/\s+/g, ' ').trim())))
+    return baseFiltered.filter(r => sel.has(ccKey(r)))
+  }, [baseFiltered, ccsSel])
 
   const sorted = useMemo(() => {
     if (!sort.col) return ccFiltered
@@ -686,10 +704,22 @@ function Detalle({ filas, empresaActiva, onAbrirPdf }: { filas: FacturacionLinea
   const sortArrow = (col: SortCol) => sort.col === col ? (sort.dir === 'asc' ? ' ▲' : ' ▼') : ''
   const clearFilters = () => { setClientesSel([]); setEjecutivosSel([]); setPeriodosSel([]); setCcsSel([]); setNFacturaText('') }
 
+  // Todo lo que esté filtrado se muestra como burbujas quitables arriba de la tabla.
+  const chipsFiltro: { key: string; texto: string; quitar: () => void }[] = [
+    ...clientesSel.map(v => ({ key: `cli:${v}`, texto: `Cliente: ${v}`, quitar: () => setClientesSel(clientesSel.filter(x => x !== v)) })),
+    ...ejecutivosSel.map(v => ({ key: `eje:${v}`, texto: `Ejecutivo: ${v}`, quitar: () => setEjecutivosSel(ejecutivosSel.filter(x => x !== v)) })),
+    ...periodosSel.map(v => ({ key: `per:${v}`, texto: `Período: ${mesLabel(v)}`, quitar: () => setPeriodosSel(periodosSel.filter(x => x !== v)) })),
+    ...ccsSel.map(v => ({ key: `cc:${v}`, texto: `CC: ${v}`, quitar: () => setCcsSel(ccsSel.filter(x => x !== v)) })),
+    ...(nFacturaText.trim() ? [{ key: 'nf', texto: `N° Factura: ${nFacturaText.trim()}`, quitar: () => setNFacturaText('') }] : []),
+  ]
+
   const kpiColors = ['#19a8e6', '#059669', '#d97706', '#7c3aed']
 
   return (
     <Card noPadding>
+      <div style={{ padding: '14px 14px 0' }}>
+        <div style={notice}>ℹ️ <strong>Facturación desglosada por línea</strong> (una factura puede tener varias filas). Filtrá lo que necesites — los indicadores de abajo se recalculan automáticamente con tu selección.</div>
+      </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12, padding: 14 }}>
         {porMoneda.map(([m, v]) => <Kpi key={m} label={`Total facturado (${m})`} value={fmtMoney(v, m)} color={kpiColors[0]} />)}
         <Kpi label="Clientes" value={String(clientesCount)} color={kpiColors[1]} />
@@ -709,11 +739,20 @@ function Detalle({ filas, empresaActiva, onAbrirPdf }: { filas: FacturacionLinea
             r.oc || '', r.leyenda || '',
           ]),
         ])}>↓ Excel</button>
-        <button style={clearBtn} onClick={clearFilters}>✕ Limpiar filtros</button>
+        {chipsFiltro.length > 0 && <button style={clearBtn} onClick={clearFilters}>✕ Limpiar filtros</button>}
       </CardHeader>
-      <div style={{ padding: '12px 16px 0' }}>
-        <div style={notice}>ℹ️ <strong>Facturación desglosada por línea</strong> (una factura puede tener varias filas). Filtrá lo que necesites — los indicadores de arriba se recalculan automáticamente con tu selección.</div>
-      </div>
+      {chipsFiltro.length > 0 && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', padding: '12px 16px 0' }}>
+          <span style={{ fontSize: 12, fontWeight: 700, color: '#7286bd', whiteSpace: 'nowrap' }}>🔎 Filtros activos:</span>
+          {chipsFiltro.map(c => (
+            <span key={c.key} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#eef6fd', border: '1px solid #c6e5f4', color: '#1d5a8a', borderRadius: 999, padding: '4px 6px 4px 12px', fontSize: 12, fontWeight: 600, maxWidth: 280 }}>
+              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.texto}</span>
+              <button onClick={c.quitar} aria-label={`Quitar ${c.texto}`} style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 18, height: 18, borderRadius: '50%', border: 'none', background: 'transparent', color: '#5a7fa0', fontSize: 14, lineHeight: 1, cursor: 'pointer', flexShrink: 0 }}>×</button>
+            </span>
+          ))}
+          <button onClick={clearFilters} style={{ marginLeft: 'auto', background: 'none', border: 'none', color: '#7286bd', fontSize: 12, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}>Limpiar todos</button>
+        </div>
+      )}
       {filas.length === 0 ? <div style={emptyStyle}>Sin datos para esta selección.</div> : (
         <div style={{ overflowX: 'auto' }}>
           <table style={{ ...tableStyle, minWidth: 980 }}>
