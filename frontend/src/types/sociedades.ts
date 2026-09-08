@@ -1,5 +1,5 @@
 export const CONDICION_OPTS = [
-  'Cuenta Corriente 7 días', 'Cuenta Corriente a 15 días', 'Cuenta Corriente 30 días',
+  'Cuenta Corriente 7 días', 'Cuenta Corriente 15 días', 'Cuenta Corriente 30 días',
   'Cuenta Corriente 45 días', 'Cuenta Corriente 60 días', 'Cuenta Corriente 90 días', 'Contado',
 ]
 

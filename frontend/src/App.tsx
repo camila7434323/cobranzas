@@ -40,7 +40,8 @@ function DescPanel({ comprobante, extra, adminMode, onUpdate, condicionActual = 
     descripcion: e?.descripcion ?? '', centro_costo: e?.centro_costo ?? '',
     tipo_servicio: e?.tipo_servicio ?? '', oc_hes_pedido: e?.oc_hes_pedido ?? '',
     colaborador: e?.colaborador ?? '', otros_conceptos: e?.otros_conceptos ?? '',
-    condicion_override: e?.condicion_override ?? condicionActual, periodo: e?.periodo ?? '', nota: e?.nota ?? '',
+    // Un override vacío significa "usar la condición del comprobante", no "sin condición".
+    condicion_override: e?.condicion_override || condicionActual, periodo: e?.periodo ?? '', nota: e?.nota ?? '',
   })
   const [vals, setVals] = useState<Record<string, string>>(toVals(extra))
   const [initialVals, setInitialVals] = useState<Record<string, string>>(toVals(extra))
@@ -101,6 +102,11 @@ function DescPanel({ comprobante, extra, adminMode, onUpdate, condicionActual = 
                 style={{ width: '100%', padding: '6px 10px', borderRadius: '6px', border: '1px solid #dde3f0', fontSize: '12px', background: '#fff', color: '#374151', outline: 'none' }}
               >
                 <option value="">—</option>
+                {/* Si la condición que trae el comprobante no está en la lista estándar
+                    (ej. variantes del XML), la agregamos igual para que no se vea vacía. */}
+                {!!(vals[f.key] || '').trim() && !CONDICION_OPTS.includes(vals[f.key]) && (
+                  <option value={vals[f.key]}>{vals[f.key]}</option>
+                )}
                 {CONDICION_OPTS.map(o => <option key={o} value={o}>{o}</option>)}
               </select>
             ) : (
@@ -1491,7 +1497,7 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
                               <td colSpan={10} style={{ padding: 0 }}>
                                 {r.manual
                                   ? <ManualDetallePanel factura={r.manual} fmtFecha={fmtFecha} />
-                                  : <DescPanel comprobante={r.comprobante} extra={extra} adminMode={adminMode} onUpdate={handleUpdateExtra} />}
+                                  : <DescPanel comprobante={r.comprobante} extra={extra} adminMode={adminMode} condicionActual={data.find(d => d.comprobante === r.comprobante)?.condicion || ''} onUpdate={handleUpdateExtra} />}
                               </td>
                             </tr>
                           )}
