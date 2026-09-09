@@ -280,6 +280,10 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
   // Un ejecutivo solo ve sus propios datos (RLS), así que los selectores de
   // "ejecutivo" no deben ofrecer toda la lista: únicamente su propio nombre.
   const soloMiEjecutivo = perfil?.rol === 'ejecutivo' && perfil.ejecutivo_nombre ? [perfil.ejecutivo_nombre] : null
+  // A qué ejecutivo se vuelve al "limpiar": para un ejecutivo, siempre a sí mismo
+  // (así no cae en la tabla plana y sigue viendo su panel con las cards de
+  // Vencidas / Próximas / Al día); para admin/gerencia, a "ninguno".
+  const ejecutivoPorDefecto = perfil?.rol === 'ejecutivo' ? (perfil.ejecutivo_nombre || null) : null
   useEffect(() => {
     let activo = true
     supabase.from('perfiles').select('rol, ejecutivo_nombre, nombre').eq('id', session.user.id).single()
@@ -618,7 +622,7 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
   const cerrarModal = () => { setModalComprobante(null); setLinkCopiado(false) }
 
   const limpiarSeleccionTabla = () => {
-    setEjecutivoSeleccionado(null)
+    setEjecutivoSeleccionado(ejecutivoPorDefecto)
     setFiltroClienteTabla('')
     setFiltroEstadoTabla('')
     setFiltroMoraRange('')
