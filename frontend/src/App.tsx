@@ -496,13 +496,32 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
     })).sort((a, b) => b.monto - a.monto)
 
   // ── historial filtrado ────────────────────────────────────────────────────
-  const qHistorial = normalizar(busquedaHistorial.trim())
+  const camposExtraHistorial = (ex: Extra | undefined) => ex
+    ? [ex.descripcion, ex.centro_costo, ex.tipo_servicio, ex.oc_hes_pedido, ex.colaborador, ex.otros_conceptos, ex.periodo, ex.nota, ex.condicion_override]
+    : []
+  // Cada palabra clave puede matchear en un campo distinto (OC + cliente, etc.);
+  // busca en comprobante, cliente, ejecutivo, cobrador, monto, fecha y todos los
+  // datos de "información adicional" (OC, centro de costo, descripción, período…).
+  const tokensHistorial = normalizar(busquedaHistorial.trim()).split(/\s+/).filter(Boolean)
   const historialFiltradoSinOrden = historial.filter(r => {
     if (filtroEjecutivoHistorial && r.ejecutivo !== filtroEjecutivoHistorial) return false
     if (filtroClienteHistorial   && r.cliente   !== filtroClienteHistorial)   return false
     if (filtroFechaDesde && r.fecha_cobro < filtroFechaDesde) return false
     if (filtroFechaHasta && r.fecha_cobro > filtroFechaHasta + 'T23:59:59') return false
-    if (qHistorial && ![r.comprobante_numero, r.cliente, r.ejecutivo, r.cobrado_por].some(v => normalizar(String(v || '')).includes(qHistorial))) return false
+    if (tokensHistorial.length) {
+      const campos = [
+        r.comprobante_numero, r.cliente, r.ejecutivo, r.cobrado_por,
+        String(r.monto ?? ''), String(r.fecha_cobro || '').slice(0, 10),
+        ...camposExtraHistorial(extras.get(r.comprobante_numero)),
+      ].map(v => normalizar(String(v || '')))
+      // También sin espacios/guiones/puntos: así "ITSC441" matchea "OC ITSC-441".
+      const camposAlnum = campos.map(c => c.replace(/[^a-z0-9]/g, ''))
+      const ok = tokensHistorial.every(t => {
+        const ta = t.replace(/[^a-z0-9]/g, '')
+        return campos.some(c => c.includes(t)) || (!!ta && camposAlnum.some(c => c.includes(ta)))
+      })
+      if (!ok) return false
+    }
     return true
   })
   const historialFiltrado = sortColHistorial
