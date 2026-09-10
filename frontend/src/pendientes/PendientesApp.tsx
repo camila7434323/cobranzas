@@ -436,7 +436,7 @@ export function PendientesApp({ onCambiarModulo }: { session: Session; onCambiar
         )}
 
         {!modoAdmin ? (
-          <div className="admin-note">Solo el administrador puede editar, eliminar o aprobar un pendiente.</div>
+          <div className="admin-note">Activá el <b>Modo administrador</b> (arriba a la derecha) para editar, eliminar o aprobar un pendiente.</div>
         ) : editId === r.id ? null : (
           <>
             <div className="approve-box" onClick={e => e.stopPropagation()}>
