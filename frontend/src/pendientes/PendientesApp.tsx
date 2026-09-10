@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useMemo, useState } from 'react'
+import { Fragment, useMemo, useState } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
 import { usePendientes, type Pendiente } from './usePendientes'
@@ -189,16 +189,8 @@ const CSS = `
 
 const flagUrl = (f: string) => `https://flagcdn.com/16x12/${f}.png`
 
-export function PendientesApp({ session, onCambiarModulo }: { session: Session; onCambiarModulo: () => void }) {
+export function PendientesApp({ onCambiarModulo }: { session: Session; onCambiarModulo: () => void }) {
   const { rows, loading, error, crear, actualizar, eliminar } = usePendientes()
-  const [rol, setRol] = useState<'admin' | 'gerencia' | 'ejecutivo' | null | undefined>(undefined)
-
-  useEffect(() => {
-    let vivo = true
-    supabase.from('perfiles').select('rol').eq('id', session.user.id).single()
-      .then(({ data }) => { if (vivo) setRol((data?.rol as 'admin' | 'gerencia' | 'ejecutivo' | undefined) ?? null) })
-    return () => { vivo = false }
-  }, [session.user.id])
 
   const hoy = useMemo(() => new Date(), [])
   const [vista, setVista] = useState<Vista>('todos')
@@ -386,20 +378,6 @@ export function PendientesApp({ session, onCambiarModulo }: { session: Session; 
     document.body.appendChild(a); a.click(); document.body.removeChild(a)
     URL.revokeObjectURL(url)
     aviso('Excel descargado')
-  }
-
-  // ── acceso ────────────────────────────────────────────────────────────────
-  if (rol === undefined) return null
-  if (rol !== 'admin') {
-    return (
-      <div style={{ width: '100vw', height: '100vh', display: 'grid', placeItems: 'center', background: '#f6f5fc', fontFamily: 'Inter, sans-serif' }}>
-        <div style={{ textAlign: 'center', maxWidth: 340 }}>
-          <div style={{ fontSize: 17, fontWeight: 800, color: '#0d1b38', marginBottom: 6 }}>Acceso restringido</div>
-          <div style={{ fontSize: 13, color: '#7a8fbb', marginBottom: 18 }}>El módulo de Pendientes de Facturación es solo para cuentas de administración.</div>
-          <button onClick={onCambiarModulo} style={{ background: '#4f46e5', color: '#fff', border: 'none', borderRadius: 8, padding: '9px 18px', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>← Cambiar de app</button>
-        </div>
-      </div>
-    )
   }
 
   // ── render helpers ────────────────────────────────────────────────────────

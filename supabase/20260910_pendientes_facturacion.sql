@@ -1,6 +1,6 @@
 -- Módulo "Pendientes de Facturación": cosas que faltan para poder facturar
 -- (OC, HES, aprobaciones internas, respuesta del cliente…). Se registran a mano;
--- el sistema no las detecta solo. Solo las cuentas admin ven y editan este módulo.
+-- el sistema no las detecta solo. Lo puede usar cualquier usuario autenticado.
 create table if not exists public.pendientes_facturacion (
   id uuid primary key default gen_random_uuid(),
   entidad text not null check (entidad in ('sa', 'llc', 'sl')),
@@ -28,7 +28,8 @@ create index if not exists pendientes_facturacion_entidad_idx on public.pendient
 alter table public.pendientes_facturacion enable row level security;
 
 drop policy if exists "Pendientes facturacion solo admin" on public.pendientes_facturacion;
-create policy "Pendientes facturacion solo admin"
+drop policy if exists "Pendientes facturacion autenticados" on public.pendientes_facturacion;
+create policy "Pendientes facturacion autenticados"
 on public.pendientes_facturacion for all
-using (public.rol_actual() = 'admin')
-with check (public.rol_actual() = 'admin');
+using (auth.role() = 'authenticated')
+with check (auth.role() = 'authenticated');
