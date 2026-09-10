@@ -1,8 +1,9 @@
-type Modulo = 'cobranzas' | 'facturacion'
+type Modulo = 'cobranzas' | 'facturacion' | 'pendientes'
 
 const OPCIONES: { key: Modulo; inicial: string; nombre: string; desc: string; color: string }[] = [
   { key: 'cobranzas', inicial: 'C', nombre: 'Cobranzas', desc: 'Estado de cuenta e historial de pagos por cliente y ejecutivo.', color: '#2554a0' },
   { key: 'facturacion', inicial: 'F', nombre: 'Facturación', desc: 'Detalle de facturas por cliente, ejecutivo, centro de costos, periodos y otros.', color: '#0e7490' },
+  { key: 'pendientes', inicial: 'P', nombre: 'Pendientes de Facturación', desc: 'Lo que falta para poder facturar (OC, HES, aprobaciones) y las demoras por cliente. Solo administración.', color: '#4f46e5' },
 ]
 
 export function ModuloSelector({ onSelect }: { onSelect: (modulo: Modulo) => void }) {

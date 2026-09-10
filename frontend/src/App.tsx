@@ -7,6 +7,7 @@ import { ManualSociedadView } from './components/ManualSociedadView'
 import { Login } from './components/Login'
 import { ModuloSelector } from './components/ModuloSelector'
 import { FacturacionApp } from './facturacion/FacturacionApp'
+import { PendientesApp } from './pendientes/PendientesApp'
 import { EJECUTIVOS, CONDICIONES_CLIENTE } from './data/ejecutivos'
 import { supabase } from './lib/supabase'
 import type { Session } from '@supabase/supabase-js'
@@ -221,8 +222,9 @@ const BTN_LIMPIAR: React.CSSProperties = {
 
 function App() {
   const [session, setSession] = useState<Session | null | undefined>(undefined)
-  const [modulo, setModulo] = useState<'cobranzas' | 'facturacion' | null>(
-    () => (localStorage.getItem('asap_modulo') as 'cobranzas' | 'facturacion' | null) || null
+  type Modulo = 'cobranzas' | 'facturacion' | 'pendientes'
+  const [modulo, setModulo] = useState<Modulo | null>(
+    () => (localStorage.getItem('asap_modulo') as Modulo | null) || null
   )
 
   useEffect(() => {
@@ -231,7 +233,7 @@ function App() {
     return () => subscription.unsubscribe()
   }, [])
 
-  const elegirModulo = (m: 'cobranzas' | 'facturacion') => {
+  const elegirModulo = (m: Modulo) => {
     localStorage.setItem('asap_modulo', m)
     setModulo(m)
   }
@@ -244,9 +246,9 @@ function App() {
   if (!modulo) return <ModuloSelector onSelect={elegirModulo} />
   if (!session) return <Login modulo={modulo} onVolver={cambiarModulo} />
 
-  return modulo === 'facturacion'
-    ? <FacturacionApp session={session} onCambiarModulo={cambiarModulo} />
-    : <AppInterna session={session} onCambiarModulo={cambiarModulo} />
+  if (modulo === 'facturacion') return <FacturacionApp session={session} onCambiarModulo={cambiarModulo} />
+  if (modulo === 'pendientes') return <PendientesApp session={session} onCambiarModulo={cambiarModulo} />
+  return <AppInterna session={session} onCambiarModulo={cambiarModulo} />
 }
 
 function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarModulo: () => void }) {

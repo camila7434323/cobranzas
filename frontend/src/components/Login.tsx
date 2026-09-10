@@ -1,11 +1,12 @@
 import { useState } from 'react'
 import { supabase } from '../lib/supabase'
 
-type Modulo = 'cobranzas' | 'facturacion'
+type Modulo = 'cobranzas' | 'facturacion' | 'pendientes'
 
 const MODULO_INFO: Record<Modulo, { inicial: string; nombre: string }> = {
   cobranzas: { inicial: 'C', nombre: 'Cobranzas' },
   facturacion: { inicial: 'F', nombre: 'Facturación' },
+  pendientes: { inicial: 'P', nombre: 'Pendientes de Facturación' },
 }
 
 export function Login({ modulo = 'cobranzas', onVolver }: { modulo?: Modulo; onVolver?: () => void }) {
