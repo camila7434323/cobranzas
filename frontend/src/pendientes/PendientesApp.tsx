@@ -1,4 +1,4 @@
-import { Fragment, useMemo, useState } from 'react'
+import { Fragment, useEffect, useMemo, useState } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
 import { usePendientes, type Pendiente } from './usePendientes'
@@ -189,13 +189,22 @@ const CSS = `
 
 const flagUrl = (f: string) => `https://flagcdn.com/16x12/${f}.png`
 
-export function PendientesApp({ onCambiarModulo }: { session: Session; onCambiarModulo: () => void }) {
+export function PendientesApp({ session, onCambiarModulo }: { session: Session; onCambiarModulo: () => void }) {
   const { rows, loading, error, crear, actualizar, eliminar } = usePendientes()
 
   const hoy = useMemo(() => new Date(), [])
   const [vista, setVista] = useState<Vista>('todos')
   const [busqueda, setBusqueda] = useState('')
   const [modoAdmin, setModoAdmin] = useState(false)
+
+  // Si entra una cuenta admin, el Modo administrador arranca en ON; el resto en OFF.
+  // Después de eso el usuario lo puede togglear a mano.
+  useEffect(() => {
+    let vivo = true
+    supabase.from('perfiles').select('rol').eq('id', session.user.id).single()
+      .then(({ data }) => { if (vivo && data?.rol === 'admin') setModoAdmin(true) })
+    return () => { vivo = false }
+  }, [session.user.id])
   const [sort, setSort] = useState<{ key: SortKey; dir: 'asc' | 'desc' }>({ key: 'dias', dir: 'desc' })
   const [openRow, setOpenRow] = useState<string | null>(null)
   const [openHist, setOpenHist] = useState<string | null>(null)
