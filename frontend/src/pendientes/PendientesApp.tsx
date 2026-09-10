@@ -195,16 +195,17 @@ export function PendientesApp({ session, onCambiarModulo }: { session: Session; 
   const hoy = useMemo(() => new Date(), [])
   const [vista, setVista] = useState<Vista>('todos')
   const [busqueda, setBusqueda] = useState('')
-  const [modoAdmin, setModoAdmin] = useState(false)
 
-  // Si entra una cuenta admin, el Modo administrador arranca en ON; el resto en OFF.
-  // Después de eso el usuario lo puede togglear a mano.
+  // El Modo administrador lo define el rol de la cuenta y no se puede cambiar a mano:
+  // admin => ON (edita, elimina, aprueba); cualquier otra cuenta => OFF (solo lectura).
+  const [esAdmin, setEsAdmin] = useState(false)
   useEffect(() => {
     let vivo = true
     supabase.from('perfiles').select('rol').eq('id', session.user.id).single()
-      .then(({ data }) => { if (vivo && data?.rol === 'admin') setModoAdmin(true) })
+      .then(({ data }) => { if (vivo) setEsAdmin(data?.rol === 'admin') })
     return () => { vivo = false }
   }, [session.user.id])
+  const modoAdmin = esAdmin
   const [sort, setSort] = useState<{ key: SortKey; dir: 'asc' | 'desc' }>({ key: 'dias', dir: 'desc' })
   const [openRow, setOpenRow] = useState<string | null>(null)
   const [openHist, setOpenHist] = useState<string | null>(null)
@@ -715,9 +716,9 @@ export function PendientesApp({ session, onCambiarModulo }: { session: Session; 
             <svg viewBox="0 0 16 16" fill="none"><circle cx="7" cy="7" r="4.5" stroke="currentColor" strokeWidth={1.3} /><path d="M11 11l2.5 2.5" stroke="currentColor" strokeWidth={1.3} strokeLinecap="round" /></svg>
             <input className="search-input" value={busqueda} onChange={e => setBusqueda(e.target.value)} placeholder="Buscar cliente o concepto..." />
           </div>
-          <button className={`admin-btn ${modoAdmin ? 'on' : ''}`} onClick={() => { setModoAdmin(v => !v); setEditId(null) }}>
+          <span className={`admin-btn ${modoAdmin ? 'on' : ''}`} style={{ cursor: 'default' }} title="Lo define el rol de tu cuenta">
             Modo administrador: {modoAdmin ? 'ON' : 'OFF'}
-          </button>
+          </span>
           <button className="topbar-btn" onClick={abrirModal}>
             <svg viewBox="0 0 16 16" fill="none"><path d="M8 3v10M3 8h10" stroke="#fff" strokeWidth={1.6} strokeLinecap="round" /></svg>
             Nuevo pendiente
