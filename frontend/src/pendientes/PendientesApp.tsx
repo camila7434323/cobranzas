@@ -133,6 +133,7 @@ const CSS = `
 .pfc .hist-title { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); margin-bottom:6px; }
 .pfc .hist-line { font-size:12.5px; color:var(--text2); padding:5px 0 5px 12px; border-left:2px solid var(--border2); margin-bottom:4px; }
 .pfc .hist-line b { color:var(--text); }
+.pfc .hist-by { color:var(--muted); font-style:italic; }
 .pfc .note-row { display:flex; gap:8px; margin-top:10px; }
 .pfc .note-row input { flex:1; font-size:12.5px; padding:8px 11px; border:1px solid var(--border); border-radius:8px; font:inherit; }
 .pfc .note-row button { font-size:12.5px; font-weight:600; padding:8px 15px; border-radius:8px; border:none; background:var(--navy-500); color:#fff; cursor:pointer; font:inherit; }
@@ -190,7 +191,7 @@ const CSS = `
 const flagUrl = (f: string) => `https://flagcdn.com/16x12/${f}.png`
 
 export function PendientesApp({ session, onCambiarModulo }: { session: Session; onCambiarModulo: () => void }) {
-  const { rows, loading, error, crear, actualizar, eliminar } = usePendientes()
+  const { rows, loading, error, crear, actualizar, eliminar, agregarComentario } = usePendientes()
 
   const hoy = useMemo(() => new Date(), [])
   const [vista, setVista] = useState<Vista>('todos')
@@ -277,10 +278,10 @@ export function PendientesApp({ session, onCambiarModulo }: { session: Session; 
     const t = nota.trim()
     if (!t) return
     try {
-      await actualizar(r.id, { hist: [...r.hist, { f: shortHoy(hoy), t }] })
+      await agregarComentario(r.id, t)
       setNota('')
-      aviso('Novedad guardada')
-    } catch { aviso('No se pudo guardar la novedad') }
+      aviso('Comentario guardado')
+    } catch { aviso('No se pudo guardar el comentario') }
   }
 
   const empezarEdicion = (r: ActivoConDias) => {
@@ -417,11 +418,11 @@ export function PendientesApp({ session, onCambiarModulo }: { session: Session; 
           {modoAdmin && <button className="btn-ghost" style={{ padding: '3px 10px', fontSize: 11.5, marginLeft: 8 }} onClick={e => { e.stopPropagation(); repetir(r) }}>Repetir para otro período</button>}
         </div>
         <div className="hist-title">Seguimiento</div>
-        {r.hist.map((h, i) => <div key={i} className="hist-line"><b>{h.f}</b> — {h.t}</div>)}
+        {r.hist.map((h, i) => <div key={i} className="hist-line"><b>{h.f}</b> — {h.t}{h.by && <span className="hist-by"> · {h.by}</span>}</div>)}
         <div className="note-row">
           <input value={openRow === r.id ? nota : ''} onChange={e => setNota(e.target.value)}
             onClick={e => e.stopPropagation()}
-            placeholder="Agregar novedad... ej: me informaron que sigue demorado por falta de aprobación interna" />
+            placeholder="Agregar comentario... ej: me informaron que sigue demorado por falta de aprobación interna" />
           <button onClick={e => { e.stopPropagation(); guardarNota(r) }}>Guardar</button>
         </div>
 
@@ -446,7 +447,7 @@ export function PendientesApp({ session, onCambiarModulo }: { session: Session; 
         )}
 
         {!modoAdmin ? (
-          <div className="admin-note">Activá el <b>Modo administrador</b> (arriba a la derecha) para editar, eliminar o aprobar un pendiente.</div>
+          <div className="admin-note">Tu cuenta solo puede dejar comentarios de seguimiento acá arriba. Agregar, editar, eliminar o aprobar un pendiente requiere una cuenta admin.</div>
         ) : editId === r.id ? null : (
           <>
             <div className="approve-box" onClick={e => e.stopPropagation()}>
@@ -584,7 +585,7 @@ export function PendientesApp({ session, onCambiarModulo }: { session: Session; 
                           Debió facturarse el <b>{fmtDate(r.deber)}</b> — estuvo pendiente {r.dias_al_aprobar} días antes de resolverse.
                         </div>
                         <div className="hist-title">Seguimiento completo</div>
-                        {r.hist.map((h, i) => <div key={i} className="hist-line"><b>{h.f}</b> — {h.t}</div>)}
+                        {r.hist.map((h, i) => <div key={i} className="hist-line"><b>{h.f}</b> — {h.t}{h.by && <span className="hist-by"> · {h.by}</span>}</div>)}
                         <div className="hist-final">Aprobado el {r.aprobado_el} vía {r.via}. {r.comentario}</div>
                       </td>
                     </tr>
@@ -719,10 +720,12 @@ export function PendientesApp({ session, onCambiarModulo }: { session: Session; 
           <span className={`admin-btn ${modoAdmin ? 'on' : ''}`} style={{ cursor: 'default' }} title="Lo define el rol de tu cuenta">
             Modo administrador: {modoAdmin ? 'ON' : 'OFF'}
           </span>
-          <button className="topbar-btn" onClick={abrirModal}>
-            <svg viewBox="0 0 16 16" fill="none"><path d="M8 3v10M3 8h10" stroke="#fff" strokeWidth={1.6} strokeLinecap="round" /></svg>
-            Nuevo pendiente
-          </button>
+          {modoAdmin && (
+            <button className="topbar-btn" onClick={abrirModal}>
+              <svg viewBox="0 0 16 16" fill="none"><path d="M8 3v10M3 8h10" stroke="#fff" strokeWidth={1.6} strokeLinecap="round" /></svg>
+              Nuevo pendiente
+            </button>
+          )}
         </header>
 
         <main className="main">

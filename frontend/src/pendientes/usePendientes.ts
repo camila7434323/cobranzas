@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 
-export type HistItem = { f: string; t: string }
+export type HistItem = { f: string; t: string; by?: string }
 
 export type Pendiente = {
   id: string
@@ -80,5 +80,16 @@ export function usePendientes() {
     await cargar()
   }
 
-  return { rows, loading, error, refetch: cargar, crear, actualizar, eliminar }
+  // A diferencia de `actualizar`, esto lo puede llamar cualquier cuenta
+  // autenticada (no solo admin): es la única escritura habilitada para
+  // terceros, vía una función de la base que agrega el comentario dejando
+  // registro de quién lo escribió (no permite tocar ningún otro campo).
+  const agregarComentario = async (id: string, texto: string) => {
+    const { error: dbError } = await supabase
+      .rpc('pendientes_agregar_comentario', { p_id: id, p_texto: texto })
+    if (dbError) throw dbError
+    await cargar()
+  }
+
+  return { rows, loading, error, refetch: cargar, crear, actualizar, eliminar, agregarComentario }
 }
