@@ -24,6 +24,13 @@ function fmt(n: number) {
   return '$' + Math.round(n).toLocaleString('es-AR')
 }
 
+function calcularDiasMoraDesde(fechaVencimiento: string | null): number {
+  if (!fechaVencimiento) return 0
+  const hoy = new Date(); hoy.setHours(0, 0, 0, 0)
+  const vencimiento = new Date(`${fechaVencimiento}T00:00:00`)
+  return Math.max(0, Math.floor((hoy.getTime() - vencimiento.getTime()) / 86400000))
+}
+
 function seccionHTML(titulo: string, color: string, facturas: any[], mostrarDias: boolean = true) {
   if (facturas.length === 0) return ''
   const filas = facturas.map(f => `
@@ -154,6 +161,12 @@ export async function enviarAlertas() {
   if (!comprobantes || comprobantes.length === 0) {
     console.log('No hay comprobantes pendientes')
     return
+  }
+
+  // La mora se recalcula acá en base a fecha_vencimiento vs hoy, en vez de
+  // confiar en la columna dias_mora (que queda congelada desde la última carga).
+  for (const c of comprobantes) {
+    c.dias_mora = calcularDiasMoraDesde(c.fecha_vencimiento)
   }
 
   // Agregar facturas próximas a vencer (en 7 días)

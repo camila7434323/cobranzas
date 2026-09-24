@@ -1,6 +1,13 @@
 import { useEffect, useState, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 
+function calcularDiasMoraDesde(fechaVencimiento: string | null): number {
+  if (!fechaVencimiento) return 0
+  const hoy = new Date(); hoy.setHours(0, 0, 0, 0)
+  const vencimiento = new Date(`${fechaVencimiento}T00:00:00`)
+  return Math.max(0, Math.floor((hoy.getTime() - vencimiento.getTime()) / 86400000))
+}
+
 export function useComprobantes() {
   const [data, setData] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
@@ -22,7 +29,12 @@ export function useComprobantes() {
         setLoading(false)
         return
       }
-      setData(result || [])
+      // La mora se recalcula acá en base a fecha_vencimiento vs hoy, en vez de
+      // confiar en la columna dias_mora (que queda congelada desde la última carga).
+      const normalizado = (result || [])
+        .map(r => ({ ...r, dias_mora: calcularDiasMoraDesde(r.fecha_vencimiento) }))
+        .sort((a, b) => b.dias_mora - a.dias_mora)
+      setData(normalizado)
       setLoading(false)
     } catch (err: any) {
       console.error('Error en cargar comprobantes:', err)
