@@ -172,6 +172,8 @@ export function FacturacionApp({ session, onCambiarModulo }: { session: Session;
   )
   const loading = loadingLineas || perfil === undefined
   const nombreUsuario = session.user.user_metadata?.full_name || perfil?.ejecutivo_nombre || session.user.email?.split('@')[0] || 'Usuario'
+  const palabras = nombreUsuario.trim().split(/\s+/)
+  const iniciales = (palabras.length > 1 ? palabras[0][0] + palabras[palabras.length - 1][0] : nombreUsuario.slice(0, 2)).toUpperCase()
   const [vista, setVista] = useState<Vista>('detalle')
   const [empresaActiva, setEmpresaActiva] = useState('all')
   const [busqueda, setBusqueda] = useState('')
@@ -269,7 +271,7 @@ export function FacturacionApp({ session, onCambiarModulo }: { session: Session;
 
         <div style={{ padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 10 }}>
           <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#14a9e1', border: '2px solid rgba(255,255,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: '#fff', flexShrink: 0 }}>
-            {nombreUsuario.slice(0, 2).toUpperCase()}
+            {iniciales}
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ color: '#fff', fontSize: 12, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{nombreUsuario}</div>
