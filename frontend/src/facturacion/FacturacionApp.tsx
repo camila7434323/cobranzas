@@ -152,8 +152,25 @@ const exportXlsx = (filename: string, rows: Array<Array<string | number>>) => {
 }
 
 export function FacturacionApp({ session, onCambiarModulo }: { session: Session; onCambiarModulo: () => void }) {
-  const { data, loading, error, insertarLote } = useFacturacionLineas()
+  const { data: dataTodas, loading: loadingLineas, error, insertarLote } = useFacturacionLineas()
   const { buscarPdf } = usePdfsStorage()
+
+  // Igual que en Cobranzas: un ejecutivo ve solo sus cuentas; admin, gerencia
+  // (o cualquier otro rol) ven todo. Mientras no se sabe el rol se sigue en "cargando"
+  // para no mostrarle por un instante datos ajenos a un ejecutivo.
+  const [perfil, setPerfil] = useState<{ rol: string; ejecutivo_nombre: string | null } | null | undefined>(undefined)
+  useEffect(() => {
+    let activo = true
+    supabase.from('perfiles').select('rol, ejecutivo_nombre').eq('id', session.user.id).single()
+      .then(({ data: p }) => { if (activo) setPerfil(p ?? null) })
+    return () => { activo = false }
+  }, [session.user.id])
+  const soloEjecutivo = perfil?.rol === 'ejecutivo' ? normalizar(perfil.ejecutivo_nombre || '').trim() : null
+  const data = useMemo(
+    () => soloEjecutivo === null ? dataTodas : dataTodas.filter(r => !!soloEjecutivo && normalizar(r.ejecutivo || '').trim() === soloEjecutivo),
+    [dataTodas, soloEjecutivo]
+  )
+  const loading = loadingLineas || perfil === undefined
   const [vista, setVista] = useState<Vista>('detalle')
   const [empresaActiva, setEmpresaActiva] = useState('all')
   const [busqueda, setBusqueda] = useState('')
@@ -273,6 +290,7 @@ export function FacturacionApp({ session, onCambiarModulo }: { session: Session;
         <header style={{ height: 58, background: '#fff', borderBottom: '1px solid #d3eaf6', padding: '0 28px', display: 'flex', alignItems: 'center', gap: 12, boxShadow: '0 1px 5px rgba(10,22,40,0.08)' }}>
           <span style={{ fontSize: 20, fontWeight: 800 }}>Facturación</span>
           <span style={{ color: '#7286bd', fontSize: 13 }}>· {empresaActiva === 'all' ? 'Todas las compañías' : empresaActiva}</span>
+          {soloEjecutivo !== null && perfil?.ejecutivo_nombre && <span style={{ background: '#ddeafd', color: '#1d4170', padding: '3px 10px', borderRadius: 20, fontSize: 12, fontWeight: 700 }}>Cuentas de {perfil.ejecutivo_nombre}</span>}
           <div style={{ flex: 1 }} />
           <span style={{ fontSize: 12, color: '#7a8fbb' }}>{session.user.email}</span>
         </header>
@@ -281,6 +299,10 @@ export function FacturacionApp({ session, onCambiarModulo }: { session: Session;
           {error && <div style={{ color: '#dc2626', marginBottom: 14, fontSize: 13 }}>⚠ {error}</div>}
           {loading ? (
             <div style={{ flex: 1, display: 'grid', placeItems: 'center' }}><div style={emptyStyle}>Cargando facturación...</div></div>
+          ) : data.length === 0 && soloEjecutivo !== null ? (
+            <div style={{ flex: 1, display: 'grid', placeItems: 'center' }}>
+              <div style={emptyStyle}>No hay facturación asignada a tu cuenta{dataTodas.length === 0 ? ' todavía' : ''}.</div>
+            </div>
           ) : data.length === 0 ? (
             <div style={{ flex: 1, display: 'grid', placeItems: 'center' }}>
               <div style={{ width: '100%', maxWidth: 680, background: '#fff', border: '1.5px dashed #b7dcf0', borderRadius: 12, padding: '64px 40px', textAlign: 'center' }}>
