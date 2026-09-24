@@ -192,8 +192,8 @@ export function ManualSociedadView({
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set())
   const [mostrarTodosClientes, setMostrarTodosClientes] = useState(false)
   const [busquedaHistorial, setBusquedaHistorial] = useState('')
-  const [sortCol, setSortCol] = useState<string | null>(null)
-  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
+  const [sortCol, setSortCol] = useState<string | null>('mora')
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
   const [sortColHist, setSortColHist] = useState<string | null>(null)
   const [sortDirHist, setSortDirHist] = useState<'asc' | 'desc'>('asc')
 
@@ -517,10 +517,13 @@ export function ManualSociedadView({
     { key: '', label: 'PDF', sortable: false },
     ...(adminMode ? [{ key: '', label: 'Acciones', sortable: false }] : []),
   ]
-  const facturasOrdenadas = ordenarPor(
-    facturasFiltradas, sortCol, sortDir,
-    (r, col) => col === 'mora' ? calcularDiasMora(r.fecha_vencimiento) : (r as any)[col]
-  )
+  // Orden por mora: mayor mora arriba y, entre las que aún no vencieron, la que vence más pronto
+  const ordenPorMora = (a: ManualFactura, b: ManualFactura) =>
+    calcularDiasMora(b.fecha_vencimiento) - calcularDiasMora(a.fecha_vencimiento) ||
+    (a.fecha_vencimiento || '9999-12-31').localeCompare(b.fecha_vencimiento || '9999-12-31')
+  const facturasOrdenadas = sortCol === 'mora'
+    ? [...facturasFiltradas].sort((a, b) => sortDir === 'desc' ? ordenPorMora(a, b) : ordenPorMora(b, a))
+    : ordenarPor(facturasFiltradas, sortCol, sortDir, (r, col) => (r as any)[col])
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
       {facturasFiltradas.length === 0 ? (

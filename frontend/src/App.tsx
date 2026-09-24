@@ -952,7 +952,7 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
     if (globalFiltroEstado === 'vencida'   && (r.estado === 'Cobrada' || r.diasMora <= 0)) return false
     if (globalFiltroEstado === 'sinvencer' && (r.estado === 'Cobrada' || r.diasMora > 0)) return false
     return true
-  })
+  }).sort((a, b) => (a.estado === 'Cobrada' ? 1 : 0) - (b.estado === 'Cobrada' ? 1 : 0) || b.diasMora - a.diasMora)
 
   const exportarGlobal = () => {
     const hoy = new Date().toISOString().slice(0, 10)
@@ -2093,7 +2093,8 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
                     return sortDir === 'asc' ? cmp : -cmp
                   })
                 // Sin orden manual: de la factura más atrasada a la más nueva (mayor mora primero)
-                : [...arr].sort((a, b) => b.dias_mora - a.dias_mora)
+                // (en las que aún no vencen, la mora es 0: se desempata por vencimiento más cercano)
+                : [...arr].sort((a, b) => b.dias_mora - a.dias_mora || (a.fecha_vencimiento || '9999-12-31').localeCompare(b.fecha_vencimiento || '9999-12-31'))
 
               const ordenados = [...ordenarGrupo(vencidas), ...ordenarGrupo(proximasTabla), ...ordenarGrupo(sinVencer)]
 
