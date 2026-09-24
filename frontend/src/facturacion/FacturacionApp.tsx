@@ -6,6 +6,7 @@ import { supabase } from '../lib/supabase'
 import { useFacturacionLineas, type FacturacionLinea } from './hooks/useFacturacionLineas'
 import { SubirFacturacionExcel } from './components/SubirFacturacionExcel'
 import { usePdfsStorage } from '../hooks/usePdfsStorage'
+import { usePdfsManuales } from '../hooks/usePdfsManuales'
 
 type Vista = 'dashboard' | 'detalle'
 type Modo = 'compania' | 'cliente' | 'cc'
@@ -154,6 +155,7 @@ const exportXlsx = (filename: string, rows: Array<Array<string | number>>) => {
 export function FacturacionApp({ session, onCambiarModulo }: { session: Session; onCambiarModulo: () => void }) {
   const { data: dataTodas, loading: loadingLineas, error, insertarLote } = useFacturacionLineas()
   const { buscarPdf } = usePdfsStorage()
+  const { buscarPdfManual } = usePdfsManuales()
 
   // Igual que en Cobranzas: un ejecutivo ve solo sus cuentas; admin, gerencia
   // (o cualquier otro rol) ven todo. Mientras no se sabe el rol se sigue en "cargando"
@@ -185,8 +187,9 @@ export function FacturacionApp({ session, onCambiarModulo }: { session: Session;
   const [pdfNoEncontrado, setPdfNoEncontrado] = useState('')
   const [modalPdf, setModalPdf] = useState<{ row: FacturacionLinea; url: string } | null>(null)
 
-  const abrirPdf = (row: FacturacionLinea) => {
-    const url = buscarPdf(row.n_factura)?.url
+  const abrirPdf = async (row: FacturacionLinea) => {
+    // Primero el bucket (facturas argentinas); si no está, las cargadas a mano en Cobranzas (exterior).
+    const url = buscarPdf(row.n_factura)?.url || await buscarPdfManual(row.n_factura)
     if (!url) {
       setPdfNoEncontrado(row.n_factura)
       setTimeout(() => setPdfNoEncontrado(''), 4000)
