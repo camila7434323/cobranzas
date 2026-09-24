@@ -171,6 +171,7 @@ export function FacturacionApp({ session, onCambiarModulo }: { session: Session;
     [dataTodas, soloEjecutivo]
   )
   const loading = loadingLineas || perfil === undefined
+  const nombreUsuario = session.user.user_metadata?.full_name || perfil?.ejecutivo_nombre || session.user.email?.split('@')[0] || 'Usuario'
   const [vista, setVista] = useState<Vista>('detalle')
   const [empresaActiva, setEmpresaActiva] = useState('all')
   const [busqueda, setBusqueda] = useState('')
@@ -266,6 +267,20 @@ export function FacturacionApp({ session, onCambiarModulo }: { session: Session;
           </div>
         </div>
 
+        <div style={{ padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#14a9e1', border: '2px solid rgba(255,255,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: '#fff', flexShrink: 0 }}>
+            {nombreUsuario.slice(0, 2).toUpperCase()}
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ color: '#fff', fontSize: 12, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{nombreUsuario}</div>
+            <div style={{ color: 'rgba(255,255,255,0.3)', fontSize: 10, display: 'flex', alignItems: 'center', gap: 4 }}>
+              <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#34d399', display: 'inline-block' }} />
+              {soloEjecutivo !== null ? 'Solo tus cuentas' : 'Activo'}
+            </div>
+          </div>
+        </div>
+        <div style={{ height: 1, background: 'rgba(255,255,255,.08)', margin: '0 20px 6px' }} />
+
         <SideTitle>Vistas</SideTitle>
         <button onClick={abrirDashboard} disabled title="Panel de Ventas deshabilitado" style={{ ...navStyle(false), opacity: 0.35, cursor: 'not-allowed' }}>▥ <span>Panel de Ventas</span></button>
         <div style={{ height: 1, background: 'rgba(255,255,255,.08)', margin: '10px 20px' }} />
@@ -290,7 +305,6 @@ export function FacturacionApp({ session, onCambiarModulo }: { session: Session;
         <header style={{ height: 58, background: '#fff', borderBottom: '1px solid #d3eaf6', padding: '0 28px', display: 'flex', alignItems: 'center', gap: 12, boxShadow: '0 1px 5px rgba(10,22,40,0.08)' }}>
           <span style={{ fontSize: 20, fontWeight: 800 }}>Facturación</span>
           <span style={{ color: '#7286bd', fontSize: 13 }}>· {empresaActiva === 'all' ? 'Todas las compañías' : empresaActiva}</span>
-          {soloEjecutivo !== null && perfil?.ejecutivo_nombre && <span style={{ background: '#ddeafd', color: '#1d4170', padding: '3px 10px', borderRadius: 20, fontSize: 12, fontWeight: 700 }}>Cuentas de {perfil.ejecutivo_nombre}</span>}
           <div style={{ flex: 1 }} />
           <span style={{ fontSize: 12, color: '#7a8fbb' }}>{session.user.email}</span>
         </header>
