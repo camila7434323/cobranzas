@@ -72,6 +72,16 @@ const coincideBusqueda = (r: FacturacionLinea, q: string) => {
 
 const flagCode = (moneda: string) => moneda === 'USD' ? 'us' : moneda === 'EUR' ? 'es' : 'ar'
 
+// La bandera es la de la sociedad que emite (SA = Argentina, LLC = EE.UU., SL = España),
+// no la de la moneda: una factura de SA puede estar en USD y no por eso es de EE.UU.
+const flagEmpresa = (empresa: string, moneda: string) => {
+  const e = normalizar(empresa || '')
+  if (/\bllc\b/.test(e)) return 'us'
+  if (/\bsl\b/.test(e)) return 'es'
+  if (/\bsa\b/.test(e)) return 'ar'
+  return flagCode(moneda)
+}
+
 const ORDEN_EMPRESAS = ['ASAP CONSULTING SA', 'ASAP CONSULTING LLC', 'IT ASAP CONSULTING SOLUTIONS, SL']
 const ordenEmpresa = (nombre: string) => {
   const i = ORDEN_EMPRESAS.indexOf(nombre)
@@ -293,7 +303,7 @@ export function FacturacionApp({ session, onCambiarModulo }: { session: Session;
         <button onClick={() => irEmpresa('all')} style={navStyle(vista === 'detalle' && empresaActiva === 'all')}><span style={dot} /> Todas las compañías</button>
         {empresas.map(e => (
           <button key={e.nombre} onClick={() => irEmpresa(e.nombre)} style={navStyle(vista === 'detalle' && empresaActiva === e.nombre)}>
-            <span className={`fi fi-${flagCode(e.moneda)}`} style={{ borderRadius: 2, flexShrink: 0 }} />
+            <span className={`fi fi-${flagEmpresa(e.nombre, e.moneda)}`} style={{ borderRadius: 2, flexShrink: 0 }} />
             <span>{e.nombre}</span>
           </button>
         ))}
@@ -466,7 +476,7 @@ function PanelVentas(props: {
           <Seg active={props.empresaActiva === 'all'} onClick={() => props.setEmpresaActiva('all')}>Todas</Seg>
           {props.empresas.map(e => (
             <Seg key={e.nombre} active={props.empresaActiva === e.nombre} onClick={() => props.setEmpresaActiva(e.nombre)}>
-              <span className={`fi fi-${flagCode(e.moneda)}`} style={{ borderRadius: 2, marginRight: 6, verticalAlign: 'middle', flexShrink: 0 }} />
+              <span className={`fi fi-${flagEmpresa(e.nombre, e.moneda)}`} style={{ borderRadius: 2, marginRight: 6, verticalAlign: 'middle', flexShrink: 0 }} />
               {e.nombre.toUpperCase()}
             </Seg>
           ))}
@@ -833,7 +843,7 @@ function Detalle({ filas, empresaActiva, onAbrirPdf }: { filas: FacturacionLinea
                     <tr onClick={() => toggleRow(r.id)} style={{ cursor: 'pointer' }}>
                       <Td>{isOpen ? '⌄' : '›'}</Td>
                       <Td>
-                        {empresaActiva === 'all' && <span className={`fi fi-${flagCode(moneda)}`} style={{ marginRight: 6, borderRadius: 2, verticalAlign: 'middle' }} />}
+                        {empresaActiva === 'all' && <span className={`fi fi-${flagEmpresa(r.empresa, moneda)}`} style={{ marginRight: 6, borderRadius: 2, verticalAlign: 'middle' }} />}
                         <strong>{nombreCliente(r)}</strong>
                         {r.cuit && <div style={{ fontSize: 10, color: '#7a8fbb', fontFamily: 'monospace', marginTop: 2 }}>{r.cuit}</div>}
                       </Td>
