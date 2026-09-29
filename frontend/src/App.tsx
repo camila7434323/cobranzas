@@ -508,13 +508,22 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
   // Cada palabra clave puede matchear en un campo distinto (OC + cliente, etc.);
   // busca en comprobante, cliente, ejecutivo, cobrador, monto, fecha y todos los
   // datos de "información adicional" (OC, centro de costo, descripción, período…).
-  const tokensHistorial = normalizar(busquedaHistorial.trim()).split(/\s+/).filter(Boolean)
+  const qHistorial = normalizar(busquedaHistorial.trim())
+  const tokensHistorial = qHistorial.split(/\s+/).filter(Boolean)
+  // Si lo buscado es parte del nombre de algún cliente, se filtra solo por cliente:
+  // si no, palabras sueltas ("sa", "grupo") matchean en notas/descripciones de otras empresas.
+  // Se compara sin mayúsculas, tildes, puntos, guiones ni espacios: "ypf sa" encuentra "YPF S.A.".
+  const clave = (v: string) => normalizar(v).replace(/[^a-z0-9]/g, '')
+  const qClaveHistorial = clave(busquedaHistorial)
+  const buscaPorClienteHistorial = !!qClaveHistorial && historial.some(r => clave(r.cliente || '').includes(qClaveHistorial))
   const historialFiltradoSinOrden = historial.filter(r => {
     if (filtroEjecutivoHistorial && r.ejecutivo !== filtroEjecutivoHistorial) return false
     if (filtroClienteHistorial   && r.cliente   !== filtroClienteHistorial)   return false
     if (filtroFechaDesde && r.fecha_cobro < filtroFechaDesde) return false
     if (filtroFechaHasta && r.fecha_cobro > filtroFechaHasta + 'T23:59:59') return false
-    if (tokensHistorial.length) {
+    if (buscaPorClienteHistorial) {
+      if (!clave(r.cliente || '').includes(qClaveHistorial)) return false
+    } else if (tokensHistorial.length) {
       const campos = [
         r.comprobante_numero, r.cliente, r.ejecutivo, r.cobrado_por,
         String(r.monto ?? ''), String(r.fecha_cobro || '').slice(0, 10),

@@ -246,9 +246,14 @@ export function ManualSociedadView({
   }
 
   if (vista === 'historial') {
-    const qHist = normalizar(busquedaHistorial.trim())
+    // Sin mayúsculas, tildes, puntos, guiones ni espacios: "ypf sa" encuentra "YPF S.A.".
+    const clave = (v: string) => normalizar(v).replace(/[^a-z0-9]/g, '')
+    const qHist = clave(busquedaHistorial)
+    const porCliente = !!qHist && historial.some(r => clave(r.cliente || '').includes(qHist))
     const historialFiltrado = ordenarPor(
-      historial.filter(r => !qHist || [r.comprobante, r.cliente, r.ejecutivo].some(v => normalizar(v || '').includes(qHist))),
+      historial.filter(r => !qHist || (porCliente
+        ? clave(r.cliente || '').includes(qHist)
+        : [r.comprobante, r.cliente, r.ejecutivo].some(v => clave(v || '').includes(qHist)))),
       sortColHist, sortDirHist,
       (r, col) => col === 'cobrado_el' ? (r.cobrado_el || '') : (r as any)[col]
     )
