@@ -1835,7 +1835,9 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
                       {historialFiltrado.map((r) => {
                         const ec = getExecColor(r.ejecutivo)
                         const fecha = r.fecha_cobro ? r.fecha_cobro.slice(0, 10) : '-'
-                        const rowKey = `hist-${r.comprobante_id || r.comprobante_numero}`
+                        // id propio del cobro: un mismo comprobante puede figurar varias veces en el historial,
+                        // y con claves repetidas React deja filas viejas en la tabla al filtrar.
+                        const rowKey = `hist-${r.id || `${r.comprobante_id || r.comprobante_numero}-${r.fecha_cobro}`}`
                         const isExp = expandedRows.has(rowKey)
                         const extra = extras.get(r.comprobante_numero)
                         return (
