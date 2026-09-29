@@ -23,7 +23,7 @@ const nombreCc = (r: FacturacionLinea) => r.cc_descripcion || 'Sin CC'
 const fmtMoney = (n: number, moneda: string) => {
   const value = n.toLocaleString(moneda === 'USD' ? 'en-US' : 'es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
   if (moneda === 'EUR') return `${value} €`
-  return moneda === 'USD' ? `$${value}` : `$ ${value}`
+  return moneda === 'USD' ? `US$ ${value}` : `$ ${value}`
 }
 
 const fmtShort = (n: number, moneda: string) => {
@@ -162,6 +162,8 @@ const exportXlsx = (filename: string, rows: Array<Array<string | number>>) => {
   XLSX.writeFile(wb, filename)
 }
 
+const CLAVE_PANEL_VENTAS = 'asap2026'
+
 export function FacturacionApp({ session, onCambiarModulo }: { session: Session; onCambiarModulo: () => void }) {
   const { data: dataTodas, loading: loadingLineas, error, insertarLote } = useFacturacionLineas()
   const { buscarPdf } = usePdfsStorage()
@@ -196,6 +198,10 @@ export function FacturacionApp({ session, onCambiarModulo }: { session: Session;
   const [ccsSel, setCcsSel] = useState<string[]>([])
   const [pdfNoEncontrado, setPdfNoEncontrado] = useState('')
   const [modalPdf, setModalPdf] = useState<{ row: FacturacionLinea; url: string } | null>(null)
+  const [ventasDesbloqueado, setVentasDesbloqueado] = useState(false)
+  const [pedirClaveVentas, setPedirClaveVentas] = useState(false)
+  const [claveVentas, setClaveVentas] = useState('')
+  const [claveVentasError, setClaveVentasError] = useState(false)
 
   const abrirPdf = async (row: FacturacionLinea) => {
     // Primero el bucket (facturas argentinas); si no está, las cargadas a mano en Cobranzas (exterior).
@@ -256,6 +262,12 @@ export function FacturacionApp({ session, onCambiarModulo }: { session: Session;
   }, [rowsEmpresa, busqueda])
 
   const abrirDashboard = () => {
+    if (!ventasDesbloqueado) {
+      setClaveVentas('')
+      setClaveVentasError(false)
+      setPedirClaveVentas(true)
+      return
+    }
     setVista('dashboard')
     setEmpresaActiva('all')
     setBusqueda('')
@@ -297,7 +309,7 @@ export function FacturacionApp({ session, onCambiarModulo }: { session: Session;
         <div style={{ height: 1, background: 'rgba(255,255,255,.08)', margin: '0 20px 6px' }} />
 
         <SideTitle>Vistas</SideTitle>
-        <button onClick={abrirDashboard} disabled title="Panel de Ventas deshabilitado" style={{ ...navStyle(false), opacity: 0.35, cursor: 'not-allowed' }}>▥ <span>Panel de Ventas</span></button>
+        <button onClick={abrirDashboard} style={navStyle(vista === 'dashboard')}>▥ <span>Panel de Ventas</span>{!ventasDesbloqueado && <span style={{ marginLeft: 'auto', fontSize: 11 }}>🔒</span>}</button>
         <div style={{ height: 1, background: 'rgba(255,255,255,.08)', margin: '10px 20px' }} />
         <SideTitle>Compañías</SideTitle>
         <button onClick={() => irEmpresa('all')} style={navStyle(vista === 'detalle' && empresaActiva === 'all')}><span style={dot} /> Todas las compañías</button>
@@ -392,6 +404,44 @@ export function FacturacionApp({ session, onCambiarModulo }: { session: Session;
         <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', zIndex: 1002, background: '#fef3c7', border: '1px solid #fcd34d', borderRadius: 10, padding: '16px 44px 16px 24px', fontSize: 14, color: '#92400e', fontWeight: 500, boxShadow: '0 10px 30px rgba(0,0,0,0.25)' }}>
           ⚠ Factura <strong>{pdfNoEncontrado}</strong> no subida a la base de datos.
           <button onClick={() => setPdfNoEncontrado('')} aria-label="Cerrar" style={{ position: 'absolute', top: 8, right: 10, background: 'none', border: 'none', cursor: 'pointer', color: '#92400e', fontSize: 18, lineHeight: 1, padding: 2 }}>×</button>
+        </div>
+      )}
+
+      {pedirClaveVentas && (
+        <div onClick={() => setPedirClaveVentas(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+          <form
+            onClick={e => e.stopPropagation()}
+            onSubmit={e => {
+              e.preventDefault()
+              if (claveVentas !== CLAVE_PANEL_VENTAS) {
+                setClaveVentasError(true)
+                return
+              }
+              setVentasDesbloqueado(true)
+              setPedirClaveVentas(false)
+              setVista('dashboard')
+              setEmpresaActiva('all')
+              setBusqueda('')
+              window.scrollTo({ top: 0 })
+            }}
+            style={{ background: '#fff', borderRadius: 16, width: '100%', maxWidth: 380, padding: 24, boxShadow: '0 20px 60px rgba(0,0,0,0.3)', display: 'grid', gap: 12 }}
+          >
+            <div style={{ fontSize: 16, fontWeight: 800, color: '#0d1b38' }}>🔒 Panel de Ventas</div>
+            <div style={{ fontSize: 13, color: '#7286bd' }}>Ingresá la contraseña para ver el panel.</div>
+            <input
+              type="password"
+              autoFocus
+              value={claveVentas}
+              onChange={e => { setClaveVentas(e.target.value); setClaveVentasError(false) }}
+              placeholder="Contraseña"
+              style={{ padding: '10px 12px', borderRadius: 8, border: `1px solid ${claveVentasError ? '#dc2626' : '#b7dcf0'}`, fontSize: 14, outline: 'none' }}
+            />
+            {claveVentasError && <div style={{ color: '#dc2626', fontSize: 12 }}>Contraseña incorrecta.</div>}
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+              <button type="button" onClick={() => setPedirClaveVentas(false)} style={{ padding: '8px 14px', borderRadius: 8, border: '1px solid #d3eaf6', background: '#fff', color: '#0d1b38', cursor: 'pointer', fontWeight: 600 }}>Cancelar</button>
+              <button type="submit" style={{ padding: '8px 14px', borderRadius: 8, border: 'none', background: '#14a9e1', color: '#fff', cursor: 'pointer', fontWeight: 700 }}>Entrar</button>
+            </div>
+          </form>
         </div>
       )}
 
