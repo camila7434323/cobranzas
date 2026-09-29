@@ -76,7 +76,19 @@ export function useComprobantes() {
     if (!rows.length) return
     const ahora = new Date().toISOString()
     const ids = rows.map(r => r.id)
-    const historialNuevo = rows.map(r => ({
+    // Un comprobante que ya estaba en el historial (lo marcaron cobrado, un XML lo
+    // volvió a pendiente y lo marcan de nuevo) no suma otra fila: se actualiza la que hay.
+    const { data: yaEnHistorial, error: errSel } = await supabase
+      .from('historial_cobros').select('comprobante_id').in('comprobante_id', ids)
+    if (errSel) throw errSel
+    const idsYaEnHistorial = new Set((yaEnHistorial || []).map(h => h.comprobante_id))
+    if (idsYaEnHistorial.size) {
+      const { error: errHistUpd } = await supabase.from('historial_cobros')
+        .update({ fecha_cobro: ahora, cobrado_por: cobradoPor })
+        .in('comprobante_id', Array.from(idsYaEnHistorial))
+      if (errHistUpd) throw errHistUpd
+    }
+    const historialNuevo = rows.filter(r => !idsYaEnHistorial.has(r.id)).map(r => ({
       comprobante_id:     r.id,
       comprobante_numero: r.comprobante,
       cliente:            r.nombre_cliente || 'Sin cliente',
@@ -85,8 +97,10 @@ export function useComprobantes() {
       cobrado_por:        cobradoPor,
       ejecutivo:          r.ejecutivo || 'Sin asignar',
     }))
-    const { error: errHist } = await supabase.from('historial_cobros').insert(historialNuevo)
-    if (errHist) throw errHist
+    if (historialNuevo.length) {
+      const { error: errHist } = await supabase.from('historial_cobros').insert(historialNuevo)
+      if (errHist) throw errHist
+    }
     const { error: errUpd } = await supabase.from('comprobantes').update({ estado: 'cobrado', updated_at: ahora }).in('id', ids)
     if (errUpd) throw errUpd
     setData(prev => prev.filter(r => !ids.includes(r.id)))

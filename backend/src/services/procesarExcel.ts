@@ -196,7 +196,12 @@ export async function registrarCobros(buffer: Buffer, usuario: string) {
   if (pendientes && pendientes.length > 0) {
     const ahora = new Date().toISOString()
     const idsACobrar = pendientes.map(p => p.id)
-    const historialNuevo = pendientes.map(p => ({
+    // No duplicar en el historial un comprobante que ya se había cobrado antes.
+    const { data: yaEnHistorial, error: errHistSel } = await supabase
+      .from('historial_cobros').select('comprobante_id').in('comprobante_id', idsACobrar)
+    if (errHistSel) throw errHistSel
+    const idsYaEnHistorial = new Set((yaEnHistorial || []).map((h: any) => h.comprobante_id))
+    const historialNuevo = pendientes.filter(p => !idsYaEnHistorial.has(p.id)).map(p => ({
       comprobante_id:     p.id,
       comprobante_numero: p.comprobante,
       cliente:            p.nombre_cliente || 'Sin cliente',
