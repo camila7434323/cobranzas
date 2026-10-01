@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, Fragment } from 'react'
+import { useState, useEffect, useRef, useCallback, Fragment } from 'react'
 import * as XLSX from 'xlsx-js-style'
 import { useComprobantes } from './hooks/useComprobantes'
 import { useHistorial } from './hooks/useHistorial'
@@ -6,6 +6,8 @@ import { SubirReporte } from './components/SubirReporte'
 import { ManualSociedadView } from './components/ManualSociedadView'
 import { Login } from './components/Login'
 import { ModuloSelector } from './components/ModuloSelector'
+import { IngresoWisoft } from './components/IngresoWisoft'
+import { controlarVencimientoSesion, limpiarInicioSesion } from './lib/sesion'
 import { FacturacionApp } from './facturacion/FacturacionApp'
 import { PendientesApp } from './pendientes/PendientesApp'
 import { EJECUTIVOS, CONDICIONES_CLIENTE } from './data/ejecutivos'
@@ -220,8 +222,19 @@ const BTN_LIMPIAR: React.CSSProperties = {
   fontSize: '12px', color: '#dc2626', background: '#fff5f5', cursor: 'pointer', fontWeight: 600,
 }
 
+// Ingreso desde WiSoft: llega como /ingreso?auth=<jwt>. Se lee una sola vez al
+// cargar y se saca de la URL enseguida para que no quede en el historial.
+function leerTokenWisoft(): string | null {
+  const token = new URLSearchParams(window.location.search).get('auth')
+  if (token) window.history.replaceState(null, '', '/')
+  return token
+}
+const TOKEN_WISOFT = leerTokenWisoft()
+
 function App() {
   const [session, setSession] = useState<Session | null | undefined>(undefined)
+  const [tokenWisoft, setTokenWisoft] = useState<string | null>(TOKEN_WISOFT)
+  const terminarIngresoWisoft = useCallback(() => setTokenWisoft(null), [])
   type Modulo = 'cobranzas' | 'facturacion' | 'pendientes'
   const [modulo, setModulo] = useState<Modulo | null>(
     () => (localStorage.getItem('asap_modulo') as Modulo | null) || null
@@ -233,6 +246,16 @@ function App() {
     return () => subscription.unsubscribe()
   }, [])
 
+  // Sesión de 10 hs como máximo (igual que Rentabilidad).
+  useEffect(() => {
+    if (tokenWisoft) return
+    if (session === null) { limpiarInicioSesion(); return }
+    if (!session) return
+    controlarVencimientoSesion()
+    const intervalo = setInterval(controlarVencimientoSesion, 60 * 1000)
+    return () => clearInterval(intervalo)
+  }, [session, tokenWisoft])
+
   const elegirModulo = (m: Modulo) => {
     localStorage.setItem('asap_modulo', m)
     setModulo(m)
@@ -242,6 +265,7 @@ function App() {
     setModulo(null)
   }
 
+  if (tokenWisoft) return <IngresoWisoft token={tokenWisoft} onListo={terminarIngresoWisoft} />
   if (session === undefined) return null
   if (!modulo) return <ModuloSelector onSelect={elegirModulo} />
   if (!session) return <Login modulo={modulo} onVolver={cambiarModulo} />
