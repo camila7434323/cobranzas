@@ -148,13 +148,13 @@ function Overlay({ state, onClose, onContinue }: {
   if (!state) return null
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Inter,sans-serif' }}>
-      <div style={{ background: '#fff', borderRadius: '16px', padding: '50px 40px', textAlign: 'center', maxWidth: '460px', width: '90%', boxShadow: '0 25px 80px rgba(0,0,0,0.6)' }}>
+      <div style={{ background: '#11223f', borderRadius: '16px', padding: '50px 40px', textAlign: 'center', maxWidth: '460px', width: '90%', boxShadow: '0 25px 80px rgba(0,0,0,0.55)' }}>
 
         {state.kind === 'loading' && (
           <>
-            <div style={{ width: '56px', height: '56px', border: '5px solid #dde3f0', borderTopColor: '#2554a0', borderRadius: '50%', margin: '0 auto 24px', animation: 'spin 0.8s linear infinite' }} />
-            <h2 style={{ color: '#0d1b38', margin: '0 0 10px', fontSize: '20px', fontWeight: 700 }}>{state.title}</h2>
-            <p style={{ color: '#7a8fbb', margin: 0, fontSize: '14px' }}>{state.sub}</p>
+            <div style={{ width: '56px', height: '56px', border: '5px solid #24395f', borderTopColor: '#3b6fd9', borderRadius: '50%', margin: '0 auto 24px', animation: 'spin 0.8s linear infinite' }} />
+            <h2 style={{ color: '#e7eefb', margin: '0 0 10px', fontSize: '20px', fontWeight: 700 }}>{state.title}</h2>
+            <p style={{ color: '#8ea0c4', margin: 0, fontSize: '14px' }}>{state.sub}</p>
             <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
           </>
         )}
@@ -162,41 +162,41 @@ function Overlay({ state, onClose, onContinue }: {
         {state.kind === 'success' && (
           <>
             <div style={{ fontSize: '54px', marginBottom: '18px' }}>✅</div>
-            <h2 style={{ color: '#059669', margin: '0 0 20px', fontSize: '22px', fontWeight: 700 }}>¡Carga completada!</h2>
-            <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '10px', padding: '18px', marginBottom: '16px', textAlign: 'left', color: '#14532d', fontSize: '14px', lineHeight: 2 }}>
+            <h2 style={{ color: '#7bf4cf', margin: '0 0 20px', fontSize: '22px', fontWeight: 700 }}>¡Carga completada!</h2>
+            <div style={{ background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(76,230,130,0.4)', borderRadius: '10px', padding: '18px', marginBottom: '16px', textAlign: 'left', color: '#8ce3af', fontSize: '14px', lineHeight: 2 }}>
               <div>✓ <strong>{state.nuevos}</strong> facturas nuevas</div>
               <div>✓ <strong>{state.actualizados}</strong> ya existían → cobradas</div>
               <div>✓ <strong>{state.cobradas}</strong> detectadas como cobradas</div>
               <div>✓ <strong>{state.total}</strong> comprobantes procesados</div>
             </div>
-            <p style={{ color: '#7a8fbb', margin: 0, fontSize: '12px', fontStyle: 'italic' }}>Recargando página...</p>
+            <p style={{ color: '#8ea0c4', margin: 0, fontSize: '12px', fontStyle: 'italic' }}>Recargando página...</p>
           </>
         )}
 
         {state.kind === 'success-xml' && (
           <>
             <div style={{ fontSize: '54px', marginBottom: '18px' }}>✅</div>
-            <h2 style={{ color: '#059669', margin: '0 0 14px', fontSize: '22px', fontWeight: 700 }}>XML cargado</h2>
-            <p style={{ color: '#7a8fbb', margin: 0, fontSize: '14px' }}>
+            <h2 style={{ color: '#7bf4cf', margin: '0 0 14px', fontSize: '22px', fontWeight: 700 }}>XML cargado</h2>
+            <p style={{ color: '#8ea0c4', margin: 0, fontSize: '14px' }}>
               <strong>{state.cantidad}</strong> descripciones guardadas correctamente.
               {!!state.omitidos && (
                 <span><br /><strong>{state.omitidos}</strong> no se cargaron porque todavía no existe ese comprobante.</span>
               )}
             </p>
-            <button onClick={onClose} style={{ marginTop: '24px', background: '#2554a0', color: '#fff', border: 'none', padding: '10px 28px', borderRadius: '8px', fontSize: '14px', fontWeight: 700, cursor: 'pointer' }}>Cerrar</button>
+            <button onClick={onClose} style={{ marginTop: '24px', background: '#3b6fd9', color: '#fff', border: 'none', padding: '10px 28px', borderRadius: '8px', fontSize: '14px', fontWeight: 700, cursor: 'pointer' }}>Cerrar</button>
           </>
         )}
 
         {state.kind === 'warning-xml' && (
           <>
             <div style={{ fontSize: '54px', marginBottom: '18px' }}>⚠️</div>
-            <h2 style={{ color: '#d97706', margin: '0 0 14px', fontSize: '20px', fontWeight: 700 }}>Comprobantes no encontrados</h2>
-            <div style={{ background: '#fffbeb', border: '1px solid #fcd34d', borderRadius: '10px', padding: '16px 18px', marginBottom: '20px', textAlign: 'left', color: '#92400e', fontSize: '14px', lineHeight: 1.7 }}>
+            <h2 style={{ color: '#f4bc7b', margin: '0 0 14px', fontSize: '20px', fontWeight: 700 }}>Comprobantes no encontrados</h2>
+            <div style={{ background: 'rgba(230,199,76,0.08)', border: '1px solid #fcd34d', borderRadius: '10px', padding: '16px 18px', marginBottom: '20px', textAlign: 'left', color: '#f3a97d', fontSize: '14px', lineHeight: 1.7 }}>
               <strong>{state.missing}</strong> de los <strong>{state.total}</strong> comprobantes del XML no existen en la base de datos.
               <br />
               Primero cargá el <strong>XML de cobranzas</strong> correspondiente para registrar esas facturas.
               {state.found > 0 && (
-                <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #fcd34d', color: '#78350f' }}>
+                <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #fcd34d', color: '#efa880' }}>
                   Los <strong>{state.found}</strong> comprobantes encontrados sí se pueden guardar.
                 </div>
               )}
@@ -212,7 +212,7 @@ function Overlay({ state, onClose, onContinue }: {
               )}
               <button
                 onClick={onClose}
-                style={{ background: state.found > 0 ? '#fff' : '#2554a0', color: state.found > 0 ? '#374151' : '#fff', border: state.found > 0 ? '1px solid #dde3f0' : 'none', padding: '10px 20px', borderRadius: '8px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}
+                style={{ background: state.found > 0 ? '#11223f' : '#3b6fd9', color: state.found > 0 ? '#e7eefb' : '#fff', border: state.found > 0 ? '1px solid #24395f' : 'none', padding: '10px 20px', borderRadius: '8px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}
               >
                 {state.found > 0 ? 'Cancelar' : 'Entendido'}
               </button>
@@ -223,9 +223,9 @@ function Overlay({ state, onClose, onContinue }: {
         {state.kind === 'error' && (
           <>
             <div style={{ fontSize: '54px', marginBottom: '18px' }}>❌</div>
-            <h2 style={{ color: '#dc2626', margin: '0 0 14px', fontSize: '20px', fontWeight: 700 }}>Error al procesar</h2>
-            <p style={{ color: '#7a8fbb', margin: '0 0 20px', fontSize: '14px' }}>{state.message}</p>
-            <button onClick={onClose} style={{ background: '#2554a0', color: '#fff', border: 'none', padding: '10px 28px', borderRadius: '8px', fontSize: '14px', fontWeight: 700, cursor: 'pointer' }}>Cerrar</button>
+            <h2 style={{ color: '#eb8484', margin: '0 0 14px', fontSize: '20px', fontWeight: 700 }}>Error al procesar</h2>
+            <p style={{ color: '#8ea0c4', margin: '0 0 20px', fontSize: '14px' }}>{state.message}</p>
+            <button onClick={onClose} style={{ background: '#3b6fd9', color: '#fff', border: 'none', padding: '10px 28px', borderRadius: '8px', fontSize: '14px', fontWeight: 700, cursor: 'pointer' }}>Cerrar</button>
           </>
         )}
 
@@ -361,27 +361,27 @@ export function SubirReporte({ batchUpsert, onExport, soloExport = false }: Prop
         onDragLeave={soloExport ? undefined : () => setDragOver(false)}
         onDrop={soloExport ? undefined : handleDrop}
         style={{
-          background: '#fff', border: dragOver ? '2px dashed #2554a0' : '1px solid #d9e2f1',
+          background: '#11223f', border: dragOver ? '2px dashed #3b6fd9' : '1px solid #24395f',
           borderRadius: '10px', padding: '16px 20px', marginBottom: '20px',
-          boxShadow: '0 2px 12px rgba(38,63,101,0.06)', transition: 'border-color 0.15s',
-          ...(dragOver ? { background: '#f0f4ff' } : {}),
+          boxShadow: '0 2px 12px rgba(0,0,0,0.21)', transition: 'border-color 0.15s',
+          ...(dragOver ? { background: '#0e1e39' } : {}),
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-          <div style={{ width: '42px', height: '42px', border: '1px solid #dde3f0', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, background: '#f8faff' }}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2554a0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <div style={{ width: '42px', height: '42px', border: '1px solid #24395f', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, background: '#11223f' }}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3b6fd9" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
               <polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
             </svg>
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: '14px', fontWeight: 700, color: '#0d1b38', marginBottom: '2px' }}>{soloExport ? 'Exportar a Excel' : 'Actualizar datos'}</div>
-            <div style={{ fontSize: '12px', color: '#7a8fbb' }}>{soloExport ? 'Descargá el detalle actual de la cartera' : 'Arrastrá el XML acá o hacé clic — detecta cobros automáticamente'}</div>
+            <div style={{ fontSize: '14px', fontWeight: 700, color: '#e7eefb', marginBottom: '2px' }}>{soloExport ? 'Exportar a Excel' : 'Actualizar datos'}</div>
+            <div style={{ fontSize: '12px', color: '#8ea0c4' }}>{soloExport ? 'Descargá el detalle actual de la cartera' : 'Arrastrá el XML acá o hacé clic — detecta cobros automáticamente'}</div>
           </div>
           <div style={{ display: 'flex', gap: '8px', flexShrink: 0, flexWrap: 'wrap' }}>
-            {!soloExport && <label style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', background: cargando ? '#7a8fbb' : '#2554a0', color: '#fff', padding: '9px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, cursor: cargando ? 'not-allowed' : 'pointer', userSelect: 'none', whiteSpace: 'nowrap' }}>
+            {!soloExport && <label style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', background: cargando ? '#7a8fbb' : '#3b6fd9', color: '#fff', padding: '9px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, cursor: cargando ? 'not-allowed' : 'pointer', userSelect: 'none', whiteSpace: 'nowrap' }}>
               {/* always render both icon and spinner — toggle display to avoid insertBefore */}
-              <span style={{ width: '13px', height: '13px', border: '2px solid rgba(255,255,255,0.35)', borderTopColor: '#fff', borderRadius: '50%', display: cargando ? 'inline-block' : 'none', animation: 'spin 0.8s linear infinite', flexShrink: 0 }} />
+              <span style={{ width: '13px', height: '13px', border: '2px solid rgba(255,255,255,0.35)', borderTopColor: '#24395f', borderRadius: '50%', display: cargando ? 'inline-block' : 'none', animation: 'spin 0.8s linear infinite', flexShrink: 0 }} />
               <svg style={{ display: cargando ? 'none' : '' }} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
               {cargando ? 'Procesando...' : 'Cargar XML cobranzas'}
               <input ref={inputRef} type="file" accept=".xls,.xlsx,.csv,.xml" onChange={handleArchivo} disabled={cargando} style={{ display: 'none' }} />
@@ -389,7 +389,7 @@ export function SubirReporte({ batchUpsert, onExport, soloExport = false }: Prop
 
             {batchUpsert && !soloExport && (
               <label style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', background: cargandoXml ? '#7a8fbb' : '#0f766e', color: '#fff', padding: '9px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, cursor: cargandoXml ? 'not-allowed' : 'pointer', userSelect: 'none', whiteSpace: 'nowrap' }}>
-              <span style={{ width: '13px', height: '13px', border: '2px solid rgba(255,255,255,0.35)', borderTopColor: '#fff', borderRadius: '50%', display: cargandoXml ? 'inline-block' : 'none', animation: 'spin 0.8s linear infinite', flexShrink: 0 }} />
+              <span style={{ width: '13px', height: '13px', border: '2px solid rgba(255,255,255,0.35)', borderTopColor: '#24395f', borderRadius: '50%', display: cargandoXml ? 'inline-block' : 'none', animation: 'spin 0.8s linear infinite', flexShrink: 0 }} />
               <svg style={{ display: cargandoXml ? 'none' : '' }} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
                 {cargandoXml ? 'Procesando...' : 'Cargar XML descripciones'}
                 <input ref={xmlRef} type="file" accept=".xml" onChange={handleXml} disabled={cargandoXml} style={{ display: 'none' }} />
@@ -406,7 +406,7 @@ export function SubirReporte({ batchUpsert, onExport, soloExport = false }: Prop
         </div>
 
         {error && (
-          <div style={{ color: '#dc2626', marginTop: '10px', fontSize: '13px', fontWeight: 500 }}>
+          <div style={{ color: '#eb8484', marginTop: '10px', fontSize: '13px', fontWeight: 500 }}>
             ⚠️ {error}
           </div>
         )}

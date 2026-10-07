@@ -12,7 +12,7 @@ import { Sidebar, SidebarHeader, SidebarUser, SidebarNav, SidebarSeccion, Sideba
 type Vista = 'dashboard' | 'detalle'
 type Modo = 'compania' | 'cliente' | 'cc'
 
-const PALETTE = ['#1ba9e5', '#38bdf8', '#72c8ee', '#147c91', '#a7b7ff', '#b9a7f5', '#80e0a0', '#f5c84b', '#f99aaa', '#cbd5e1', '#55dfc9']
+const PALETTE = ['#5b8def', '#38bdf8', '#72c8ee', '#147c91', '#a7b7ff', '#b9a7f5', '#80e0a0', '#f5c84b', '#f99aaa', '#cbd5e1', '#55dfc9']
 const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
 const MESES_CORTOS = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic']
 
@@ -90,16 +90,16 @@ const ordenEmpresa = (nombre: string) => {
 }
 
 const EXEC_PALETTE = [
-  { bg: '#ddeafd', text: '#1d4170', bd: '#a8c4f5' },
-  { bg: '#d1fae5', text: '#065f46', bd: '#6ee7b7' },
-  { bg: '#fef3c7', text: '#92400e', bd: '#fcd34d' },
-  { bg: '#ede9fe', text: '#4c1d95', bd: '#c4b5fd' },
-  { bg: '#ccfbf1', text: '#0f766e', bd: '#5eead4' },
-  { bg: '#cffafe', text: '#155e75', bd: '#67e8f9' },
-  { bg: '#fce7f3', text: '#9d174d', bd: '#f9a8d4' },
-  { bg: '#e0e7ff', text: '#3730a3', bd: '#a5b4fc' },
-  { bg: '#dcfce7', text: '#166534', bd: '#86efac' },
-  { bg: '#ffedd5', text: '#9a3412', bd: '#fdba74' },
+  { bg: 'rgba(76,139,230,0.16)', text: '#a9c4ff', bd: 'rgba(76,132,230,0.4)' },
+  { bg: 'rgba(76,230,151,0.16)', text: '#7bf4d2', bd: '#6ee7b7' },
+  { bg: 'rgba(230,199,76,0.16)', text: '#f3a97d', bd: '#fcd34d' },
+  { bg: 'rgba(139,92,246,0.16)', text: '#ad87e8', bd: 'rgba(108,76,230,0.4)' },
+  { bg: 'rgba(76,230,197,0.16)', text: '#80efe6', bd: '#5eead4' },
+  { bg: 'rgba(76,216,230,0.16)', text: '#7ee0f0', bd: '#67e8f9' },
+  { bg: 'rgba(230,76,164,0.16)', text: '#ed82ad', bd: 'rgba(230,76,160,0.4)' },
+  { bg: 'rgba(99,102,241,0.16)', text: '#9591df', bd: 'rgba(76,103,230,0.4)' },
+  { bg: 'rgba(76,230,129,0.16)', text: '#8ae5ad', bd: '#86efac' },
+  { bg: 'rgba(230,164,76,0.16)', text: '#f09b7f', bd: '#fdba74' },
 ]
 
 const execColor = (name: string) => {
@@ -281,7 +281,7 @@ export function FacturacionApp({ session, onCambiarModulo }: { session: Session;
   }
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '260px minmax(0, 1fr)', width: '100vw', height: '100vh', overflow: 'hidden', background: '#eaf7fd', color: '#0d1b38', fontFamily: 'Inter, sans-serif', fontSize: 13 }}>
+    <div style={{ display: 'grid', gridTemplateColumns: '260px minmax(0, 1fr)', width: '100vw', height: '100vh', overflow: 'hidden', background: 'radial-gradient(1100px 600px at 100% 0%, rgba(59,111,217,0.12), transparent 60%), radial-gradient(800px 500px at 0% 100%, rgba(79,70,229,0.08), transparent 60%), #0a1630', color: '#e7eefb', fontFamily: 'Inter, sans-serif', fontSize: 13 }}>
       <Sidebar>
         <SidebarHeader app="facturacion" />
         <SidebarUser nombre={nombreUsuario} estado={soloEjecutivo !== null ? 'Solo tus cuentas' : 'Activo'} />
@@ -316,15 +316,15 @@ export function FacturacionApp({ session, onCambiarModulo }: { session: Session;
       </Sidebar>
 
       <section style={{ minWidth: 0, overflow: 'hidden' }}>
-        <header style={{ height: 58, background: '#fff', borderBottom: '1px solid #d3eaf6', padding: '0 28px', display: 'flex', alignItems: 'center', gap: 12, boxShadow: '0 1px 5px rgba(10,22,40,0.08)' }}>
+        <header style={{ height: 58, background: '#11223f', borderBottom: '1px solid rgba(76,177,230,0.4)', padding: '0 28px', display: 'flex', alignItems: 'center', gap: 12, boxShadow: '0 1px 5px rgba(10,22,40,0.08)' }}>
           <span style={{ fontSize: 20, fontWeight: 800 }}>Facturación</span>
-          <span style={{ color: '#7286bd', fontSize: 13 }}>· {empresaActiva === 'all' ? 'Todas las compañías' : empresaActiva}</span>
+          <span style={{ color: '#8ea0c4', fontSize: 13 }}>· {empresaActiva === 'all' ? 'Todas las compañías' : empresaActiva}</span>
           <div style={{ flex: 1 }} />
-          <span style={{ fontSize: 12, color: '#7a8fbb' }}>{session.user.email}</span>
+          <span style={{ fontSize: 12, color: '#8ea0c4' }}>{session.user.email}</span>
         </header>
 
         <main style={{ padding: '22px 28px 36px', height: 'calc(100vh - 58px)', overflowY: 'auto', overflowX: 'hidden', scrollbarGutter: 'stable', display: 'flex', flexDirection: 'column' }}>
-          {error && <div style={{ color: '#dc2626', marginBottom: 14, fontSize: 13 }}>⚠ {error}</div>}
+          {error && <div style={{ color: '#eb8484', marginBottom: 14, fontSize: 13 }}>⚠ {error}</div>}
           {loading ? (
             <div style={{ flex: 1, display: 'grid', placeItems: 'center' }}><div style={emptyStyle}>Cargando facturación...</div></div>
           ) : data.length === 0 && soloEjecutivo !== null ? (
@@ -333,9 +333,9 @@ export function FacturacionApp({ session, onCambiarModulo }: { session: Session;
             </div>
           ) : data.length === 0 ? (
             <div style={{ flex: 1, display: 'grid', placeItems: 'center' }}>
-              <div style={{ width: '100%', maxWidth: 680, background: '#fff', border: '1.5px dashed #b7dcf0', borderRadius: 12, padding: '64px 40px', textAlign: 'center' }}>
-                <div style={{ width: 64, height: 64, margin: '0 auto', borderRadius: 14, background: '#eaf6fd', display: 'grid', placeItems: 'center' }}>
-                  <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#4aa8d8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <div style={{ width: '100%', maxWidth: 680, background: '#11223f', border: '1.5px dashed rgba(76,176,230,0.4)', borderRadius: 12, padding: '64px 40px', textAlign: 'center' }}>
+                <div style={{ width: 64, height: 64, margin: '0 auto', borderRadius: 14, background: '#0a1630', display: 'grid', placeItems: 'center' }}>
+                  <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#5b8def" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
                     <polyline points="14 2 14 8 20 8" />
                     <line x1="8" y1="13" x2="16" y2="13" />
@@ -343,8 +343,8 @@ export function FacturacionApp({ session, onCambiarModulo }: { session: Session;
                     <line x1="8" y1="9" x2="10" y2="9" />
                   </svg>
                 </div>
-                <div style={{ marginTop: 18, fontSize: 18, fontWeight: 800, color: '#0d1b38' }}>Todavía no cargaste ningún archivo</div>
-                <div style={{ margin: '8px auto 22px', maxWidth: 420, fontSize: 13.5, color: '#7286bd', lineHeight: 1.5 }}>
+                <div style={{ marginTop: 18, fontSize: 18, fontWeight: 800, color: '#e7eefb' }}>Todavía no cargaste ningún archivo</div>
+                <div style={{ margin: '8px auto 22px', maxWidth: 420, fontSize: 13.5, color: '#8ea0c4', lineHeight: 1.5 }}>
                   Subí el Excel de desglose de facturación para poder filtrar por cliente, ejecutivo, período y centro de costo.
                 </div>
                 <div style={{ display: 'inline-block', minWidth: 190 }}>
@@ -388,9 +388,9 @@ export function FacturacionApp({ session, onCambiarModulo }: { session: Session;
       </section>
 
       {pdfNoEncontrado && (
-        <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', zIndex: 1002, background: '#fef3c7', border: '1px solid #fcd34d', borderRadius: 10, padding: '16px 44px 16px 24px', fontSize: 14, color: '#92400e', fontWeight: 500, boxShadow: '0 10px 30px rgba(0,0,0,0.25)' }}>
+        <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', zIndex: 1002, background: 'rgba(230,199,76,0.16)', border: '1px solid #fcd34d', borderRadius: 10, padding: '16px 44px 16px 24px', fontSize: 14, color: '#f3a97d', fontWeight: 500, boxShadow: '0 10px 30px rgba(0,0,0,0.55)' }}>
           ⚠ Factura <strong>{pdfNoEncontrado}</strong> no subida a la base de datos.
-          <button onClick={() => setPdfNoEncontrado('')} aria-label="Cerrar" style={{ position: 'absolute', top: 8, right: 10, background: 'none', border: 'none', cursor: 'pointer', color: '#92400e', fontSize: 18, lineHeight: 1, padding: 2 }}>×</button>
+          <button onClick={() => setPdfNoEncontrado('')} aria-label="Cerrar" style={{ position: 'absolute', top: 8, right: 10, background: 'none', border: 'none', cursor: 'pointer', color: '#f3a97d', fontSize: 18, lineHeight: 1, padding: 2 }}>×</button>
         </div>
       )}
 
@@ -411,22 +411,22 @@ export function FacturacionApp({ session, onCambiarModulo }: { session: Session;
               setBusqueda('')
               window.scrollTo({ top: 0 })
             }}
-            style={{ background: '#fff', borderRadius: 16, width: '100%', maxWidth: 380, padding: 24, boxShadow: '0 20px 60px rgba(0,0,0,0.3)', display: 'grid', gap: 12 }}
+            style={{ background: '#11223f', borderRadius: 16, width: '100%', maxWidth: 380, padding: 24, boxShadow: '0 20px 60px rgba(0,0,0,0.55)', display: 'grid', gap: 12 }}
           >
-            <div style={{ fontSize: 16, fontWeight: 800, color: '#0d1b38' }}>🔒 Panel de Ventas</div>
-            <div style={{ fontSize: 13, color: '#7286bd' }}>Ingresá la contraseña para ver el panel.</div>
+            <div style={{ fontSize: 16, fontWeight: 800, color: '#e7eefb' }}>🔒 Panel de Ventas</div>
+            <div style={{ fontSize: 13, color: '#8ea0c4' }}>Ingresá la contraseña para ver el panel.</div>
             <input
               type="password"
               autoFocus
               value={claveVentas}
               onChange={e => { setClaveVentas(e.target.value); setClaveVentasError(false) }}
               placeholder="Contraseña"
-              style={{ padding: '10px 12px', borderRadius: 8, border: `1px solid ${claveVentasError ? '#dc2626' : '#b7dcf0'}`, fontSize: 14, outline: 'none' }}
+              style={{ padding: '10px 12px', borderRadius: 8, border: `1px solid ${claveVentasError ? '#dc2626' : '#24395f'}`, fontSize: 14, outline: 'none' }}
             />
-            {claveVentasError && <div style={{ color: '#dc2626', fontSize: 12 }}>Contraseña incorrecta.</div>}
+            {claveVentasError && <div style={{ color: '#eb8484', fontSize: 12 }}>Contraseña incorrecta.</div>}
             <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-              <button type="button" onClick={() => setPedirClaveVentas(false)} style={{ padding: '8px 14px', borderRadius: 8, border: '1px solid #d3eaf6', background: '#fff', color: '#0d1b38', cursor: 'pointer', fontWeight: 600 }}>Cancelar</button>
-              <button type="submit" style={{ padding: '8px 14px', borderRadius: 8, border: 'none', background: '#14a9e1', color: '#fff', cursor: 'pointer', fontWeight: 700 }}>Entrar</button>
+              <button type="button" onClick={() => setPedirClaveVentas(false)} style={{ padding: '8px 14px', borderRadius: 8, border: '1px solid rgba(76,177,230,0.4)', background: '#11223f', color: '#e7eefb', cursor: 'pointer', fontWeight: 600 }}>Cancelar</button>
+              <button type="submit" style={{ padding: '8px 14px', borderRadius: 8, border: 'none', background: '#3b6fd9', color: '#fff', cursor: 'pointer', fontWeight: 700 }}>Entrar</button>
             </div>
           </form>
         </div>
@@ -434,8 +434,8 @@ export function FacturacionApp({ session, onCambiarModulo }: { session: Session;
 
       {modalPdf && (
         <div onClick={() => setModalPdf(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-          <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: 16, width: '100%', maxWidth: 620, maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}>
-            <div style={{ background: '#0a1628', borderRadius: '16px 16px 0 0', padding: '18px 24px', display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: '#11223f', borderRadius: 16, width: '100%', maxWidth: 620, maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,0.55)' }}>
+            <div style={{ background: '#1c3360', borderRadius: '16px 16px 0 0', padding: '18px 24px', display: 'flex', alignItems: 'center', gap: 12 }}>
               <div style={{ width: 36, height: 36, background: 'rgba(255,255,255,0.1)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, flexShrink: 0 }}>📄</div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ color: '#fff', fontWeight: 700, fontSize: 16, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{modalPdf.row.n_factura}</div>
@@ -443,8 +443,8 @@ export function FacturacionApp({ session, onCambiarModulo }: { session: Session;
               </div>
               <button onClick={() => setModalPdf(null)} style={{ background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: 8, width: 32, height: 32, cursor: 'pointer', color: '#fff', fontSize: 16, flexShrink: 0 }}>✕</button>
             </div>
-            <div style={{ background: '#f4f6fb', padding: 16 }}>
-              <iframe src={modalPdf.url} style={{ width: '100%', height: 380, border: 'none', borderRadius: 8, background: '#fff' }} title="PDF" />
+            <div style={{ background: '#0e1e39', padding: 16 }}>
+              <iframe src={modalPdf.url} style={{ width: '100%', height: 380, border: 'none', borderRadius: 8, background: '#11223f' }} title="PDF" />
             </div>
             <div style={{ padding: '16px 24px 24px' }}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 16 }}>
@@ -456,13 +456,13 @@ export function FacturacionApp({ session, onCambiarModulo }: { session: Session;
                   { label: 'IMPORTE', value: fmtMoney(modalPdf.row.total_neto, monedaFila(modalPdf.row)) },
                   { label: 'CC', value: nombreCc(modalPdf.row) },
                 ].map((item, idx) => (
-                  <div key={`modal-${item.label}-${idx}`} style={{ background: '#f8faff', borderRadius: 10, padding: '12px 16px' }}>
-                    <div style={{ fontSize: 10, fontWeight: 600, color: '#7a8fbb', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 4 }}>{item.label}</div>
-                    <div style={{ fontSize: 14, fontWeight: 600, color: '#0d1b38' }}>{item.value}</div>
+                  <div key={`modal-${item.label}-${idx}`} style={{ background: '#11223f', borderRadius: 10, padding: '12px 16px' }}>
+                    <div style={{ fontSize: 10, fontWeight: 600, color: '#8ea0c4', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 4 }}>{item.label}</div>
+                    <div style={{ fontSize: 14, fontWeight: 600, color: '#e7eefb' }}>{item.value}</div>
                   </div>
                 ))}
               </div>
-              <a href={modalPdf.url} download target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, background: '#2554a0', color: '#fff', padding: 10, borderRadius: 10, fontSize: 13, fontWeight: 600, textDecoration: 'none' }}>⬇ Descargar</a>
+              <a href={modalPdf.url} download target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, background: '#3b6fd9', color: '#fff', padding: 10, borderRadius: 10, fontSize: 13, fontWeight: 600, textDecoration: 'none' }}>⬇ Descargar</a>
             </div>
           </div>
         </div>
@@ -551,7 +551,7 @@ function PanelVentas(props: {
         )}
       </div>
 
-      <div style={{ color: '#7286bd', fontSize: 13 }}>▦ Análisis hasta <strong>{ultimoMes ? mesLabel(ultimoMes) : 'el último período cargado'}</strong> — se excluye el mes en curso por estar incompleto.</div>
+      <div style={{ color: '#8ea0c4', fontSize: 13 }}>▦ Análisis hasta <strong>{ultimoMes ? mesLabel(ultimoMes) : 'el último período cargado'}</strong> — se excluye el mes en curso por estar incompleto.</div>
 
       {monedas.length === 0 ? <div style={emptyStyle}>Sin datos para esta selección.</div> : (
         <>
@@ -597,14 +597,14 @@ function LineCard({ rows, moneda }: { rows: FacturacionLinea[]; moneda: string }
     <Card>
       <CardTitle title="Evolución mensual" badge={moneda} />
       <svg viewBox="0 0 940 265" style={{ width: '100%', height: 265, display: 'block', flexShrink: 0 }}>
-        {[0, 1, 2, 3, 4].map(i => <line key={i} x1="60" x2="900" y1={230 - i * 45} y2={230 - i * 45} stroke="#d8ecf7" strokeDasharray="4 5" />)}
-        {area && <path d={area} fill="#e5f6fd" />}
-        {line && <path d={line} fill="none" stroke="#19a8e6" strokeWidth="3" />}
-        {points.map(p => <g key={p.k}><circle cx={p.x} cy={p.y} r="4" fill="#19a8e6" stroke="#fff" strokeWidth="2" /><text x={p.x} y={p.y - 12} textAnchor="middle" fontSize="11" fill="#243d71" fontWeight="800">{fmtShort(p.v, moneda)}</text><text x={p.x} y="252" textAnchor="middle" fontSize="11" fill="#7286bd">{mesCorto(p.k)}</text></g>)}
+        {[0, 1, 2, 3, 4].map(i => <line key={i} x1="60" x2="900" y1={230 - i * 45} y2={230 - i * 45} stroke="#24395f" strokeDasharray="4 5" />)}
+        {area && <path d={area} fill="rgba(91,141,239,0.14)" />}
+        {line && <path d={line} fill="none" stroke="#5b8def" strokeWidth="3" />}
+        {points.map(p => <g key={p.k}><circle cx={p.x} cy={p.y} r="4" fill="#5b8def" stroke="#11223f" strokeWidth="2" /><text x={p.x} y={p.y - 12} textAnchor="middle" fontSize="11" fill="#e7eefb" fontWeight="800">{fmtShort(p.v, moneda)}</text><text x={p.x} y="252" textAnchor="middle" fontSize="11" fill="#8ea0c4">{mesCorto(p.k)}</text></g>)}
       </svg>
       <div style={{ display: 'grid', gap: 8, minHeight: 98, alignContent: 'start' }}>
-        {subida && <Insight color="#22c55e" bg="#d8ffe8">📈 <strong>Mayor suba:</strong> {subida.pct.toFixed(0)}% de {mesLabel(subida.from.k)} a {mesLabel(subida.to.k)} ({fmtMoney(subida.from.v, moneda)} → {fmtMoney(subida.to.v, moneda)})</Insight>}
-        {baja && <Insight color="#8b5cf6" bg="#efe9ff">📉 <strong>Mayor baja:</strong> {baja.pct.toFixed(0)}% de {mesLabel(baja.from.k)} a {mesLabel(baja.to.k)} ({fmtMoney(baja.from.v, moneda)} → {fmtMoney(baja.to.v, moneda)})</Insight>}
+        {subida && <Insight color="#22c55e" bg="rgba(34,197,94,0.12)">📈 <strong>Mayor suba:</strong> {subida.pct.toFixed(0)}% de {mesLabel(subida.from.k)} a {mesLabel(subida.to.k)} ({fmtMoney(subida.from.v, moneda)} → {fmtMoney(subida.to.v, moneda)})</Insight>}
+        {baja && <Insight color="#8b5cf6" bg="rgba(139,92,246,0.14)">📉 <strong>Mayor baja:</strong> {baja.pct.toFixed(0)}% de {mesLabel(baja.from.k)} a {mesLabel(baja.to.k)} ({fmtMoney(baja.from.v, moneda)} → {fmtMoney(baja.to.v, moneda)})</Insight>}
       </div>
     </Card>
   )
@@ -624,7 +624,7 @@ function ClientConcentration({ clientes, total, moneda }: { rows: FacturacionLin
         <thead><tr><Th>#</Th><Th>Cliente</Th><Th right>Facturación</Th><Th right>% del total</Th></tr></thead>
         <tbody>{top.map(([name, value], i) => <tr key={name}><Td>{i + 1}</Td><Td>{name}</Td><Td right>{fmtMoney(value, moneda)}</Td><Td right><strong>{((value / total) * 100).toFixed(1)}%</strong></Td></tr>)}</tbody>
       </table>
-      {clientes.length > 10 && <div style={{ textAlign: 'center', padding: 10, color: '#159fe2', fontWeight: 700, borderTop: '1px solid #d3eaf6' }}>▼ Ver los {clientes.length - 10} restantes</div>}
+      {clientes.length > 10 && <div style={{ textAlign: 'center', padding: 10, color: '#7cccf3', fontWeight: 700, borderTop: '1px solid rgba(76,177,230,0.4)' }}>▼ Ver los {clientes.length - 10} restantes</div>}
     </Card>
   )
 }
@@ -644,10 +644,10 @@ function PieCard({ clientes, total }: { clientes: [string, number][]; total: num
   ).list
   return (
     <Card noPadding>
-      <div style={{ padding: '14px 18px', fontSize: 15, fontWeight: 800, borderBottom: '1px solid #d3eaf6' }}>Distribución</div>
+      <div style={{ padding: '14px 18px', fontSize: 15, fontWeight: 800, borderBottom: '1px solid rgba(76,177,230,0.4)' }}>Distribución</div>
       <div style={{ display: 'grid', gridTemplateColumns: '205px 1fr', gap: 22, alignItems: 'center', padding: 20 }}>
         <svg viewBox="0 0 220 220" style={{ width: 200 }}>{segs.map(s => <path key={s.name} d={s.d} fill={s.color} />)}</svg>
-        <div style={{ display: 'grid', gap: 8 }}>{segs.map(s => <div key={s.name} style={{ display: 'grid', gridTemplateColumns: '14px 1fr auto', gap: 8, alignItems: 'center' }}><span style={{ width: 12, height: 12, borderRadius: 3, background: s.color }} /><span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: '#243d71' }}>{s.name}</span><strong>{((s.value / total) * 100).toFixed(1)}%</strong></div>)}</div>
+        <div style={{ display: 'grid', gap: 8 }}>{segs.map(s => <div key={s.name} style={{ display: 'grid', gridTemplateColumns: '14px 1fr auto', gap: 8, alignItems: 'center' }}><span style={{ width: 12, height: 12, borderRadius: 3, background: s.color }} /><span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: '#e7eefb' }}>{s.name}</span><strong>{((s.value / total) * 100).toFixed(1)}%</strong></div>)}</div>
       </div>
     </Card>
   )
@@ -696,7 +696,7 @@ function ClientMonthTable({ rows, moneda }: { rows: FacturacionLinea[]; moneda: 
 
   return (
     <Card noPadding>
-      <CardHeader><CardTitle title="Clientes x mes" badge={moneda} /><span style={{ color: '#7286bd', fontSize: 12 }}>clic en un cliente para ver el desglose por CC</span><button style={excelBtn} onClick={() => exportXlsx(`clientes-por-mes-${moneda}.xlsx`, [['Cliente', ...months.map(mesCorto)], ...clients.map(([client]) => [client, ...months.map(m => sumFor(client, m).toFixed(2))])])}>↓ Excel</button></CardHeader>
+      <CardHeader><CardTitle title="Clientes x mes" badge={moneda} /><span style={{ color: '#8ea0c4', fontSize: 12 }}>clic en un cliente para ver el desglose por CC</span><button style={excelBtn} onClick={() => exportXlsx(`clientes-por-mes-${moneda}.xlsx`, [['Cliente', ...months.map(mesCorto)], ...clients.map(([client]) => [client, ...months.map(m => sumFor(client, m).toFixed(2))])])}>↓ Excel</button></CardHeader>
       <div style={{ overflowX: 'auto' }}>
         <table style={{ ...tableStyle, minWidth: 680 }}>
           <thead><tr><Th>Cliente</Th>{months.map(m => <Th key={m} right>{mesCorto(m)}</Th>)}</tr></thead>
@@ -708,11 +708,11 @@ function ClientMonthTable({ rows, moneda }: { rows: FacturacionLinea[]; moneda: 
                   <tr key={client} onClick={() => setOpen(o => ({ ...o, [client]: !o[client] }))} style={{ cursor: 'pointer' }}>
                     <Td><strong>{open[client] ? '⌄' : '›'} {client}</strong></Td>{months.map(m => { const v = sumFor(client, m); return <Td key={m} right><strong>{v ? fmtMoney(v, moneda) : '-'}</strong></Td> })}
                   </tr>
-                  {open[client] && ccs.map(cc => <tr key={`${client}-${cc}`} style={{ background: '#f1fbff' }}><Td style={{ paddingLeft: 34, color: '#7286bd' }}>{cc}</Td>{months.map(m => { const v = sumFor(client, m, cc); return <Td key={m} right style={{ color: '#7286bd' }}>{v ? fmtMoney(v, moneda) : '-'}</Td> })}</tr>)}
+                  {open[client] && ccs.map(cc => <tr key={`${client}-${cc}`} style={{ background: '#0e1e39' }}><Td style={{ paddingLeft: 34, color: '#8ea0c4' }}>{cc}</Td>{months.map(m => { const v = sumFor(client, m, cc); return <Td key={m} right style={{ color: '#8ea0c4' }}>{v ? fmtMoney(v, moneda) : '-'}</Td> })}</tr>)}
                 </Fragment>
               )
             })}
-            <tr style={{ background: '#e8f8ff' }}><Td><strong>TOTAL GENERAL</strong></Td>{months.map(m => <Td key={m} right><strong>{fmtMoney(monthGrandTotal.get(m) || 0, moneda)}</strong></Td>)}</tr>
+            <tr style={{ background: '#0e1e39' }}><Td><strong>TOTAL GENERAL</strong></Td>{months.map(m => <Td key={m} right><strong>{fmtMoney(monthGrandTotal.get(m) || 0, moneda)}</strong></Td>)}</tr>
           </tbody>
         </table>
       </div>
@@ -801,7 +801,7 @@ function Detalle({ filas, empresaActiva, onAbrirPdf }: { filas: FacturacionLinea
     ...(nFacturaText.trim() ? [{ key: 'nf', texto: `N° Factura: ${nFacturaText.trim()}`, quitar: () => setNFacturaText('') }] : []),
   ]
 
-  const kpiColors = ['#19a8e6', '#059669', '#d97706', '#7c3aed']
+  const kpiColors = ['#5b8def', '#059669', '#d97706', '#7c3aed']
 
   return (
     <Card noPadding>
@@ -816,7 +816,7 @@ function Detalle({ filas, empresaActiva, onAbrirPdf }: { filas: FacturacionLinea
       </div>
       <CardHeader>
         <strong>Detalle de facturación</strong>
-        <span style={{ color: '#7286bd' }}>{sorted.length} línea{sorted.length === 1 ? '' : 's'}</span>
+        <span style={{ color: '#8ea0c4' }}>{sorted.length} línea{sorted.length === 1 ? '' : 's'}</span>
         <span style={{ marginLeft: 'auto' }} />
         <button style={excelBtn} onClick={() => exportXlsx('facturacion_detalle.xlsx', [
           ['Cliente', 'CUIT', 'Ejecutivo', 'Período', 'Fecha Factura', 'N° Factura', 'Cond. Venta', 'Colaborador', 'Legajo', 'CC Descripción', 'Moneda', 'Cantidad', 'Precio Unitario', 'Total Neto', 'OC', 'Leyenda'],
@@ -831,14 +831,14 @@ function Detalle({ filas, empresaActiva, onAbrirPdf }: { filas: FacturacionLinea
       </CardHeader>
       {chipsFiltro.length > 0 && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', padding: '12px 16px 0' }}>
-          <span style={{ fontSize: 12, fontWeight: 700, color: '#7286bd', whiteSpace: 'nowrap' }}>🔎 Filtros activos:</span>
+          <span style={{ fontSize: 12, fontWeight: 700, color: '#8ea0c4', whiteSpace: 'nowrap' }}>🔎 Filtros activos:</span>
           {chipsFiltro.map(c => (
-            <span key={c.key} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#eef6fd', border: '1px solid #c6e5f4', color: '#1d5a8a', borderRadius: 999, padding: '4px 6px 4px 12px', fontSize: 12, fontWeight: 600, maxWidth: 280 }}>
+            <span key={c.key} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#0a1630', border: '1px solid rgba(76,180,230,0.4)', color: '#89bde6', borderRadius: 999, padding: '4px 6px 4px 12px', fontSize: 12, fontWeight: 600, maxWidth: 280 }}>
               <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.texto}</span>
-              <button onClick={c.quitar} aria-label={`Quitar ${c.texto}`} style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 18, height: 18, borderRadius: '50%', border: 'none', background: 'transparent', color: '#5a7fa0', fontSize: 14, lineHeight: 1, cursor: 'pointer', flexShrink: 0 }}>×</button>
+              <button onClick={c.quitar} aria-label={`Quitar ${c.texto}`} style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 18, height: 18, borderRadius: '50%', border: 'none', background: 'transparent', color: '#b6c4de', fontSize: 14, lineHeight: 1, cursor: 'pointer', flexShrink: 0 }}>×</button>
             </span>
           ))}
-          <button onClick={clearFilters} style={{ marginLeft: 'auto', background: 'none', border: 'none', color: '#7286bd', fontSize: 12, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}>Limpiar todos</button>
+          <button onClick={clearFilters} style={{ marginLeft: 'auto', background: 'none', border: 'none', color: '#8ea0c4', fontSize: 12, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}>Limpiar todos</button>
         </div>
       )}
       {filas.length === 0 ? <div style={emptyStyle}>Sin datos para esta selección.</div> : (
@@ -870,7 +870,7 @@ function Detalle({ filas, empresaActiva, onAbrirPdf }: { filas: FacturacionLinea
             </thead>
             <tbody>
               {sorted.length === 0 ? (
-                <tr><td colSpan={9} style={{ textAlign: 'center', padding: 40, color: '#7286bd', fontSize: 13 }}>No se encontraron resultados con estos filtros</td></tr>
+                <tr><td colSpan={9} style={{ textAlign: 'center', padding: 40, color: '#8ea0c4', fontSize: 13 }}>No se encontraron resultados con estos filtros</td></tr>
               ) : sorted.map(r => {
                 const isOpen = openRows.has(r.id)
                 const ec = execColor(r.ejecutivo || '')
@@ -882,7 +882,7 @@ function Detalle({ filas, empresaActiva, onAbrirPdf }: { filas: FacturacionLinea
                       <Td>
                         {empresaActiva === 'all' && <span className={`fi fi-${flagEmpresa(r.empresa, moneda)}`} style={{ marginRight: 6, borderRadius: 2, verticalAlign: 'middle' }} />}
                         <strong>{nombreCliente(r)}</strong>
-                        {r.cuit && <div style={{ fontSize: 10, color: '#7a8fbb', fontFamily: 'monospace', marginTop: 2 }}>{r.cuit}</div>}
+                        {r.cuit && <div style={{ fontSize: 10, color: '#8ea0c4', fontFamily: 'monospace', marginTop: 2 }}>{r.cuit}</div>}
                       </Td>
                       <Td>{r.ejecutivo ? <span style={{ fontSize: 10.5, fontWeight: 700, padding: '2px 8px', borderRadius: 20, background: ec.bg, color: ec.text, border: `1px solid ${ec.bd}`, whiteSpace: 'nowrap' }}>{r.ejecutivo}</span> : '-'}</Td>
                       <Td>{r.periodo ? mesLabel(periodoKey(r)) : '-'}</Td>
@@ -891,7 +891,7 @@ function Detalle({ filas, empresaActiva, onAbrirPdf }: { filas: FacturacionLinea
                       <Td>{nombreCc(r)}</Td>
                       <Td right>
                         <strong>{fmtMoney(r.total_neto, moneda)}</strong>
-                        <div style={{ fontSize: 10, color: '#7a8fbb', marginTop: 2, whiteSpace: 'nowrap' }}>
+                        <div style={{ fontSize: 10, color: '#8ea0c4', marginTop: 2, whiteSpace: 'nowrap' }}>
                           {r.cantidad.toLocaleString('es-AR', { maximumFractionDigits: 2 })} u. × {fmtMoney(r.precio_unitario, moneda)}
                         </div>
                       </Td>
@@ -900,8 +900,8 @@ function Detalle({ filas, empresaActiva, onAbrirPdf }: { filas: FacturacionLinea
                       </Td>
                     </tr>
                     {isOpen && (
-                      <tr style={{ background: '#f1fbff' }}>
-                        <td colSpan={9} style={{ padding: '12px 16px 14px 34px', borderBottom: '1px solid #d3eaf6' }}>
+                      <tr style={{ background: '#0e1e39' }}>
+                        <td colSpan={9} style={{ padding: '12px 16px 14px 34px', borderBottom: '1px solid rgba(76,177,230,0.4)' }}>
                           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px,1fr))', gap: '8px 20px' }}>
                             <DetailItem label="Legajo" value={r.legajo} />
                             <DetailItem label="Colaborador" value={r.colaborador} />
@@ -928,8 +928,8 @@ function Detalle({ filas, empresaActiva, onAbrirPdf }: { filas: FacturacionLinea
 function DetailItem({ label, value }: { label: string; value?: string | null }) {
   return (
     <div style={{ fontSize: 11.5 }}>
-      <div style={{ color: '#7286bd', textTransform: 'uppercase', letterSpacing: 0.6, fontSize: 9.5, fontWeight: 700, marginBottom: 2 }}>{label}</div>
-      <div style={{ color: '#243d71' }}>{value || '-'}</div>
+      <div style={{ color: '#8ea0c4', textTransform: 'uppercase', letterSpacing: 0.6, fontSize: 9.5, fontWeight: 700, marginBottom: 2 }}>{label}</div>
+      <div style={{ color: '#e7eefb' }}>{value || '-'}</div>
     </div>
   )
 }
@@ -977,7 +977,7 @@ function MultiSelect({ options, selected, onChange, placeholderAll, formatLabel 
     <div ref={ref} style={{ position: 'relative' }}>
       <button type="button" onClick={() => setOpen(o => !o)} style={mselBtn}>
         <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{label}</span>
-        <span style={{ fontSize: 8, color: '#7286bd' }}>▾</span>
+        <span style={{ fontSize: 8, color: '#8ea0c4' }}>▾</span>
       </button>
       {open && createPortal(
         <div ref={panelRef} style={{ ...mselPanel, position: 'fixed', top: coords.top, left: coords.left, width: Math.max(coords.width, 220) }}>
@@ -986,7 +986,7 @@ function MultiSelect({ options, selected, onChange, placeholderAll, formatLabel 
             <span onClick={() => onChange(options)}>Todos</span>
             <span onClick={() => onChange([])}>Limpiar</span>
           </div>
-          {visible.length === 0 ? <div style={{ padding: 6, fontSize: 11, color: '#7286bd' }}>Sin resultados</div> : visible.map(opt => (
+          {visible.length === 0 ? <div style={{ padding: 6, fontSize: 11, color: '#8ea0c4' }}>Sin resultados</div> : visible.map(opt => (
             <label key={opt} style={mselOption}>
               <input type="checkbox" checked={selected.includes(opt)} onChange={() => toggle(opt)} />
               <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{fmt(opt)}</span>
@@ -1000,39 +1000,39 @@ function MultiSelect({ options, selected, onChange, placeholderAll, formatLabel 
 }
 
 function Segmented({ children }: { children: React.ReactNode }) {
-  return <div style={{ display: 'inline-flex', maxWidth: '100%', border: '1px solid #c6e5f4', borderRadius: 8, overflow: 'hidden', background: '#f7fcff' }}>{children}</div>
+  return <div style={{ display: 'inline-flex', maxWidth: '100%', border: '1px solid rgba(76,180,230,0.4)', borderRadius: 8, overflow: 'hidden', background: '#11223f' }}>{children}</div>
 }
 
 function Seg({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
-  return <button onClick={onClick} style={{ border: 0, borderRight: '1px solid #c6e5f4', background: active ? '#18a9e5' : 'transparent', color: active ? '#fff' : '#243d71', padding: '9px 14px', fontSize: 13, fontWeight: 700, cursor: 'pointer', minWidth: 72, whiteSpace: 'nowrap', flexShrink: 0 }}>{children}</button>
+  return <button onClick={onClick} style={{ border: 0, borderRight: '1px solid rgba(76,180,230,0.4)', background: active ? '#3b6fd9' : 'transparent', color: active ? '#fff' : '#e7eefb', padding: '9px 14px', fontSize: 13, fontWeight: 700, cursor: 'pointer', minWidth: 72, whiteSpace: 'nowrap', flexShrink: 0 }}>{children}</button>
 }
 
 function Card({ children, noPadding = false }: { children: React.ReactNode; noPadding?: boolean }) {
-  return <section style={{ width: '100%', minWidth: 0, background: '#fff', border: '1px solid #cbe5f3', borderRadius: 8, padding: noPadding ? 0 : 16, boxShadow: '0 1px 4px rgba(14,74,103,.1)', overflow: 'hidden' }}>{children}</section>
+  return <section style={{ width: '100%', minWidth: 0, background: '#11223f', border: '1px solid rgba(76,176,230,0.4)', borderRadius: 8, padding: noPadding ? 0 : 16, boxShadow: '0 1px 4px rgba(14,74,103,.1)', overflow: 'hidden' }}>{children}</section>
 }
 
 function CardHeader({ children }: { children: React.ReactNode }) {
-  return <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 16px', borderBottom: '1px solid #d3eaf6', background: '#f6fcff' }}>{children}</div>
+  return <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 16px', borderBottom: '1px solid rgba(76,177,230,0.4)', background: '#11223f' }}>{children}</div>
 }
 
 function CardTitle({ title, badge }: { title: string; badge?: string }) {
-  return <div style={{ display: 'flex', alignItems: 'center', gap: 9, fontSize: 15, fontWeight: 800 }}>{title}{badge && <span style={{ background: '#e8f8ff', color: '#087fa8', border: '1px solid #c6e5f4', borderRadius: 999, padding: '2px 8px', fontSize: 10, fontWeight: 800 }}>{badge}</span>}</div>
+  return <div style={{ display: 'flex', alignItems: 'center', gap: 9, fontSize: 15, fontWeight: 800 }}>{title}{badge && <span style={{ background: '#0e1e39', color: '#7bd5f4', border: '1px solid rgba(76,180,230,0.4)', borderRadius: 999, padding: '2px 8px', fontSize: 10, fontWeight: 800 }}>{badge}</span>}</div>
 }
 
-function Kpi({ label, value, color = '#19a8e6' }: { label: string; value: string; color?: string }) {
-  return <div style={{ background: '#fff', border: '1px solid #cbe5f3', borderTop: `3px solid ${color}`, borderRadius: 8, padding: '13px 16px', boxShadow: '0 1px 4px rgba(14,74,103,.1)' }}><div style={{ color: '#7286bd', fontSize: 10.5, fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1 }}>{label}</div><div style={{ color: '#087fa8', marginTop: 7, fontFamily: 'monospace', fontSize: 17, fontWeight: 800 }}>{value}</div></div>
+function Kpi({ label, value, color = '#5b8def' }: { label: string; value: string; color?: string }) {
+  return <div style={{ background: '#11223f', border: '1px solid rgba(76,176,230,0.4)', borderTop: `3px solid ${color}`, borderRadius: 8, padding: '13px 16px', boxShadow: '0 1px 4px rgba(14,74,103,.1)' }}><div style={{ color: '#8ea0c4', fontSize: 10.5, fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1 }}>{label}</div><div style={{ color: '#7bd5f4', marginTop: 7, fontFamily: 'monospace', fontSize: 17, fontWeight: 800 }}>{value}</div></div>
 }
 
 function Insight({ children, color, bg }: { children: React.ReactNode; color: string; bg: string }) {
-  return <div style={{ background: bg, border: `1px solid ${color}`, color: '#0b4b5d', borderRadius: 8, padding: '10px 12px', fontSize: 13, lineHeight: 1.45 }}>{children}</div>
+  return <div style={{ background: bg, border: `1px solid ${color}`, color: '#e7eefb', borderRadius: 8, padding: '10px 12px', fontSize: 13, lineHeight: 1.45 }}>{children}</div>
 }
 
 function Th({ children, right = false, onClick }: { children?: React.ReactNode; right?: boolean; onClick?: () => void }) {
-  return <th onClick={onClick} style={{ padding: '8px 10px', color: '#7286bd', fontSize: 10.5, textTransform: 'uppercase', letterSpacing: 0.8, textAlign: right ? 'right' : 'left', borderBottom: '1px solid #d3eaf6', cursor: onClick ? 'pointer' : 'default', userSelect: 'none' }}>{children}</th>
+  return <th onClick={onClick} style={{ padding: '8px 10px', color: '#8ea0c4', fontSize: 10.5, textTransform: 'uppercase', letterSpacing: 0.8, textAlign: right ? 'right' : 'left', borderBottom: '1px solid rgba(76,177,230,0.4)', cursor: onClick ? 'pointer' : 'default', userSelect: 'none' }}>{children}</th>
 }
 
 function Td({ children, right = false, style = {}, onClick, onClickCapture }: { children: React.ReactNode; right?: boolean; style?: React.CSSProperties; onClick?: (e: React.MouseEvent) => void; onClickCapture?: (e: React.MouseEvent) => void }) {
-  return <td onClick={onClick} onClickCapture={onClickCapture} style={{ padding: '8px 10px', color: '#243d71', fontSize: 13, textAlign: right ? 'right' : 'left', borderBottom: '1px solid #d3eaf6', ...style }}>{children}</td>
+  return <td onClick={onClick} onClickCapture={onClickCapture} style={{ padding: '8px 10px', color: '#e7eefb', fontSize: 13, textAlign: right ? 'right' : 'left', borderBottom: '1px solid rgba(76,177,230,0.4)', ...style }}>{children}</td>
 }
 
 function pieSlice(cx: number, cy: number, r: number, start: number, end: number) {
@@ -1046,22 +1046,22 @@ function pieSlice(cx: number, cy: number, r: number, start: number, end: number)
 }
 
 
-const inputStyle: React.CSSProperties = { width: 340, background: '#f7fcff', border: '1px solid #bfe1f3', borderRadius: 8, color: '#0d1b38', fontSize: 13, padding: '8px 10px', outline: 'none' }
-const emptyStyle: React.CSSProperties = { background: '#fff', border: '1.5px dashed #b7dcf0', borderRadius: 10, padding: '78px 20px', textAlign: 'center', color: '#7286bd' }
+const inputStyle: React.CSSProperties = { width: 340, background: '#11223f', border: '1px solid rgba(76,177,230,0.4)', borderRadius: 8, color: '#e7eefb', fontSize: 13, padding: '8px 10px', outline: 'none' }
+const emptyStyle: React.CSSProperties = { background: '#11223f', border: '1.5px dashed rgba(76,176,230,0.4)', borderRadius: 10, padding: '78px 20px', textAlign: 'center', color: '#8ea0c4' }
 const tableStyle: React.CSSProperties = { width: '100%', borderCollapse: 'collapse' }
-const notice: React.CSSProperties = { border: '1px solid #c6e5f4', background: '#f5fcff', borderRadius: 8, padding: 12, color: '#243d71', lineHeight: 1.4, fontSize: 13 }
-const excelBtn: React.CSSProperties = { marginLeft: 'auto', border: '1px solid #c6e5f4', background: '#fff', color: '#087fa8', borderRadius: 8, padding: '7px 12px', fontSize: 12, fontWeight: 800, cursor: 'pointer' }
-const clearBtn: React.CSSProperties = { border: '1px solid #c6e5f4', background: '#fff', color: '#7286bd', borderRadius: 8, padding: '7px 12px', fontSize: 12, fontWeight: 800, cursor: 'pointer' }
-const filterInputStyle: React.CSSProperties = { width: '100%', border: '1px solid #bfe1f3', borderRadius: 6, padding: '4px 6px', fontSize: 11, background: '#f7fcff', color: '#0d1b38', outline: 'none' }
+const notice: React.CSSProperties = { border: '1px solid rgba(76,180,230,0.4)', background: '#0e1e39', borderRadius: 8, padding: 12, color: '#e7eefb', lineHeight: 1.4, fontSize: 13 }
+const excelBtn: React.CSSProperties = { marginLeft: 'auto', border: '1px solid rgba(76,180,230,0.4)', background: '#11223f', color: '#7bd5f4', borderRadius: 8, padding: '7px 12px', fontSize: 12, fontWeight: 800, cursor: 'pointer' }
+const clearBtn: React.CSSProperties = { border: '1px solid rgba(76,180,230,0.4)', background: '#11223f', color: '#8ea0c4', borderRadius: 8, padding: '7px 12px', fontSize: 12, fontWeight: 800, cursor: 'pointer' }
+const filterInputStyle: React.CSSProperties = { width: '100%', border: '1px solid rgba(76,177,230,0.4)', borderRadius: 6, padding: '4px 6px', fontSize: 11, background: '#11223f', color: '#e7eefb', outline: 'none' }
 const pdfBtnStyle = (activo: boolean): React.CSSProperties => ({
   fontSize: 10.5, fontWeight: 700, padding: '4px 9px', borderRadius: 6, whiteSpace: 'nowrap',
-  border: `1px solid ${activo ? '#bfe1f3' : '#d3eaf6'}`,
-  background: activo ? '#f0f8ff' : '#f7fcff',
-  color: activo ? '#087fa8' : '#a0b0d0',
+  border: `1px solid ${activo ? '#2c4672' : '#24395f'}`,
+  background: activo ? '#0e1e39' : '#11223f',
+  color: activo ? '#7bd5f4' : '#8ea0c4',
   cursor: activo ? 'pointer' : 'default',
 })
-const mselBtn: React.CSSProperties = { border: '1px solid #bfe1f3', borderRadius: 6, padding: '4px 8px', fontSize: 11, background: '#f7fcff', color: '#0d1b38', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5, width: '100%', minWidth: 90, justifyContent: 'space-between' }
-const mselPanel: React.CSSProperties = { position: 'absolute', top: 'calc(100% + 4px)', left: 0, background: '#fff', border: '1px solid #b7dcf0', borderRadius: 8, boxShadow: '0 6px 24px rgba(10,22,40,0.14)', zIndex: 50, width: 270, maxWidth: 'calc(100vw - 40px)', maxHeight: 260, overflowY: 'auto', padding: 6 }
-const mselSearch: React.CSSProperties = { width: '100%', border: '1px solid #d3eaf6', borderRadius: 6, padding: '5px 8px', fontSize: 11.5, color: '#0d1b38', background: '#f7fcff', outline: 'none', marginBottom: 6 }
-const mselActions: React.CSSProperties = { display: 'flex', justifyContent: 'space-between', padding: '2px 6px 6px', borderBottom: '1px solid #d3eaf6', marginBottom: 4, fontSize: 10.5, color: '#19a8e6', fontWeight: 700, cursor: 'pointer' }
-const mselOption: React.CSSProperties = { display: 'flex', alignItems: 'center', gap: 6, padding: '4px 6px', fontSize: 12, cursor: 'pointer', borderRadius: 5, color: '#3d5278' }
+const mselBtn: React.CSSProperties = { border: '1px solid rgba(76,177,230,0.4)', borderRadius: 6, padding: '4px 8px', fontSize: 11, background: '#11223f', color: '#e7eefb', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5, width: '100%', minWidth: 90, justifyContent: 'space-between' }
+const mselPanel: React.CSSProperties = { position: 'absolute', top: 'calc(100% + 4px)', left: 0, background: '#11223f', border: '1px solid rgba(76,176,230,0.4)', borderRadius: 8, boxShadow: '0 6px 24px rgba(10,22,40,0.14)', zIndex: 50, width: 270, maxWidth: 'calc(100vw - 40px)', maxHeight: 260, overflowY: 'auto', padding: 6 }
+const mselSearch: React.CSSProperties = { width: '100%', border: '1px solid rgba(76,177,230,0.4)', borderRadius: 6, padding: '5px 8px', fontSize: 11.5, color: '#e7eefb', background: '#11223f', outline: 'none', marginBottom: 6 }
+const mselActions: React.CSSProperties = { display: 'flex', justifyContent: 'space-between', padding: '2px 6px 6px', borderBottom: '1px solid rgba(76,177,230,0.4)', marginBottom: 4, fontSize: 10.5, color: '#7ecef1', fontWeight: 700, cursor: 'pointer' }
+const mselOption: React.CSSProperties = { display: 'flex', alignItems: 'center', gap: 6, padding: '4px 6px', fontSize: 12, cursor: 'pointer', borderRadius: 5, color: '#b6c4de' }

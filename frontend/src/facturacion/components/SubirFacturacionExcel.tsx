@@ -172,7 +172,7 @@ export function SubirFacturacionExcel({ insertarLote, compact = false }: Props) 
   if (compact) {
     return (
       <div style={{ display: 'grid', gap: '8px' }}>
-        <label style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px', background: cargando ? '#7a8fbb' : '#0ea5e9', color: '#fff', padding: '11px 14px', borderRadius: '8px', fontSize: '13px', fontWeight: 800, cursor: cargando ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap' }}>
+        <label style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px', background: cargando ? '#7a8fbb' : '#3b6fd9', color: '#fff', padding: '11px 14px', borderRadius: '8px', fontSize: '13px', fontWeight: 800, cursor: cargando ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap' }}>
           {cargando ? 'Procesando...' : '↓ Cargar Excel'}
           <input
             ref={inputRef}
@@ -184,19 +184,19 @@ export function SubirFacturacionExcel({ insertarLote, compact = false }: Props) 
           />
         </label>
         {error && <div style={{ color: '#fecaca', fontSize: '11px', lineHeight: 1.35 }}>{error}</div>}
-        {exito && <div style={{ color: '#34d399', fontSize: '11px', lineHeight: 1.35 }}>{exito}</div>}
+        {exito && <div style={{ color: '#8ae6c4', fontSize: '11px', lineHeight: 1.35 }}>{exito}</div>}
       </div>
     )
   }
 
   return (
-    <div style={{ background: '#fff', border: '1px solid #d9e2f1', borderRadius: '10px', padding: '16px 20px', marginBottom: '20px', boxShadow: '0 2px 12px rgba(38,63,101,0.06)' }}>
+    <div style={{ background: '#11223f', border: '1px solid #24395f', borderRadius: '10px', padding: '16px 20px', marginBottom: '20px', boxShadow: '0 2px 12px rgba(0,0,0,0.21)' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: '14px', fontWeight: 700, color: '#0d1b38', marginBottom: '2px' }}>Cargar Excel de facturación</div>
-          <div style={{ fontSize: '12px', color: '#7a8fbb' }}>Subí el desglose de facturación — las líneas quedan guardadas para futuras sesiones</div>
+          <div style={{ fontSize: '14px', fontWeight: 700, color: '#e7eefb', marginBottom: '2px' }}>Cargar Excel de facturación</div>
+          <div style={{ fontSize: '12px', color: '#8ea0c4' }}>Subí el desglose de facturación — las líneas quedan guardadas para futuras sesiones</div>
         </div>
-        <label style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', background: cargando ? '#7a8fbb' : '#0e7490', color: '#fff', padding: '9px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, cursor: cargando ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap' }}>
+        <label style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', background: cargando ? '#7a8fbb' : '#3b6fd9', color: '#fff', padding: '9px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, cursor: cargando ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap' }}>
           {cargando ? 'Procesando...' : '↑ Cargar Excel'}
           <input
             ref={inputRef}
@@ -208,8 +208,8 @@ export function SubirFacturacionExcel({ insertarLote, compact = false }: Props) 
           />
         </label>
       </div>
-      {error && <div style={{ color: '#dc2626', marginTop: '10px', fontSize: '13px', fontWeight: 500 }}>⚠️ {error}</div>}
-      {exito && <div style={{ color: '#059669', marginTop: '10px', fontSize: '13px', fontWeight: 500 }}>✓ {exito}</div>}
+      {error && <div style={{ color: '#eb8484', marginTop: '10px', fontSize: '13px', fontWeight: 500 }}>⚠️ {error}</div>}
+      {exito && <div style={{ color: '#7bf4cf', marginTop: '10px', fontSize: '13px', fontWeight: 500 }}>✓ {exito}</div>}
     </div>
   )
 }

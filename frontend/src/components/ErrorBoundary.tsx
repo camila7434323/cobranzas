@@ -35,40 +35,40 @@ export class ErrorBoundary extends Component<Props, State> {
           alignItems: 'center',
           justifyContent: 'center',
           flexDirection: 'column',
-          background: '#eef2f8',
+          background: '#0a1630',
           fontFamily: 'Inter, sans-serif',
           padding: '20px',
           boxSizing: 'border-box'
         }}>
           <div style={{
-            background: '#fff',
+            background: '#11223f',
             padding: '40px',
             borderRadius: '12px',
             maxWidth: '500px',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.35)',
             border: '2px solid #dc2626'
           }}>
             <div style={{ fontSize: '32px', marginBottom: '16px' }}>⚠️</div>
-            <h1 style={{ color: '#dc2626', margin: '0 0 12px 0', fontSize: '20px' }}>
+            <h1 style={{ color: '#eb8484', margin: '0 0 12px 0', fontSize: '20px' }}>
               Error en la aplicación
             </h1>
-            <p style={{ color: '#7a8fbb', marginBottom: '16px', lineHeight: '1.6' }}>
+            <p style={{ color: '#8ea0c4', marginBottom: '16px', lineHeight: '1.6' }}>
               {this.state.error?.message || 'Algo salió mal durante el renderizado'}
             </p>
             <details style={{
               marginBottom: '20px',
               padding: '12px',
-              background: '#f8faff',
+              background: '#11223f',
               borderRadius: '8px',
               cursor: 'pointer'
             }}>
-              <summary style={{ color: '#7a8fbb', fontSize: '12px', fontWeight: 600 }}>
+              <summary style={{ color: '#8ea0c4', fontSize: '12px', fontWeight: 600 }}>
                 Detalles técnicos
               </summary>
               <pre style={{
                 marginTop: '10px',
                 fontSize: '11px',
-                color: '#3d5278',
+                color: '#b6c4de',
                 overflow: 'auto',
                 maxHeight: '200px'
               }}>
@@ -80,7 +80,7 @@ export class ErrorBoundary extends Component<Props, State> {
               style={{
                 width: '100%',
                 padding: '10px 16px',
-                background: '#2554a0',
+                background: '#3b6fd9',
                 color: '#fff',
                 border: 'none',
                 borderRadius: '8px',
@@ -93,7 +93,7 @@ export class ErrorBoundary extends Component<Props, State> {
             </button>
             <p style={{
               fontSize: '12px',
-              color: '#7a8fbb',
+              color: '#8ea0c4',
               marginTop: '16px',
               marginBottom: '0'
             }}>

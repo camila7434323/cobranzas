@@ -1,5 +1,5 @@
-export const DASH_BAR_COLORS = ['#2554a0','#dc2626','#059669','#d97706','#7c3aed','#0891b2','#9d174d','#65a30d','#ea580c','#0f766e']
-export const EXEC_PIE_COLORS = ['#1d4170','#0f766e','#7c3aed','#b45309','#0369a1','#15803d','#9f1239','#1e3a5f','#6d28d9','#065f46']
+export const DASH_BAR_COLORS = ['#5b8def','#f87171','#34d399','#fbbf24','#a78bfa','#22d3ee','#f472b6','#a3e635','#fb923c','#2dd4bf']
+export const EXEC_PIE_COLORS = ['#5b8def','#2dd4bf','#a78bfa','#fbbf24','#38bdf8','#4ade80','#fb7185','#94a3b8','#c084fc','#34d399']
 
 export function svgPie(items: { value: number; color: string }[], size = 160) {
   const total = items.reduce((s, d) => s + d.value, 0)

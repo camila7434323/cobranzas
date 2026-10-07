@@ -88,20 +88,20 @@ function DescPanel({ comprobante, extra, adminMode, onUpdate, condicionActual = 
   ]
 
   return (
-    <div style={{ padding: '14px 20px 18px', background: '#f8faff', borderTop: '2px solid #e0e7ff' }}>
-      <div style={{ fontSize: '11px', fontWeight: 700, color: '#4338ca', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '12px' }}>
-        Información adicional{!adminMode && <span style={{ color: '#94a3b8', fontWeight: 400, textTransform: 'none', marginLeft: '6px' }}>(solo lectura)</span>}
+    <div style={{ padding: '14px 20px 18px', background: '#11223f', borderTop: '2px solid rgba(76,111,230,0.4)' }}>
+      <div style={{ fontSize: '11px', fontWeight: 700, color: '#948ee1', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '12px' }}>
+        Información adicional{!adminMode && <span style={{ color: '#8ea0c4', fontWeight: 400, textTransform: 'none', marginLeft: '6px' }}>(solo lectura)</span>}
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
         {FIELDS.map(f => (
           <div key={f.key} style={f.wide ? { gridColumn: '1 / -1' } : {}}>
-            <div style={{ fontSize: '10px', fontWeight: 700, color: '#7a8fbb', textTransform: 'uppercase', letterSpacing: '0.7px', marginBottom: '4px' }}>{f.label}</div>
+            <div style={{ fontSize: '10px', fontWeight: 700, color: '#8ea0c4', textTransform: 'uppercase', letterSpacing: '0.7px', marginBottom: '4px' }}>{f.label}</div>
             {f.type === 'select' ? (
               <select
                 value={vals[f.key] || ''}
                 onChange={e => { setVals(p => ({ ...p, [f.key]: e.target.value })); setSaveState('idle') }}
                 disabled={!adminMode}
-                style={{ width: '100%', padding: '6px 10px', borderRadius: '6px', border: '1px solid #dde3f0', fontSize: '12px', background: '#fff', color: '#374151', outline: 'none' }}
+                style={{ width: '100%', padding: '6px 10px', borderRadius: '6px', border: '1px solid #24395f', fontSize: '12px', background: '#11223f', color: '#e7eefb', outline: 'none' }}
               >
                 <option value="">—</option>
                 {/* Si la condición que trae el comprobante no está en la lista estándar
@@ -117,7 +117,7 @@ function DescPanel({ comprobante, extra, adminMode, onUpdate, condicionActual = 
                 value={f.key === 'periodo' && !adminMode ? fmtPeriodo(vals[f.key] || '') : (vals[f.key] || '')}
                 onChange={e => { setVals(p => ({ ...p, [f.key]: e.target.value })); setSaveState('idle') }}
                 readOnly={!adminMode}
-                style={{ width: '100%', padding: '6px 10px', borderRadius: '6px', border: '1px solid #dde3f0', fontSize: '12px', background: adminMode ? '#fff' : '#f1f5f9', color: '#374151', outline: 'none', boxSizing: 'border-box' }}
+                style={{ width: '100%', padding: '6px 10px', borderRadius: '6px', border: '1px solid #24395f', fontSize: '12px', background: adminMode ? '#11223f' : '#0e1e39', color: '#e7eefb', outline: 'none', boxSizing: 'border-box' }}
               />
             )}
           </div>
@@ -125,12 +125,12 @@ function DescPanel({ comprobante, extra, adminMode, onUpdate, condicionActual = 
       </div>
       {adminMode && (
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '10px', marginTop: '14px' }}>
-          {saveState === 'saved' && <span style={{ color: '#059669', fontSize: '12px', fontWeight: 600 }}>Cambios guardados</span>}
-          {saveState === 'error' && <span style={{ color: '#dc2626', fontSize: '12px', fontWeight: 600 }}>No se pudo guardar</span>}
+          {saveState === 'saved' && <span style={{ color: '#7bf4cf', fontSize: '12px', fontWeight: 600 }}>Cambios guardados</span>}
+          {saveState === 'error' && <span style={{ color: '#eb8484', fontSize: '12px', fontWeight: 600 }}>No se pudo guardar</span>}
           <button
             onClick={handleSave}
             disabled={!hasChanges || saving}
-            style={{ background: !hasChanges || saving ? '#94a3b8' : '#2554a0', color: '#fff', border: 'none', borderRadius: '8px', padding: '8px 16px', fontSize: '13px', fontWeight: 700, cursor: !hasChanges || saving ? 'not-allowed' : 'pointer' }}
+            style={{ background: !hasChanges || saving ? '#94a3b8' : '#3b6fd9', color: '#fff', border: 'none', borderRadius: '8px', padding: '8px 16px', fontSize: '13px', fontWeight: 700, cursor: !hasChanges || saving ? 'not-allowed' : 'pointer' }}
           >
             {saving ? 'Guardando...' : 'Guardar cambios'}
           </button>
@@ -147,24 +147,24 @@ function ManualDetallePanel({ factura, fmtFecha }: { factura: ManualFactura; fmt
   }
   const r = factura
   return (
-    <div style={{ padding: '14px 20px', background: '#f8faff', borderLeft: '3px solid #a8c4f5' }}>
+    <div style={{ padding: '14px 20px', background: '#11223f', borderLeft: '3px solid rgba(76,132,230,0.4)' }}>
       {(r.items || []).length > 0 && (
         <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '12px', fontSize: '12px' }}>
           <thead>
             <tr>
               {['Descripción', 'Unidad', 'Cant.', 'Valor unit.', 'Subtotal'].map(h => (
-                <th key={h} style={{ textAlign: h === 'Descripción' || h === 'Unidad' ? 'left' : 'right', padding: '4px 8px', fontSize: '10px', fontWeight: 700, color: '#7a8fbb', textTransform: 'uppercase' }}>{h}</th>
+                <th key={h} style={{ textAlign: h === 'Descripción' || h === 'Unidad' ? 'left' : 'right', padding: '4px 8px', fontSize: '10px', fontWeight: 700, color: '#8ea0c4', textTransform: 'uppercase' }}>{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
             {(r.items || []).map((it, i) => (
-              <tr key={i} style={{ borderTop: '1px solid #e2e8f0' }}>
-                <td style={{ padding: '5px 8px', color: '#0d1b38' }}>{it.descripcion || '—'}</td>
-                <td style={{ padding: '5px 8px', color: '#0d1b38' }}>{it.unidad || '—'}</td>
-                <td style={{ padding: '5px 8px', textAlign: 'right', color: '#0d1b38' }}>{it.cantidad}</td>
-                <td style={{ padding: '5px 8px', textAlign: 'right', color: '#0d1b38' }}>{fmtMonto(r.moneda, it.valor_unitario)}</td>
-                <td style={{ padding: '5px 8px', textAlign: 'right', fontWeight: 600, color: '#0d1b38' }}>{fmtMonto(r.moneda, it.cantidad * it.valor_unitario)}</td>
+              <tr key={i} style={{ borderTop: '1px solid #24395f' }}>
+                <td style={{ padding: '5px 8px', color: '#e7eefb' }}>{it.descripcion || '—'}</td>
+                <td style={{ padding: '5px 8px', color: '#e7eefb' }}>{it.unidad || '—'}</td>
+                <td style={{ padding: '5px 8px', textAlign: 'right', color: '#e7eefb' }}>{it.cantidad}</td>
+                <td style={{ padding: '5px 8px', textAlign: 'right', color: '#e7eefb' }}>{fmtMonto(r.moneda, it.valor_unitario)}</td>
+                <td style={{ padding: '5px 8px', textAlign: 'right', fontWeight: 600, color: '#e7eefb' }}>{fmtMonto(r.moneda, it.cantidad * it.valor_unitario)}</td>
               </tr>
             ))}
           </tbody>
@@ -172,9 +172,9 @@ function ManualDetallePanel({ factura, fmtFecha }: { factura: ManualFactura; fmt
       )}
       {!!r.iva && (
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '18px', marginBottom: '12px', fontSize: '12px' }}>
-          <span style={{ color: '#7a8fbb' }}>Base imponible: <strong style={{ color: '#0d1b38' }}>{fmtMonto(r.moneda, (r.items || []).reduce((s, it) => s + it.cantidad * it.valor_unitario, 0))}</strong></span>
-          <span style={{ color: '#7a8fbb' }}>IVA: <strong style={{ color: '#0d1b38' }}>{fmtMonto(r.moneda, r.iva)}</strong></span>
-          <span style={{ color: '#7a8fbb' }}>Total factura: <strong style={{ color: '#2554a0' }}>{fmtMonto(r.moneda, r.monto)}</strong></span>
+          <span style={{ color: '#8ea0c4' }}>Base imponible: <strong style={{ color: '#e7eefb' }}>{fmtMonto(r.moneda, (r.items || []).reduce((s, it) => s + it.cantidad * it.valor_unitario, 0))}</strong></span>
+          <span style={{ color: '#8ea0c4' }}>IVA: <strong style={{ color: '#e7eefb' }}>{fmtMonto(r.moneda, r.iva)}</strong></span>
+          <span style={{ color: '#8ea0c4' }}>Total factura: <strong style={{ color: '#8bade4' }}>{fmtMonto(r.moneda, r.monto)}</strong></span>
         </div>
       )}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px', fontSize: '12px' }}>
@@ -184,8 +184,8 @@ function ManualDetallePanel({ factura, fmtFecha }: { factura: ManualFactura; fmt
           ['Emisión', r.fecha_emision ? fmtFecha(r.fecha_emision) : null], ['Vencimiento', r.fecha_vencimiento ? fmtFecha(r.fecha_vencimiento) : null],
         ].map(([label, val]) => (
           <div key={label}>
-            <div style={{ fontSize: '10px', fontWeight: 700, color: '#7a8fbb', textTransform: 'uppercase', marginBottom: '3px' }}>{label}</div>
-            <div style={{ color: '#0d1b38' }}>{val || '—'}</div>
+            <div style={{ fontSize: '10px', fontWeight: 700, color: '#8ea0c4', textTransform: 'uppercase', marginBottom: '3px' }}>{label}</div>
+            <div style={{ color: '#e7eefb' }}>{val || '—'}</div>
           </div>
         ))}
       </div>
@@ -212,13 +212,13 @@ function getExecColor(nombre: string) {
 }
 
 const SEL: React.CSSProperties = {
-  padding: '7px 12px', borderRadius: '8px', border: '1px solid #dde3f0',
-  fontSize: '12px', color: '#0d1b38', background: '#fff', outline: 'none',
+  padding: '7px 12px', borderRadius: '8px', border: '1px solid #24395f',
+  fontSize: '12px', color: '#e7eefb', background: '#11223f', outline: 'none',
   cursor: 'pointer', minWidth: '160px',
 }
 const BTN_LIMPIAR: React.CSSProperties = {
-  padding: '7px 14px', borderRadius: '8px', border: '1px solid #fecaca',
-  fontSize: '12px', color: '#dc2626', background: '#fff5f5', cursor: 'pointer', fontWeight: 600,
+  padding: '7px 14px', borderRadius: '8px', border: '1px solid rgba(230,76,76,0.4)',
+  fontSize: '12px', color: '#eb8484', background: 'rgba(239,68,68,0.14)', cursor: 'pointer', fontWeight: 600,
 }
 
 function App() {
@@ -485,10 +485,10 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
     .filter(n => !clientesConMoraSet.has(n)).sort()
 
   const moraDist = [
-    {label: '1–7 días',   sub: 'Vencimiento reciente · Gestión de cobro estándar',  filterKey: 'recien',   color: '#92400e', bg: '#fef9c3', items: vencidasArr.filter(r => r.dias_mora >= 1 && r.dias_mora <= 7)},
-    {label: '8–15 días',  sub: 'Prioridad media',                                    filterKey: 'atencion', color: '#c2410c', bg: '#fed7aa', items: vencidasArr.filter(r => r.dias_mora > 7 && r.dias_mora <= 15)},
-    {label: '16–30 días', sub: 'Amerita gestión prioritaria e identificada',          filterKey: 'critica',  color: '#9a3412', bg: '#fdba74', items: vencidasArr.filter(r => r.dias_mora > 15 && r.dias_mora <= 30)},
-    {label: '+30 días',   sub: 'Requiere atención prioritaria e inmediata',           filterKey: 'urgente',  color: '#991b1b', bg: '#fecaca', items: vencidasArr.filter(r => r.dias_mora > 30)},
+    {label: '1–7 días',   sub: 'Vencimiento reciente · Gestión de cobro estándar',  filterKey: 'recien',   color: '#f3a97d', bg: 'rgba(230,217,76,0.16)', items: vencidasArr.filter(r => r.dias_mora >= 1 && r.dias_mora <= 7)},
+    {label: '8–15 días',  sub: 'Prioridad media',                                    filterKey: 'atencion', color: '#f49e7b', bg: 'rgba(230,158,76,0.16)', items: vencidasArr.filter(r => r.dias_mora > 7 && r.dias_mora <= 15)},
+    {label: '16–30 días', sub: 'Amerita gestión prioritaria e identificada',          filterKey: 'critica',  color: '#f09b7f', bg: '#fdba74', items: vencidasArr.filter(r => r.dias_mora > 15 && r.dias_mora <= 30)},
+    {label: '+30 días',   sub: 'Requiere atención prioritaria e inmediata',           filterKey: 'urgente',  color: '#ea8686', bg: 'rgba(230,76,76,0.16)', items: vencidasArr.filter(r => r.dias_mora > 30)},
   ]
   const clientesTotalDataSel = new Set(dataSel.map(r => r.nombre_cliente)).size
 
@@ -607,10 +607,10 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
   }
 
   const moraBadge = (dias: number) => {
-    if (dias <= 0)  return { label: 'Sin vencer', color: '#059669', bg: '#d1fae5' }
-    if (dias <= 7)  return { label: `${dias}d`,   color: '#854d0e', bg: '#fef9c3' }
-    if (dias <= 15) return { label: `${dias}d`,   color: '#9a3412', bg: '#ffedd5' }
-    if (dias <= 30) return { label: `${dias}d`,   color: '#7f1d1d', bg: '#fee2e2' }
+    if (dias <= 0)  return { label: 'Sin vencer', color: '#6ee7b7', bg: 'rgba(16,185,129,0.18)' }
+    if (dias <= 7)  return { label: `${dias}d`,   color: '#fcd34d', bg: 'rgba(245,158,11,0.2)' }
+    if (dias <= 15) return { label: `${dias}d`,   color: '#fdba74', bg: 'rgba(249,115,22,0.22)' }
+    if (dias <= 30) return { label: `${dias}d`,   color: '#fca5a5', bg: 'rgba(239,68,68,0.24)' }
     return           { label: `🔴 ${dias}d`,      color: '#ffffff', bg: '#dc2626' }
   }
 
@@ -1111,13 +1111,13 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
   }
 
   return (
-    <div style={{ display: 'flex', width: '100vw', height: '100vh', fontFamily: 'Inter, sans-serif', background: '#eef2f8', overflow: 'hidden' }}>
+    <div style={{ display: 'flex', width: '100vw', height: '100vh', fontFamily: 'Inter, sans-serif', background: '#0a1630', overflow: 'hidden' }}>
 
       {/* ── MODAL PDF ─────────────────────────────────────────────────────── */}
       {modalComprobante && (
         <div onClick={cerrarModal} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-          <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: '16px', width: '100%', maxWidth: '620px', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}>
-            <div style={{ background: '#0a1628', borderRadius: '16px 16px 0 0', padding: '18px 24px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: '#11223f', borderRadius: '16px', width: '100%', maxWidth: '620px', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,0.55)' }}>
+            <div style={{ background: '#1c3360', borderRadius: '16px 16px 0 0', padding: '18px 24px', display: 'flex', alignItems: 'center', gap: '12px' }}>
               <div style={{ width: '36px', height: '36px', background: 'rgba(255,255,255,0.1)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px', flexShrink: 0 }}>📄</div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ color: '#fff', fontWeight: 700, fontSize: '16px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{modalComprobante.comprobante}</div>
@@ -1125,12 +1125,12 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
               </div>
               <button onClick={cerrarModal} style={{ background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '8px', width: '32px', height: '32px', cursor: 'pointer', color: '#fff', fontSize: '16px', flexShrink: 0 }}>✕</button>
             </div>
-            <div style={{ background: '#f4f6fb', padding: '16px' }}>
-              <iframe src={modalComprobante._pdfUrl} style={{ width: '100%', height: '380px', border: 'none', borderRadius: '8px', background: '#fff' }} title="PDF" />
+            <div style={{ background: '#0e1e39', padding: '16px' }}>
+              <iframe src={modalComprobante._pdfUrl} style={{ width: '100%', height: '380px', border: 'none', borderRadius: '8px', background: '#11223f' }} title="PDF" />
             </div>
             <div style={{ padding: '16px 24px 24px' }}>
               {modalComprobante.dias_mora > 0 && (
-                <div style={{ background: '#fee2e2', color: '#dc2626', padding: '6px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, marginBottom: '14px', display: 'inline-block' }}>
+                <div style={{ background: 'rgba(239,68,68,0.14)', color: '#eb8484', padding: '6px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, marginBottom: '14px', display: 'inline-block' }}>
                   EN MORA · {modalComprobante.dias_mora} días
                 </div>
               )}
@@ -1143,15 +1143,15 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
                   { label: 'MONTO',       value: fmt(modalComprobante.monto) },
                   { label: 'MORA',        value: modalComprobante.dias_mora > 0 ? `${modalComprobante.dias_mora} días` : 'Sin vencer' },
                 ].map((item, idx) => (
-                  <div key={`modal-${item.label}-${idx}`} style={{ background: '#f8faff', borderRadius: '10px', padding: '12px 16px' }}>
-                    <div style={{ fontSize: '10px', fontWeight: 600, color: '#7a8fbb', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '4px' }}>{item.label}</div>
-                    <div style={{ fontSize: '14px', fontWeight: 600, color: '#0d1b38' }}>{item.value}</div>
+                  <div key={`modal-${item.label}-${idx}`} style={{ background: '#11223f', borderRadius: '10px', padding: '12px 16px' }}>
+                    <div style={{ fontSize: '10px', fontWeight: 600, color: '#8ea0c4', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '4px' }}>{item.label}</div>
+                    <div style={{ fontSize: '14px', fontWeight: 600, color: '#e7eefb' }}>{item.value}</div>
                   </div>
                 ))}
               </div>
               <div style={{ display: 'flex', gap: '10px' }}>
-                <a href={modalComprobante._pdfUrl} download style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', background: '#2554a0', color: '#fff', padding: '10px', borderRadius: '10px', fontSize: '13px', fontWeight: 600, textDecoration: 'none' }}>⬇ Descargar</a>
-                <button onClick={copiarLink} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', background: linkCopiado ? '#d1fae5' : '#f0f4ff', color: linkCopiado ? '#059669' : '#2554a0', padding: '10px', borderRadius: '10px', fontSize: '13px', fontWeight: 600, border: linkCopiado ? '1px solid #6ee7b7' : '1px solid transparent', cursor: 'pointer', transition: 'all 0.2s ease' }}>
+                <a href={modalComprobante._pdfUrl} download style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', background: '#3b6fd9', color: '#fff', padding: '10px', borderRadius: '10px', fontSize: '13px', fontWeight: 600, textDecoration: 'none' }}>⬇ Descargar</a>
+                <button onClick={copiarLink} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', background: linkCopiado ? 'rgba(76,230,151,0.16)' : '#0e1e39', color: linkCopiado ? '#7bf4cf' : '#8bade4', padding: '10px', borderRadius: '10px', fontSize: '13px', fontWeight: 600, border: linkCopiado ? '1px solid #6ee7b7' : '1px solid transparent', cursor: 'pointer', transition: 'all 0.2s ease' }}>
                   {linkCopiado ? '✅ Copiado!' : '🔗 Copiar link'}
                 </button>
               </div>
@@ -1164,16 +1164,16 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
       {/* ── MODAL FECHA DE PAGO (marcar cobrada manual) ─────────────────────── */}
       {marcandoCobroManual && (
         <div onClick={() => setMarcandoCobroManual(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-          <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: '16px', width: '100%', maxWidth: '380px', boxShadow: '0 20px 60px rgba(0,0,0,0.3)', padding: '24px' }}>
-            <div style={{ fontSize: '16px', fontWeight: 700, color: '#0d1b38', marginBottom: '6px' }}>Marcar como cobrada</div>
-            <div style={{ fontSize: '13px', color: '#7a8fbb', marginBottom: '18px' }}>Factura {marcandoCobroManual.comprobante} — indicá la fecha real en la que se recibió el pago.</div>
-            <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: '#7a8fbb', textTransform: 'uppercase', marginBottom: '6px' }}>Fecha de pago</label>
+          <div onClick={e => e.stopPropagation()} style={{ background: '#11223f', borderRadius: '16px', width: '100%', maxWidth: '380px', boxShadow: '0 20px 60px rgba(0,0,0,0.55)', padding: '24px' }}>
+            <div style={{ fontSize: '16px', fontWeight: 700, color: '#e7eefb', marginBottom: '6px' }}>Marcar como cobrada</div>
+            <div style={{ fontSize: '13px', color: '#8ea0c4', marginBottom: '18px' }}>Factura {marcandoCobroManual.comprobante} — indicá la fecha real en la que se recibió el pago.</div>
+            <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: '#8ea0c4', textTransform: 'uppercase', marginBottom: '6px' }}>Fecha de pago</label>
             <input
               type="date" value={fechaPagoManual} onChange={e => setFechaPagoManual(e.target.value)}
-              style={{ width: '100%', padding: '9px 12px', borderRadius: '8px', border: '1px solid #dde3f0', fontSize: '13px', color: '#0d1b38', outline: 'none', marginBottom: '18px' }}
+              style={{ width: '100%', padding: '9px 12px', borderRadius: '8px', border: '1px solid #24395f', fontSize: '13px', color: '#e7eefb', outline: 'none', marginBottom: '18px' }}
             />
             <div style={{ display: 'flex', gap: '10px' }}>
-              <button onClick={() => setMarcandoCobroManual(null)} style={{ flex: 1, background: '#f1f5f9', color: '#374151', border: 'none', borderRadius: '10px', padding: '10px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}>Cancelar</button>
+              <button onClick={() => setMarcandoCobroManual(null)} style={{ flex: 1, background: '#0e1e39', color: '#e7eefb', border: 'none', borderRadius: '10px', padding: '10px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}>Cancelar</button>
               <button onClick={confirmarMarcarCobradaManual} disabled={!fechaPagoManual} style={{ flex: 1, background: fechaPagoManual ? '#059669' : '#94a3b8', color: '#fff', border: 'none', borderRadius: '10px', padding: '10px', fontSize: '13px', fontWeight: 700, cursor: fechaPagoManual ? 'pointer' : 'not-allowed' }}>✓ Confirmar</button>
             </div>
           </div>
@@ -1182,8 +1182,8 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
 
       {/* ── TOAST ÉXITO ───────────────────────────────────────────────────── */}
       {toastExito && (
-        <div style={{ position: 'fixed', bottom: '28px', right: '28px', zIndex: 1002, background: '#0d1b38', color: '#fff', padding: '14px 22px', borderRadius: '10px', boxShadow: '0 10px 30px rgba(0,0,0,0.3)', fontSize: '13px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <span style={{ color: '#4ade80', fontSize: '16px' }}>✓</span>
+        <div style={{ position: 'fixed', bottom: '28px', right: '28px', zIndex: 1002, background: '#1c3360', color: '#fff', padding: '14px 22px', borderRadius: '10px', boxShadow: '0 10px 30px rgba(0,0,0,0.55)', fontSize: '13px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <span style={{ color: '#86e9aa', fontSize: '16px' }}>✓</span>
           {toastExito}
         </div>
       )}
@@ -1246,7 +1246,7 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
                     <SidebarSeccion>Por ejecutivo</SidebarSeccion>
                     {[...ejecutivos, ...(data.some(r => esSinAsignar(r.ejecutivo)) ? ['Sin asignar'] : [])].map(exec => {
                       const sinAsignar = exec === 'Sin asignar'
-                      const ec = sinAsignar ? { bg: '#f8fafc', color: '#475569', initials: 'Sa' } : getExecColor(exec)
+                      const ec = sinAsignar ? { bg: '#11223f', color: '#b6c4de', initials: 'Sa' } : getExecColor(exec)
                       const count     = data.filter(r => sinAsignar ? esSinAsignar(r.ejecutivo) : r.ejecutivo === exec).length
                       const moraCount = data.filter(r => (sinAsignar ? esSinAsignar(r.ejecutivo) : r.ejecutivo === exec) && r.dias_mora > 0).length
                       return (
@@ -1254,7 +1254,7 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
                           key={`sa-exec-${exec}`}
                           compacto
                           label={exec}
-                          icono={<span style={{ width: 22, height: 22, borderRadius: '50%', background: ec.bg, color: ec.color, display: 'grid', placeItems: 'center', fontSize: 9, fontWeight: 700, boxShadow: '0 2px 6px rgba(0,0,0,0.3)' }}>{ec.initials}</span>}
+                          icono={<span style={{ width: 22, height: 22, borderRadius: '50%', background: ec.bg, color: ec.color, display: 'grid', placeItems: 'center', fontSize: 9, fontWeight: 700, boxShadow: '0 2px 6px rgba(0,0,0,0.55)' }}>{ec.initials}</span>}
                           activo={sociedadActiva === 'sa' && ejecutivoSeleccionado === exec}
                           onClick={() => { setSociedadActiva('sa'); setEjecutivoSeleccionado(exec); setVista('todos'); setBusqueda(''); setBusquedaHistorial(''); setBusquedaClientes(''); setFiltroClienteTabla(''); setFiltroEstadoTabla(''); setFiltroMoraRange(''); setSortCol(null); setSortDir('asc'); setExpandedRows(new Set()) }}
                           extra={moraCount > 0 ? <span title="Tiene comprobantes en mora" style={{ width: 6, height: 6, borderRadius: '50%', background: '#f87171', flexShrink: 0 }} /> : undefined}
@@ -1274,21 +1274,21 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
       </Sidebar>
 
       {/* ── MAIN ──────────────────────────────────────────────────────────── */}
-      <main ref={mainRef} style={{ flex: 1, minWidth: 0, padding: '28px 32px', overflowY: 'auto', background: '#eef2f8' }}>
+      <main ref={mainRef} style={{ flex: 1, minWidth: 0, padding: '28px 32px', overflowY: 'auto', background: 'radial-gradient(1100px 600px at 100% 0%, rgba(59,111,217,0.12), transparent 60%), radial-gradient(800px 500px at 0% 100%, rgba(79,70,229,0.08), transparent 60%), #0a1630' }}>
 
         {(errorCarga || errorComprobantes || errorHistorial || errorFacturasManuales) && (
-          <div style={{ background: '#fee2e2', border: '1px solid #fca5a5', borderRadius: '8px', padding: '10px 16px', marginBottom: '14px', fontSize: '13px', color: '#dc2626', fontWeight: 500 }}>
+          <div style={{ background: 'rgba(239,68,68,0.14)', border: '1px solid rgba(230,76,76,0.4)', borderRadius: '8px', padding: '10px 16px', marginBottom: '14px', fontSize: '13px', color: '#eb8484', fontWeight: 500 }}>
             ⚠ {String(errorCarga || errorComprobantes || errorHistorial || errorFacturasManuales)}
           </div>
         )}
 
         {pdfNoEncontrado && (
-          <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', zIndex: 1002, background: '#fef3c7', border: '1px solid #fcd34d', borderRadius: '10px', padding: '16px 44px 16px 24px', fontSize: '14px', color: '#92400e', fontWeight: 500, boxShadow: '0 10px 30px rgba(0,0,0,0.25)' }}>
+          <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', zIndex: 1002, background: 'rgba(230,199,76,0.16)', border: '1px solid #fcd34d', borderRadius: '10px', padding: '16px 44px 16px 24px', fontSize: '14px', color: '#f3a97d', fontWeight: 500, boxShadow: '0 10px 30px rgba(0,0,0,0.55)' }}>
             ⚠ Factura <strong>{pdfNoEncontrado}</strong> no subida a la base de datos.
             <button
               onClick={() => setPdfNoEncontrado('')}
               aria-label="Cerrar"
-              style={{ position: 'absolute', top: '8px', right: '10px', background: 'none', border: 'none', cursor: 'pointer', color: '#92400e', fontSize: '18px', lineHeight: 1, padding: '2px' }}
+              style={{ position: 'absolute', top: '8px', right: '10px', background: 'none', border: 'none', cursor: 'pointer', color: '#f3a97d', fontSize: '18px', lineHeight: 1, padding: '2px' }}
             >
               ×
             </button>
@@ -1302,24 +1302,24 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
               <button onClick={() => setSidebarAbierto(true)} style={{ background: 'linear-gradient(180deg,#0e2549,#06122a)', border: 'none', borderRadius: '8px', width: '36px', height: '36px', cursor: 'pointer', color: '#fff', fontSize: '16px', marginRight: '12px' }}>≡</button>
             )}
             <div>
-              <h1 style={{ fontSize: '18px', fontWeight: 700, color: '#0d1b38', margin: 0 }}>
+              <h1 style={{ fontSize: '18px', fontWeight: 700, color: '#e7eefb', margin: 0 }}>
                 {esDashboard ? 'Dashboard'
                   : esHistorial ? 'Historial cobrado'
                   : esClientes  ? 'Listado de clientes'
                   : ejecutivoSeleccionado || 'Todos los comprobantes'}
               </h1>
-              <p style={{ color: '#7a8fbb', fontSize: '13px', margin: '2px 0 0' }}>· Al {new Date().toLocaleDateString('es-AR')}</p>
+              <p style={{ color: '#8ea0c4', fontSize: '13px', margin: '2px 0 0' }}>· Al {new Date().toLocaleDateString('es-AR')}</p>
             </div>
           </div>
           <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
             {(esTabla || esGlobal) && (
               <div style={{ position: 'relative' }}>
-                <span style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: '#7a8fbb', fontSize: '13px' }}>🔍</span>
-                <input type="text" placeholder="Buscar cliente o factura..." value={busqueda} onChange={e => setBusqueda(e.target.value)} style={{ padding: '8px 12px 8px 32px', borderRadius: '8px', border: '1px solid #dde3f0', fontSize: '13px', width: '220px', outline: 'none', color: '#0d1b38', background: '#fff' }} />
+                <span style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: '#8ea0c4', fontSize: '13px' }}>🔍</span>
+                <input type="text" placeholder="Buscar cliente o factura..." value={busqueda} onChange={e => setBusqueda(e.target.value)} style={{ padding: '8px 12px 8px 32px', borderRadius: '8px', border: '1px solid #24395f', fontSize: '13px', width: '220px', outline: 'none', color: '#e7eefb', background: '#11223f' }} />
               </div>
             )}
             {(esClientes || esHistorial) && (
-              <button onClick={exportar} style={{ background: '#2554a0', color: '#fff', border: 'none', padding: '8px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}>
+              <button onClick={exportar} style={{ background: '#3b6fd9', color: '#fff', border: 'none', padding: '8px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}>
                 ↗ Exportar .xlsx
               </button>
             )}
@@ -1331,7 +1331,7 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
         {/* ── DASHBOARD ─────────────────────────────────────────────────── */}
         {esGlobal ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
-            <div style={{ background: '#fff', border: '1px solid #dde3f0', borderRadius: '10px', padding: '16px 20px', boxShadow: '0 2px 12px rgba(38,63,101,0.06)' }}>
+            <div style={{ background: '#11223f', border: '1px solid #24395f', borderRadius: '10px', padding: '16px 20px', boxShadow: '0 2px 12px rgba(0,0,0,0.21)' }}>
               <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
                 <select style={SEL} value={globalFiltroEjecutivo} onChange={e => setGlobalFiltroEjecutivo(e.target.value)}>
                   <option value="">Todos los ejecutivos</option>
@@ -1352,70 +1352,70 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
                   <button onClick={() => { setBusqueda(''); setGlobalFiltroEjecutivo(''); setGlobalFiltroCliente(''); setGlobalFiltroEstado('') }} style={BTN_LIMPIAR}>× Limpiar</button>
                 )}
               </div>
-              <div style={{ marginTop: '14px', color: '#4a6fa5', fontSize: '13px' }}>
+              <div style={{ marginTop: '14px', color: '#b6c4de', fontSize: '13px' }}>
                 📊 Vista consolidada · ASAP SA · ASAP LLC · IT ASAP SL · incluye pendientes y cobrados
               </div>
             </div>
 
-            <div style={{ background: '#fff', border: '1px solid #dde3f0', borderRadius: '10px', overflow: 'hidden', boxShadow: '0 2px 12px rgba(38,63,101,0.06)' }}>
-              <div style={{ padding: '14px 22px', borderBottom: '1px solid #dde3f0', background: '#f8faff', display: 'flex', gap: '8px', alignItems: 'center' }}>
-                <strong style={{ fontSize: '14px', color: '#0d1b38' }}>Comprobantes</strong>
-                <span style={{ color: '#7a8fbb', fontSize: '12px' }}>{globalRows.length} comprobantes</span>
-                <button onClick={exportarGlobal} style={{ marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: '6px', background: '#2554a0', color: '#fff', border: 'none', borderRadius: '8px', padding: '6px 12px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>
+            <div style={{ background: '#11223f', border: '1px solid #24395f', borderRadius: '10px', overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.21)' }}>
+              <div style={{ padding: '14px 22px', borderBottom: '1px solid #24395f', background: '#11223f', display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <strong style={{ fontSize: '14px', color: '#e7eefb' }}>Comprobantes</strong>
+                <span style={{ color: '#8ea0c4', fontSize: '12px' }}>{globalRows.length} comprobantes</span>
+                <button onClick={exportarGlobal} style={{ marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: '6px', background: '#3b6fd9', color: '#fff', border: 'none', borderRadius: '8px', padding: '6px 12px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>
                   ↓ .xlsx
                 </button>
               </div>
               <div style={{ overflowX: 'auto' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                   <thead>
-                    <tr style={{ background: '#f8faff' }}>
+                    <tr style={{ background: '#11223f' }}>
                       <th style={{ padding: '10px 6px', width: '32px' }} />
                       {['Empresa', 'Comprobante', 'Cliente', 'Ejecutivo', 'Emision', 'Monto', 'Estado', 'Mora', 'Factura'].map(h => (
-                        <th key={h} style={{ padding: '10px 16px', textAlign: h === 'Monto' ? 'right' : 'left', fontSize: '10px', color: '#7a8fbb', textTransform: 'uppercase', letterSpacing: '0.8px', borderBottom: '1px solid #dde3f0' }}>{h}</th>
+                        <th key={h} style={{ padding: '10px 16px', textAlign: h === 'Monto' ? 'right' : 'left', fontSize: '10px', color: '#8ea0c4', textTransform: 'uppercase', letterSpacing: '0.8px', borderBottom: '1px solid #24395f' }}>{h}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
                     {globalRows.length === 0 ? (
-                      <tr><td colSpan={10} style={{ padding: '58px', textAlign: 'center', color: '#7a8fbb' }}>Sin resultados.</td></tr>
+                      <tr><td colSpan={10} style={{ padding: '58px', textAlign: 'center', color: '#8ea0c4' }}>Sin resultados.</td></tr>
                     ) : globalRows.map((r, idx) => {
                       const rowKey = `${r.estado}-${r.comprobante}-${idx}`
                       const isExp = expandedGlobalRows.has(rowKey)
                       const extra = extras.get(r.comprobante)
                       return (
                         <Fragment key={rowKey}>
-                          <tr style={{ borderBottom: isExp ? 'none' : '1px solid #dde3f0' }}>
+                          <tr style={{ borderBottom: isExp ? 'none' : '1px solid #24395f' }}>
                             <td style={{ padding: '8px 4px 8px 6px' }}>
                               <button
                                 onClick={() => setExpandedGlobalRows(prev => { const next = new Set(prev); if (next.has(rowKey)) next.delete(rowKey); else next.add(rowKey); return next })}
-                                style={{ width: '22px', height: '22px', border: '1px solid #dde3f0', borderRadius: '4px', background: isExp ? '#2554a0' : '#f1f5f9', color: isExp ? '#fff' : '#374151', fontSize: '14px', fontWeight: 700, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: 0, lineHeight: 1 }}
+                                style={{ width: '22px', height: '22px', border: '1px solid #24395f', borderRadius: '4px', background: isExp ? '#3b6fd9' : '#0e1e39', color: isExp ? '#fff' : '#e7eefb', fontSize: '14px', fontWeight: 700, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: 0, lineHeight: 1 }}
                               >
                                 {isExp ? '−' : '+'}
                               </button>
                             </td>
-                            <td style={{ padding: '11px 16px', fontSize: '12px', color: '#3d5278', whiteSpace: 'nowrap' }}>{r.empresa}</td>
-                            <td style={{ padding: '11px 16px', fontSize: '12px', fontFamily: 'monospace', color: '#3d5278', whiteSpace: 'nowrap' }}>{r.comprobante}</td>
-                            <td style={{ padding: '11px 16px', fontSize: '13px', fontWeight: 600, color: '#0d1b38' }}>{r.cliente}</td>
-                            <td style={{ padding: '11px 16px', fontSize: '12px', color: '#7a8fbb' }}>{r.ejecutivo}</td>
-                            <td style={{ padding: '11px 16px', fontSize: '12px', color: '#7a8fbb', whiteSpace: 'nowrap' }}>{fmtFecha(r.fecha)}</td>
+                            <td style={{ padding: '11px 16px', fontSize: '12px', color: '#b6c4de', whiteSpace: 'nowrap' }}>{r.empresa}</td>
+                            <td style={{ padding: '11px 16px', fontSize: '12px', fontFamily: 'monospace', color: '#b6c4de', whiteSpace: 'nowrap' }}>{r.comprobante}</td>
+                            <td style={{ padding: '11px 16px', fontSize: '13px', fontWeight: 600, color: '#e7eefb' }}>{r.cliente}</td>
+                            <td style={{ padding: '11px 16px', fontSize: '12px', color: '#8ea0c4' }}>{r.ejecutivo}</td>
+                            <td style={{ padding: '11px 16px', fontSize: '12px', color: '#8ea0c4', whiteSpace: 'nowrap' }}>{fmtFecha(r.fecha)}</td>
                             <td style={{ padding: '11px 16px', fontSize: '12px', fontWeight: 700, fontFamily: 'monospace', textAlign: 'right' }}>{fmt(r.monto)}</td>
                             <td style={{ padding: '11px 16px' }}>
-                              <span style={{ background: r.estado === 'Cobrada' ? '#d1fae5' : '#fef3c7', color: r.estado === 'Cobrada' ? '#065f46' : '#92400e', padding: '3px 9px', borderRadius: '20px', fontSize: '11px', fontWeight: 700 }}>{r.estado}</span>
+                              <span style={{ background: r.estado === 'Cobrada' ? 'rgba(76,230,151,0.16)' : 'rgba(230,199,76,0.16)', color: r.estado === 'Cobrada' ? '#7bf4d2' : '#f3a97d', padding: '3px 9px', borderRadius: '20px', fontSize: '11px', fontWeight: 700 }}>{r.estado}</span>
                             </td>
                             <td style={{ padding: '11px 16px' }}>
                               {r.estado === 'Cobrada' ? (
-                                <span style={{ color: '#94a3b8', fontSize: '11px' }}>—</span>
+                                <span style={{ color: '#8ea0c4', fontSize: '11px' }}>—</span>
                               ) : (() => {
                                 const badge = moraBadge(r.diasMora)
                                 return <span style={{ background: badge.bg, color: badge.color, padding: '3px 9px', borderRadius: '20px', fontSize: '11px', fontWeight: 700, whiteSpace: 'nowrap' }}>{badge.label}</span>
                               })()}
                             </td>
                             <td style={{ padding: '11px 16px' }}>
-                              <button onClick={() => abrirPdf({ comprobante: r.comprobante, nombre_cliente: r.cliente, ejecutivo: r.ejecutivo, fecha_emision: null, fecha_vencimiento: null, monto: r.monto, dias_mora: r.diasMora }, r.pdfDirecta)} style={{ background: '#f0f4ff', color: '#2554a0', border: 'none', borderRadius: '8px', padding: '5px 12px', fontWeight: 700, cursor: 'pointer' }}>Abrir PDF</button>
+                              <button onClick={() => abrirPdf({ comprobante: r.comprobante, nombre_cliente: r.cliente, ejecutivo: r.ejecutivo, fecha_emision: null, fecha_vencimiento: null, monto: r.monto, dias_mora: r.diasMora }, r.pdfDirecta)} style={{ background: '#0e1e39', color: '#8bade4', border: 'none', borderRadius: '8px', padding: '5px 12px', fontWeight: 700, cursor: 'pointer' }}>Abrir PDF</button>
                             </td>
                           </tr>
                           {isExp && (
-                            <tr style={{ borderBottom: '1px solid #dde3f0' }}>
+                            <tr style={{ borderBottom: '1px solid #24395f' }}>
                               <td colSpan={10} style={{ padding: 0 }}>
                                 {r.manual
                                   ? <ManualDetallePanel factura={r.manual} fmtFecha={fmtFecha} />
@@ -1429,7 +1429,7 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
                   </tbody>
                 </table>
               </div>
-              <div style={{ padding: '10px 18px', borderTop: '1px solid #dde3f0', background: '#f8faff', color: '#6b7fb3', fontSize: '11px', textAlign: 'right' }}>📁 PDFs en SharePoint · Microsoft 365</div>
+              <div style={{ padding: '10px 18px', borderTop: '1px solid #24395f', background: '#11223f', color: '#8ea0c4', fontSize: '11px', textAlign: 'right' }}>📁 PDFs en SharePoint · Microsoft 365</div>
             </div>
           </div>
         ) : esSociedadManual ? (
@@ -1464,8 +1464,8 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
           <>
             <SubirReporte batchUpsert={batchUpsert} onExport={exportDashboard} soloExport={!adminMode} />
             {loading && data.length === 0 ? (
-              <div style={{ padding: '80px 20px', textAlign: 'center', color: '#7a8fbb', fontSize: '16px' }}>
-                <div style={{ display: 'inline-block', width: '32px', height: '32px', border: '3px solid #dde3f0', borderTopColor: '#2554a0', borderRadius: '50%', animation: 'spin 0.8s linear infinite', marginBottom: '16px' }} />
+              <div style={{ padding: '80px 20px', textAlign: 'center', color: '#8ea0c4', fontSize: '16px' }}>
+                <div style={{ display: 'inline-block', width: '32px', height: '32px', border: '3px solid #24395f', borderTopColor: '#3b6fd9', borderRadius: '50%', animation: 'spin 0.8s linear infinite', marginBottom: '16px' }} />
                 <div>Cargando datos...</div>
               </div>
             ) : (
@@ -1485,73 +1485,73 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '14px' }}>
                 <div
                   onClick={() => { setFiltroEstadoTabla('mora'); setFiltroMoraRange(''); setFiltroClienteTabla(''); setVista('todos') }}
-                  style={{ background: '#fff', border: '1px solid #dde3f0', borderRadius: '12px', padding: '22px 24px', boxShadow: '0 2px 8px rgba(10,22,40,0.08)', borderLeft: '5px solid #dc2626', position: 'relative', overflow: 'hidden', cursor: 'pointer' }}
+                  style={{ background: '#11223f', border: '1px solid #24395f', borderRadius: '12px', padding: '22px 24px', boxShadow: '0 2px 8px rgba(10,22,40,0.08)', borderLeft: '5px solid #dc2626', position: 'relative', overflow: 'hidden', cursor: 'pointer' }}
                 >
-                  <div style={{ position: 'absolute', right: '-10px', top: '-10px', width: '70px', height: '70px', background: '#fee2e2', borderRadius: '50%', opacity: 0.4 }} />
-                  <div style={{ fontSize: '10px', fontWeight: 700, color: '#7a8fbb', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '10px' }}>💸 Total vencido</div>
-                  <div style={{ fontSize: '28px', fontWeight: 800, color: '#dc2626', fontFamily: 'monospace', lineHeight: 1, marginBottom: '6px' }}>{fmt(totalVencido)}</div>
-                  <div style={{ fontSize: '12px', color: '#7a8fbb' }}>{vencidasArr.length} facturas · {clientDashList.length} clientes</div>
-                  <div style={{ fontSize: '11px', fontWeight: 700, color: '#dc2626', marginTop: '8px', textDecoration: 'underline' }}>Ver facturas ⋯</div>
+                  <div style={{ position: 'absolute', right: '-10px', top: '-10px', width: '70px', height: '70px', background: 'rgba(239,68,68,0.14)', borderRadius: '50%', opacity: 0.4 }} />
+                  <div style={{ fontSize: '10px', fontWeight: 700, color: '#8ea0c4', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '10px' }}>💸 Total vencido</div>
+                  <div style={{ fontSize: '28px', fontWeight: 800, color: '#eb8484', fontFamily: 'monospace', lineHeight: 1, marginBottom: '6px' }}>{fmt(totalVencido)}</div>
+                  <div style={{ fontSize: '12px', color: '#8ea0c4' }}>{vencidasArr.length} facturas · {clientDashList.length} clientes</div>
+                  <div style={{ fontSize: '11px', fontWeight: 700, color: '#eb8484', marginTop: '8px', textDecoration: 'underline' }}>Ver facturas ⋯</div>
                 </div>
                 <div
                   onClick={() => { setFiltroEstadoTabla('proximas'); setFiltroMoraRange(''); setFiltroClienteTabla(''); setVista('todos') }}
-                  style={{ background: '#fff', border: '1px solid #dde3f0', borderRadius: '12px', padding: '22px 24px', boxShadow: '0 2px 8px rgba(10,22,40,0.08)', borderLeft: '5px solid #d97706', position: 'relative', overflow: 'hidden', cursor: 'pointer' }}
+                  style={{ background: '#11223f', border: '1px solid #24395f', borderRadius: '12px', padding: '22px 24px', boxShadow: '0 2px 8px rgba(10,22,40,0.08)', borderLeft: '5px solid #d97706', position: 'relative', overflow: 'hidden', cursor: 'pointer' }}
                 >
-                  <div style={{ position: 'absolute', right: '-10px', top: '-10px', width: '70px', height: '70px', background: '#fef3c7', borderRadius: '50%', opacity: 0.4 }} />
-                  <div style={{ fontSize: '10px', fontWeight: 700, color: '#7a8fbb', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '10px' }}>⏳ Vence en 7 días</div>
-                  <div style={{ fontSize: '28px', fontWeight: 800, color: '#d97706', fontFamily: 'monospace', lineHeight: 1, marginBottom: '6px' }}>{fmt(totalProxAVencer)}</div>
-                  <div style={{ fontSize: '12px', color: '#7a8fbb' }}>{proxAVencer.length} facturas próximas a vencer</div>
-                  <div style={{ fontSize: '11px', fontWeight: 700, color: '#d97706', marginTop: '8px', textDecoration: 'underline' }}>Ver facturas ⋯</div>
+                  <div style={{ position: 'absolute', right: '-10px', top: '-10px', width: '70px', height: '70px', background: 'rgba(230,199,76,0.16)', borderRadius: '50%', opacity: 0.4 }} />
+                  <div style={{ fontSize: '10px', fontWeight: 700, color: '#8ea0c4', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '10px' }}>⏳ Vence en 7 días</div>
+                  <div style={{ fontSize: '28px', fontWeight: 800, color: '#f4bc7b', fontFamily: 'monospace', lineHeight: 1, marginBottom: '6px' }}>{fmt(totalProxAVencer)}</div>
+                  <div style={{ fontSize: '12px', color: '#8ea0c4' }}>{proxAVencer.length} facturas próximas a vencer</div>
+                  <div style={{ fontSize: '11px', fontWeight: 700, color: '#f4bc7b', marginTop: '8px', textDecoration: 'underline' }}>Ver facturas ⋯</div>
                 </div>
                 <div
                   onClick={() => { setFiltroEstadoTabla('sinvencer'); setFiltroMoraRange(''); setFiltroClienteTabla(''); setVista('todos') }}
-                  style={{ background: '#fff', border: '1px solid #dde3f0', borderRadius: '12px', padding: '22px 24px', boxShadow: '0 2px 8px rgba(10,22,40,0.08)', borderLeft: '5px solid #059669', position: 'relative', overflow: 'hidden', cursor: 'pointer' }}
+                  style={{ background: '#11223f', border: '1px solid #24395f', borderRadius: '12px', padding: '22px 24px', boxShadow: '0 2px 8px rgba(10,22,40,0.08)', borderLeft: '5px solid #059669', position: 'relative', overflow: 'hidden', cursor: 'pointer' }}
                 >
-                  <div style={{ position: 'absolute', right: '-10px', top: '-10px', width: '70px', height: '70px', background: '#d1fae5', borderRadius: '50%', opacity: 0.4 }} />
-                  <div style={{ fontSize: '10px', fontWeight: 700, color: '#7a8fbb', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '10px' }}>✅ Sin vencer</div>
-                  <div style={{ fontSize: '28px', fontWeight: 800, color: '#059669', fontFamily: 'monospace', lineHeight: 1, marginBottom: '6px' }}>{fmt(totalSinVencer)}</div>
-                  <div style={{ fontSize: '12px', color: '#7a8fbb' }}>{sinVencerArr.length} facturas al día</div>
-                  <div style={{ fontSize: '11px', fontWeight: 700, color: '#059669', marginTop: '8px', textDecoration: 'underline' }}>Ver facturas ⋯</div>
+                  <div style={{ position: 'absolute', right: '-10px', top: '-10px', width: '70px', height: '70px', background: 'rgba(76,230,151,0.16)', borderRadius: '50%', opacity: 0.4 }} />
+                  <div style={{ fontSize: '10px', fontWeight: 700, color: '#8ea0c4', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '10px' }}>✅ Sin vencer</div>
+                  <div style={{ fontSize: '28px', fontWeight: 800, color: '#7bf4cf', fontFamily: 'monospace', lineHeight: 1, marginBottom: '6px' }}>{fmt(totalSinVencer)}</div>
+                  <div style={{ fontSize: '12px', color: '#8ea0c4' }}>{sinVencerArr.length} facturas al día</div>
+                  <div style={{ fontSize: '11px', fontWeight: 700, color: '#7bf4cf', marginTop: '8px', textDecoration: 'underline' }}>Ver facturas ⋯</div>
                 </div>
               </div>
 
               {/* SLIM METRICS */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '10px' }}>
-                <div style={{ background: '#fff', border: '1px solid #dde3f0', borderRadius: '10px', padding: '14px 18px', boxShadow: '0 1px 4px rgba(10,22,40,0.06)', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: '#ede9fe', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', flexShrink: 0 }}>🎯</div>
+                <div style={{ background: '#11223f', border: '1px solid #24395f', borderRadius: '10px', padding: '14px 18px', boxShadow: '0 1px 4px rgba(10,22,40,0.06)', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: 'rgba(91,141,239,0.16)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', flexShrink: 0 }}>🎯</div>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: '10px', fontWeight: 700, color: '#7a8fbb', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '4px' }}>% de la cartera vencido</div>
-                    <div style={{ fontSize: '11px', color: '#94a3b8', marginBottom: '4px' }}>porcentaje de la cartera total actualmente vencido</div>
-                    <div style={{ height: '4px', background: '#eef2fa', borderRadius: '3px', overflow: 'hidden' }}>
+                    <div style={{ fontSize: '10px', fontWeight: 700, color: '#8ea0c4', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '4px' }}>% de la cartera vencido</div>
+                    <div style={{ fontSize: '11px', color: '#8ea0c4', marginBottom: '4px' }}>porcentaje de la cartera total actualmente vencido</div>
+                    <div style={{ height: '4px', background: '#0e1e39', borderRadius: '3px', overflow: 'hidden' }}>
                       <div style={{ width: `${porcentajeMora}%`, height: '100%', background: '#7c3aed', borderRadius: '3px', transition: 'width 0.5s' }} />
                     </div>
                   </div>
-                  <div style={{ fontSize: '20px', fontWeight: 800, color: '#7c3aed', flexShrink: 0 }}>{porcentajeMora}%</div>
+                  <div style={{ fontSize: '20px', fontWeight: 800, color: '#a87cf3', flexShrink: 0 }}>{porcentajeMora}%</div>
                 </div>
-                <div style={{ background: '#fff', border: '1px solid #dde3f0', borderRadius: '10px', padding: '14px 18px', boxShadow: '0 1px 4px rgba(10,22,40,0.06)', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: '#fef3c7', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', flexShrink: 0 }}>⏱</div>
+                <div style={{ background: '#11223f', border: '1px solid #24395f', borderRadius: '10px', padding: '14px 18px', boxShadow: '0 1px 4px rgba(10,22,40,0.06)', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: 'rgba(230,199,76,0.16)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', flexShrink: 0 }}>⏱</div>
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: '10px', fontWeight: 700, color: '#7a8fbb', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '2px' }}>Atraso promedio de la deuda vencida</div>
-                    <div style={{ fontSize: '11px', color: '#94a3b8' }}>las facturas vencidas presentan, en promedio, {moraPromedio} días de atraso</div>
+                    <div style={{ fontSize: '10px', fontWeight: 700, color: '#8ea0c4', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '2px' }}>Atraso promedio de la deuda vencida</div>
+                    <div style={{ fontSize: '11px', color: '#8ea0c4' }}>las facturas vencidas presentan, en promedio, {moraPromedio} días de atraso</div>
                   </div>
-                  <div style={{ fontSize: '20px', fontWeight: 800, color: '#d97706', flexShrink: 0 }}>{moraPromedio}d</div>
+                  <div style={{ fontSize: '20px', fontWeight: 800, color: '#f4bc7b', flexShrink: 0 }}>{moraPromedio}d</div>
                 </div>
-                <div style={{ background: '#fff', border: '1px solid #dde3f0', borderRadius: '10px', padding: '14px 18px', boxShadow: '0 1px 4px rgba(10,22,40,0.06)', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', flexShrink: 0 }}>👥</div>
+                <div style={{ background: '#11223f', border: '1px solid #24395f', borderRadius: '10px', padding: '14px 18px', boxShadow: '0 1px 4px rgba(10,22,40,0.06)', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: '#0e1e39', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', flexShrink: 0 }}>👥</div>
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: '10px', fontWeight: 700, color: '#7a8fbb', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '2px' }}>Clientes con mora</div>
-                    <div style={{ fontSize: '11px', color: '#94a3b8' }}>sobre un total de {clientesTotalDataSel} clientes</div>
+                    <div style={{ fontSize: '10px', fontWeight: 700, color: '#8ea0c4', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '2px' }}>Clientes con mora</div>
+                    <div style={{ fontSize: '11px', color: '#8ea0c4' }}>sobre un total de {clientesTotalDataSel} clientes</div>
                   </div>
-                  <div style={{ fontSize: '20px', fontWeight: 800, color: '#4338ca', flexShrink: 0 }}>{clientDashList.length}</div>
+                  <div style={{ fontSize: '20px', fontWeight: 800, color: '#948ee1', flexShrink: 0 }}>{clientDashList.length}</div>
                 </div>
               </div>
 
               {/* CLIENTS + PIE */}
               <div style={{ display: 'grid', gridTemplateColumns: '3fr 2fr', gap: '14px' }}>
-                <div style={{ background: '#fff', border: '1px solid #dde3f0', borderRadius: '12px', boxShadow: '0 2px 8px rgba(10,22,40,0.07)', overflow: 'hidden' }}>
-                  <div style={{ padding: '14px 20px', borderBottom: '1px solid #eef2fa', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <span style={{ fontSize: '13px', fontWeight: 700, color: '#0d1b38' }}>Total vencido por cliente</span>
-                    <span style={{ fontSize: '11px', color: '#7a8fbb' }}>clic para ver facturas</span>
+                <div style={{ background: '#11223f', border: '1px solid #24395f', borderRadius: '12px', boxShadow: '0 2px 8px rgba(10,22,40,0.07)', overflow: 'hidden' }}>
+                  <div style={{ padding: '14px 20px', borderBottom: '1px solid #24395f', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <span style={{ fontSize: '13px', fontWeight: 700, color: '#e7eefb' }}>Total vencido por cliente</span>
+                    <span style={{ fontSize: '11px', color: '#8ea0c4' }}>clic para ver facturas</span>
                   </div>
                   <div style={{ padding: '12px 20px' }}>
                     {(mostrarTodosClientesDash ? clientDashList : clientDashList.slice(0, 10)).map((c, i) => {
@@ -1559,24 +1559,24 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
                       return (
                         <div key={c.name} style={{ marginBottom: '10px' }}>
                           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px', gap: '8px' }}>
-                            <span onClick={() => { setFiltroClienteTabla(c.name); setBusqueda(''); setFiltroEstadoTabla(''); setFiltroMoraRange(''); setEjecutivoSeleccionado(null); setVista('todos') }} style={{ fontSize: '13px', fontWeight: 600, color: '#1d4170', textDecoration: 'underline', textDecorationColor: '#a8c4f5', cursor: 'pointer', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '45%' }}>{c.name}</span>
+                            <span onClick={() => { setFiltroClienteTabla(c.name); setBusqueda(''); setFiltroEstadoTabla(''); setFiltroMoraRange(''); setEjecutivoSeleccionado(null); setVista('todos') }} style={{ fontSize: '13px', fontWeight: 600, color: '#e7eefb', textDecoration: 'underline', textDecorationColor: 'rgba(76,132,230,0.4)', cursor: 'pointer', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '45%' }}>{c.name}</span>
                             <span style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
-                              <span title="Monto total vencido de este cliente" style={{ fontFamily: 'monospace', fontSize: '13px', fontWeight: 700, color: '#0d1b38', minWidth: '110px', textAlign: 'right' }}>{fmt(c.monto)}</span>
+                              <span title="Monto total vencido de este cliente" style={{ fontFamily: 'monospace', fontSize: '13px', fontWeight: 700, color: '#e7eefb', minWidth: '110px', textAlign: 'right' }}>{fmt(c.monto)}</span>
                               <span title="% que representa este cliente sobre el total de la deuda vencida" style={{ fontSize: '11px', fontWeight: 700, padding: '2px 6px', borderRadius: '20px', background: bc + '18', border: '1px solid ' + bc + '35', color: bc }}>{c.pct}%</span>
-                              <span title="Días de mora promedio de las facturas vencidas de este cliente" style={{ fontSize: '11px', fontWeight: 700, padding: '2px 6px', borderRadius: '20px', background: '#fef3c7', color: '#92400e' }}>{c.moraProm}d</span>
+                              <span title="Días de mora promedio de las facturas vencidas de este cliente" style={{ fontSize: '11px', fontWeight: 700, padding: '2px 6px', borderRadius: '20px', background: 'rgba(230,199,76,0.16)', color: '#f3a97d' }}>{c.moraProm}d</span>
                             </span>
                           </div>
-                          <div style={{ height: '4px', background: '#eef2fa', borderRadius: '3px', overflow: 'hidden' }}>
+                          <div style={{ height: '4px', background: '#0e1e39', borderRadius: '3px', overflow: 'hidden' }}>
                             <div style={{ width: c.pct + '%', height: '100%', background: bc, borderRadius: '3px', transition: 'width 0.5s' }} />
                           </div>
                         </div>
                       )
                     })}
-                    {clientDashList.length === 0 && <div style={{ color: '#7a8fbb', fontSize: '13px', padding: '20px 0', textAlign: 'center' }}>Sin clientes con mora</div>}
+                    {clientDashList.length === 0 && <div style={{ color: '#8ea0c4', fontSize: '13px', padding: '20px 0', textAlign: 'center' }}>Sin clientes con mora</div>}
                     {clientDashList.length > 10 && (
                       <button
                         onClick={() => setMostrarTodosClientesDash(v => !v)}
-                        style={{ width: '100%', marginTop: '4px', padding: '8px', fontSize: '12px', fontWeight: 700, color: '#1d4170', background: '#f8faff', border: '1px dashed #c7d3ea', borderRadius: '8px', cursor: 'pointer' }}
+                        style={{ width: '100%', marginTop: '4px', padding: '8px', fontSize: '12px', fontWeight: 700, color: '#e7eefb', background: '#11223f', border: '1px dashed #24395f', borderRadius: '8px', cursor: 'pointer' }}
                       >
                         {mostrarTodosClientesDash
                           ? '▲ Ver menos'
@@ -1585,22 +1585,22 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
                     )}
                   </div>
                 </div>
-                <div style={{ background: '#fff', border: '1px solid #dde3f0', borderRadius: '12px', boxShadow: '0 2px 8px rgba(10,22,40,0.07)', overflow: 'hidden' }}>
-                  <div style={{ padding: '14px 20px', borderBottom: '1px solid #eef2fa' }}>
-                    <span style={{ fontSize: '13px', fontWeight: 700, color: '#0d1b38' }}>Distribución deuda por ejecutivo</span>
+                <div style={{ background: '#11223f', border: '1px solid #24395f', borderRadius: '12px', boxShadow: '0 2px 8px rgba(10,22,40,0.07)', overflow: 'hidden' }}>
+                  <div style={{ padding: '14px 20px', borderBottom: '1px solid #24395f' }}>
+                    <span style={{ fontSize: '13px', fontWeight: 700, color: '#e7eefb' }}>Distribución deuda por ejecutivo</span>
                   </div>
                   <div style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
                     {execPieList.length > 0
                       ? svgPie(execPieList.map(e => ({ value: e.monto, color: e.color })), 150)
-                      : <div style={{ color: '#7a8fbb', fontSize: '13px', padding: '30px' }}>Sin datos</div>
+                      : <div style={{ color: '#8ea0c4', fontSize: '13px', padding: '30px' }}>Sin datos</div>
                     }
                     <div style={{ width: '100%' }}>
                       {execPieList.map(e => (
-                        <div key={e.name} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '5px 0', borderBottom: '1px solid #f8faff' }}>
+                        <div key={e.name} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '5px 0', borderBottom: '1px solid rgba(76,120,230,0.4)' }}>
                           <span style={{ width: '10px', height: '10px', borderRadius: '2px', background: e.color, flexShrink: 0 }} />
-                          <span style={{ fontSize: '12px', color: '#3d5278', flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{e.name}</span>
-                          <span style={{ fontSize: '12px', fontWeight: 700, color: '#0d1b38' }}>{fmt(e.monto)}</span>
-                          <span style={{ fontSize: '11px', padding: '1px 6px', borderRadius: '20px', background: '#e0e7ff', color: '#4338ca' }}>{e.pct}%</span>
+                          <span style={{ fontSize: '12px', color: '#b6c4de', flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{e.name}</span>
+                          <span style={{ fontSize: '12px', fontWeight: 700, color: '#e7eefb' }}>{fmt(e.monto)}</span>
+                          <span style={{ fontSize: '11px', padding: '1px 6px', borderRadius: '20px', background: 'rgba(139,92,246,0.16)', color: '#948ee1' }}>{e.pct}%</span>
                         </div>
                       ))}
                     </div>
@@ -1610,10 +1610,10 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
 
               {/* MORA DIST + CLIENTES AL DIA */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
-                <div style={{ background: '#fff', border: '1px solid #dde3f0', borderRadius: '12px', boxShadow: '0 2px 8px rgba(10,22,40,0.07)', overflow: 'hidden' }}>
-                  <div style={{ padding: '14px 20px', borderBottom: '1px solid #eef2fa' }}>
-                    <div style={{ fontSize: '13px', fontWeight: 700, color: '#0d1b38' }}>Antigüedad de la deuda</div>
-                    <div style={{ fontSize: '11px', color: '#7a8fbb', marginTop: '3px' }}>La totalidad de este monto está vencida; la prioridad de gestión aumenta con la antigüedad. Seleccione una categoría para ver el detalle.</div>
+                <div style={{ background: '#11223f', border: '1px solid #24395f', borderRadius: '12px', boxShadow: '0 2px 8px rgba(10,22,40,0.07)', overflow: 'hidden' }}>
+                  <div style={{ padding: '14px 20px', borderBottom: '1px solid #24395f' }}>
+                    <div style={{ fontSize: '13px', fontWeight: 700, color: '#e7eefb' }}>Antigüedad de la deuda</div>
+                    <div style={{ fontSize: '11px', color: '#8ea0c4', marginTop: '3px' }}>La totalidad de este monto está vencida; la prioridad de gestión aumenta con la antigüedad. Seleccione una categoría para ver el detalle.</div>
                   </div>
                   <div style={{ padding: '16px', display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: '10px' }}>
                     {moraDist.map(b => (
@@ -1634,16 +1634,16 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
                     ))}
                   </div>
                 </div>
-                <div style={{ background: '#fff', border: '1px solid #dde3f0', borderRadius: '12px', boxShadow: '0 2px 8px rgba(10,22,40,0.07)', overflow: 'hidden' }}>
-                  <div style={{ padding: '14px 20px', borderBottom: '1px solid #eef2fa', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <span style={{ fontSize: '13px', fontWeight: 700, color: '#0d1b38' }}>Clientes al día</span>
-                    <span style={{ fontSize: '11px', fontWeight: 700, padding: '2px 8px', borderRadius: '20px', background: '#d1fae5', color: '#065f46' }}>{clientesAlDia.length}</span>
+                <div style={{ background: '#11223f', border: '1px solid #24395f', borderRadius: '12px', boxShadow: '0 2px 8px rgba(10,22,40,0.07)', overflow: 'hidden' }}>
+                  <div style={{ padding: '14px 20px', borderBottom: '1px solid #24395f', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <span style={{ fontSize: '13px', fontWeight: 700, color: '#e7eefb' }}>Clientes al día</span>
+                    <span style={{ fontSize: '11px', fontWeight: 700, padding: '2px 8px', borderRadius: '20px', background: 'rgba(76,230,151,0.16)', color: '#7bf4d2' }}>{clientesAlDia.length}</span>
                   </div>
                   <div style={{ padding: '16px', display: 'flex', flexWrap: 'wrap', gap: '8px', maxHeight: '220px', overflowY: 'auto' }}>
                     {clientesAlDia.length === 0
-                      ? <div style={{ color: '#7a8fbb', fontSize: '13px' }}>Sin clientes al día</div>
+                      ? <div style={{ color: '#8ea0c4', fontSize: '13px' }}>Sin clientes al día</div>
                       : clientesAlDia.map(n => (
-                          <span key={n} onClick={() => { setBusqueda(n); setVista('todos') }} style={{ fontSize: '12px', fontWeight: 500, padding: '4px 10px', borderRadius: '20px', background: '#f0fdf4', border: '1px solid #bbf7d0', color: '#065f46', cursor: 'pointer', whiteSpace: 'nowrap' }}>{n}</span>
+                          <span key={n} onClick={() => { setBusqueda(n); setVista('todos') }} style={{ fontSize: '12px', fontWeight: 500, padding: '4px 10px', borderRadius: '20px', background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(76,230,130,0.4)', color: '#7bf4d2', cursor: 'pointer', whiteSpace: 'nowrap' }}>{n}</span>
                         ))
                     }
                   </div>
@@ -1681,24 +1681,24 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
             </div>
 
             {/* ── Tabla ── */}
-            <div style={{ background: '#fff', border: '1px solid #dde3f0', borderRadius: '10px', overflow: 'hidden' }}>
-              <div style={{ padding: '12px 16px', borderBottom: '1px solid #dde3f0', display: 'flex', alignItems: 'center', gap: '8px', background: '#f8faff' }}>
-                <span style={{ fontSize: '13px', fontWeight: 600, color: '#0d1b38' }}>Historial de cobros</span>
-                <span style={{ fontSize: '12px', color: '#7a8fbb' }}>{historialFiltrado.length} registros</span>
-                {loadingHistorial && <span style={{ fontSize: '11px', color: '#d97706' }}>Actualizando...</span>}
-                <button onClick={exportar} style={{ marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: '6px', background: '#2554a0', color: '#fff', border: 'none', borderRadius: '8px', padding: '6px 12px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>
+            <div style={{ background: '#11223f', border: '1px solid #24395f', borderRadius: '10px', overflow: 'hidden' }}>
+              <div style={{ padding: '12px 16px', borderBottom: '1px solid #24395f', display: 'flex', alignItems: 'center', gap: '8px', background: '#11223f' }}>
+                <span style={{ fontSize: '13px', fontWeight: 600, color: '#e7eefb' }}>Historial de cobros</span>
+                <span style={{ fontSize: '12px', color: '#8ea0c4' }}>{historialFiltrado.length} registros</span>
+                {loadingHistorial && <span style={{ fontSize: '11px', color: '#f4bc7b' }}>Actualizando...</span>}
+                <button onClick={exportar} style={{ marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: '6px', background: '#3b6fd9', color: '#fff', border: 'none', borderRadius: '8px', padding: '6px 12px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>
                   ↓ .xlsx
                 </button>
               </div>
               {loadingHistorial && historial.length === 0 ? (
-                <div style={{ padding: '48px', textAlign: 'center', color: '#7a8fbb' }}>Cargando...</div>
+                <div style={{ padding: '48px', textAlign: 'center', color: '#8ea0c4' }}>Cargando...</div>
               ) : historialFiltrado.length === 0 ? (
-                <div style={{ padding: '48px', textAlign: 'center', color: '#7a8fbb' }}>No hay registros para los filtros aplicados.</div>
+                <div style={{ padding: '48px', textAlign: 'center', color: '#8ea0c4' }}>No hay registros para los filtros aplicados.</div>
               ) : (
                 <div style={{ overflowX: 'auto' }}>
                   <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                     <thead>
-                      <tr style={{ background: '#f8faff', borderBottom: '1px solid #dde3f0' }}>
+                      <tr style={{ background: '#11223f', borderBottom: '1px solid #24395f' }}>
                         {[
                           { key: '', label: '', sortable: false },
                           { key: 'comprobante_numero', label: 'Comprobante', sortable: true },
@@ -1712,7 +1712,7 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
                         ].map((col, i) => (
                           <th key={col.label || `acc-${i}`}
                             onClick={col.sortable ? () => handleSortHistorial(col.key) : undefined}
-                            style={{ padding: '10px 16px', textAlign: 'left', fontSize: '10px', fontWeight: 600, color: sortColHistorial === col.key ? '#2554a0' : '#7a8fbb', textTransform: 'uppercase', whiteSpace: 'nowrap', cursor: col.sortable ? 'pointer' : 'default', userSelect: 'none' }}
+                            style={{ padding: '10px 16px', textAlign: 'left', fontSize: '10px', fontWeight: 600, color: sortColHistorial === col.key ? '#8bade4' : '#8ea0c4', textTransform: 'uppercase', whiteSpace: 'nowrap', cursor: col.sortable ? 'pointer' : 'default', userSelect: 'none' }}
                           >
                             {col.label}{col.sortable && sortColHistorial === col.key ? (sortDirHistorial === 'asc' ? ' ▲' : ' ▼') : ''}
                           </th>
@@ -1731,45 +1731,45 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
                         return (
                           <Fragment key={rowKey}>
                           <tr
-                            style={{ borderBottom: isExp ? 'none' : '1px solid #dde3f0' }}
-                            onMouseEnter={e => (e.currentTarget.style.background = '#f8faff')}
+                            style={{ borderBottom: isExp ? 'none' : '1px solid #24395f' }}
+                            onMouseEnter={e => (e.currentTarget.style.background = '#172b4d')}
                             onMouseLeave={e => (e.currentTarget.style.background = '')}>
                             <td style={{ padding: '8px 4px 8px 12px', width: '32px' }}>
                               <button
                                 onClick={() => setExpandedRows(prev => { const next = new Set(prev); if (next.has(rowKey)) next.delete(rowKey); else next.add(rowKey); return next })}
-                                style={{ width: '22px', height: '22px', border: '1px solid #dde3f0', borderRadius: '4px', background: isExp ? '#2554a0' : '#f1f5f9', color: isExp ? '#fff' : '#374151', fontSize: '14px', fontWeight: 700, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: 0, lineHeight: 1 }}
+                                style={{ width: '22px', height: '22px', border: '1px solid #24395f', borderRadius: '4px', background: isExp ? '#3b6fd9' : '#0e1e39', color: isExp ? '#fff' : '#e7eefb', fontSize: '14px', fontWeight: 700, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: 0, lineHeight: 1 }}
                               >
                                 {isExp ? '−' : '+'}
                               </button>
                             </td>
-                            <td style={{ padding: '12px 16px', fontSize: '12px', fontFamily: 'monospace', color: '#3d5278', whiteSpace: 'nowrap' }}>{r.comprobante_numero}</td>
-                            <td style={{ padding: '12px 16px', fontSize: '13px', fontWeight: 600, color: '#0d1b38', maxWidth: '180px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.cliente}</td>
+                            <td style={{ padding: '12px 16px', fontSize: '12px', fontFamily: 'monospace', color: '#b6c4de', whiteSpace: 'nowrap' }}>{r.comprobante_numero}</td>
+                            <td style={{ padding: '12px 16px', fontSize: '13px', fontWeight: 600, color: '#e7eefb', maxWidth: '180px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.cliente}</td>
                             <td style={{ padding: '12px 16px' }}>
                               <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '11px', fontWeight: 500, padding: '3px 8px', borderRadius: '20px', background: ec.bg + '20', color: ec.bg, whiteSpace: 'nowrap' }}>
                                 <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: ec.bg, flexShrink: 0 }} />
                                 {r.ejecutivo || 'Sin asignar'}
                               </span>
                             </td>
-                            <td style={{ padding: '12px 16px', fontSize: '12px', color: '#3d5278', whiteSpace: 'nowrap' }}>{fecha}</td>
-                            <td style={{ padding: '12px 16px', fontSize: '13px', fontWeight: 600, fontFamily: 'monospace', color: '#059669', whiteSpace: 'nowrap' }}>{fmt(r.monto)}</td>
+                            <td style={{ padding: '12px 16px', fontSize: '12px', color: '#b6c4de', whiteSpace: 'nowrap' }}>{fecha}</td>
+                            <td style={{ padding: '12px 16px', fontSize: '13px', fontWeight: 600, fontFamily: 'monospace', color: '#7bf4cf', whiteSpace: 'nowrap' }}>{fmt(r.monto)}</td>
                             <td style={{ padding: '12px 16px' }}>
-                              <span style={{ display: 'inline-block', background: '#f0fdf4', color: '#059669', border: '1px solid #bbf7d0', borderRadius: '20px', padding: '2px 10px', fontSize: '11px', fontWeight: 600 }}>Cobrado</span>
+                              <span style={{ display: 'inline-block', background: 'rgba(16,185,129,0.12)', color: '#7bf4cf', border: '1px solid rgba(76,230,130,0.4)', borderRadius: '20px', padding: '2px 10px', fontSize: '11px', fontWeight: 600 }}>Cobrado</span>
                             </td>
                             <td style={{ padding: '12px 16px' }}>
-                              <button onClick={() => abrirPdf({ ...r, comprobante: r.comprobante_numero, nombre_cliente: r.cliente, fecha_emision: null, fecha_vencimiento: null })} style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', background: '#f0f4ff', color: '#2554a0', padding: '5px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, border: 'none', cursor: 'pointer' }}>
+                              <button onClick={() => abrirPdf({ ...r, comprobante: r.comprobante_numero, nombre_cliente: r.cliente, fecha_emision: null, fecha_vencimiento: null })} style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', background: '#0e1e39', color: '#8bade4', padding: '5px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, border: 'none', cursor: 'pointer' }}>
                                 📄 Ver PDF
                               </button>
                             </td>
                             {adminMode && (
                               <td style={{ padding: '12px 16px' }}>
-                                <button onClick={() => handleDeshacerCobro(r)} style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', background: '#fff5f5', color: '#dc2626', border: '1px solid #fca5a5', borderRadius: '8px', padding: '5px 12px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                                <button onClick={() => handleDeshacerCobro(r)} style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', background: 'rgba(239,68,68,0.14)', color: '#eb8484', border: '1px solid rgba(230,76,76,0.4)', borderRadius: '8px', padding: '5px 12px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}>
                                   ↩ Deshacer
                                 </button>
                               </td>
                             )}
                           </tr>
                           {isExp && (
-                            <tr style={{ borderBottom: '1px solid #dde3f0' }}>
+                            <tr style={{ borderBottom: '1px solid #24395f' }}>
                               <td colSpan={adminMode ? 9 : 8} style={{ padding: 0 }}>
                                 <DescPanel comprobante={r.comprobante_numero} extra={extra} adminMode={adminMode} onUpdate={handleUpdateExtra} />
                               </td>
@@ -1789,8 +1789,8 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
         ) : esClientes ? (
           <>
             {errorAsignacion && (
-              <div style={{ background: '#fee2e2', border: '1px solid #fca5a5', borderRadius: '8px', padding: '10px 16px', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <span style={{ fontSize: '13px', color: '#dc2626', fontWeight: 500 }}>⚠ {errorAsignacion}</span>
+              <div style={{ background: 'rgba(239,68,68,0.14)', border: '1px solid rgba(230,76,76,0.4)', borderRadius: '8px', padding: '10px 16px', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span style={{ fontSize: '13px', color: '#eb8484', fontWeight: 500 }}>⚠ {errorAsignacion}</span>
               </div>
             )}
             <div style={{ display: 'flex', gap: '8px', marginBottom: '14px', alignItems: 'center', flexWrap: 'wrap' }}>
@@ -1806,19 +1806,19 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
               {hayFiltrosClientes && <button onClick={limpiarFiltrosClientes} style={BTN_LIMPIAR}>✕ Limpiar</button>}
             </div>
 
-            <div style={{ background: '#fff', border: '1px solid #dde3f0', borderRadius: '10px', overflow: 'hidden' }}>
-              <div style={{ padding: '12px 16px', borderBottom: '1px solid #dde3f0', display: 'flex', alignItems: 'center', gap: '8px', background: '#f8faff' }}>
-                <span style={{ fontSize: '13px', fontWeight: 600, color: '#0d1b38' }}>Listado de clientes y ejecutivos</span>
-                <span style={{ fontSize: '12px', color: '#7a8fbb' }}>Clientes con deuda activa: {clientesFiltrados.filter(c => c.vencido > 0).length}</span>
-                <button onClick={exportar} style={{ marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: '6px', background: '#2554a0', color: '#fff', border: 'none', borderRadius: '8px', padding: '6px 12px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>↓ .xlsx</button>
+            <div style={{ background: '#11223f', border: '1px solid #24395f', borderRadius: '10px', overflow: 'hidden' }}>
+              <div style={{ padding: '12px 16px', borderBottom: '1px solid #24395f', display: 'flex', alignItems: 'center', gap: '8px', background: '#11223f' }}>
+                <span style={{ fontSize: '13px', fontWeight: 600, color: '#e7eefb' }}>Listado de clientes y ejecutivos</span>
+                <span style={{ fontSize: '12px', color: '#8ea0c4' }}>Clientes con deuda activa: {clientesFiltrados.filter(c => c.vencido > 0).length}</span>
+                <button onClick={exportar} style={{ marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: '6px', background: '#3b6fd9', color: '#fff', border: 'none', borderRadius: '8px', padding: '6px 12px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>↓ .xlsx</button>
               </div>
               {clientesFiltrados.length === 0 ? (
-                <div style={{ padding: '48px', textAlign: 'center', color: '#7a8fbb' }}>No hay clientes para los filtros aplicados.</div>
+                <div style={{ padding: '48px', textAlign: 'center', color: '#8ea0c4' }}>No hay clientes para los filtros aplicados.</div>
               ) : (
                 <div style={{ overflowX: 'auto' }}>
                   <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                     <thead>
-                      <tr style={{ background: '#f8faff', borderBottom: '1px solid #dde3f0' }}>
+                      <tr style={{ background: '#11223f', borderBottom: '1px solid #24395f' }}>
                         {([
                           { label: 'Cliente', col: 'cliente' as const },
                           { label: 'Ejecutivo asignado', col: 'ejecutivo' as const },
@@ -1834,14 +1834,14 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
                             style={{
                               padding: '10px 16px', textAlign: 'left', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', whiteSpace: 'nowrap',
                               cursor: col ? 'pointer' : 'default', userSelect: 'none',
-                              color: col && sortColClientes === col ? '#2554a0' : '#7a8fbb',
-                              background: col && sortColClientes === col ? '#eef2ff' : 'transparent',
+                              color: col && sortColClientes === col ? '#8bade4' : '#8ea0c4',
+                              background: col && sortColClientes === col ? '#172b4d' : 'transparent',
                             }}
                           >
                             <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
                               {label}
                               {col && (
-                                <span style={{ fontSize: sortColClientes === col ? '12px' : '11px', color: sortColClientes === col ? '#2554a0' : '#b6c2dc' }}>
+                                <span style={{ fontSize: sortColClientes === col ? '12px' : '11px', color: sortColClientes === col ? '#8bade4' : '#8ea0c4' }}>
                                   {sortColClientes === col ? (sortDirClientes === 'asc' ? '▲' : '▼') : '⇅'}
                                 </span>
                               )}
@@ -1855,13 +1855,13 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
                         const execEfectivo = localEjecutivos[c.cliente] || c.ejecutivo
                         const ec = getExecColor(execEfectivo)
                         return (
-                          <tr key={c.cliente} style={{ borderBottom: '1px solid #dde3f0' }}
-                            onMouseEnter={e => (e.currentTarget.style.background = '#f8faff')}
+                          <tr key={c.cliente} style={{ borderBottom: '1px solid #24395f' }}
+                            onMouseEnter={e => (e.currentTarget.style.background = '#172b4d')}
                             onMouseLeave={e => (e.currentTarget.style.background = '')}>
-                            <td style={{ padding: '14px 16px', fontSize: '13px', fontWeight: 700, color: '#0d1b38', maxWidth: '220px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.cliente}</td>
+                            <td style={{ padding: '14px 16px', fontSize: '13px', fontWeight: 700, color: '#e7eefb', maxWidth: '220px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.cliente}</td>
                             <td style={{ padding: '14px 16px' }}>
                               {execEfectivo === 'Sin asignar' ? (
-                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: '#fef3c7', color: '#92400e', padding: '4px 10px', borderRadius: '20px', fontSize: '12px', fontWeight: 600, whiteSpace: 'nowrap', border: '1px solid #fcd34d' }}>⚠ Sin asignar</span>
+                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'rgba(230,199,76,0.16)', color: '#f3a97d', padding: '4px 10px', borderRadius: '20px', fontSize: '12px', fontWeight: 600, whiteSpace: 'nowrap', border: '1px solid #fcd34d' }}>⚠ Sin asignar</span>
                               ) : (
                                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: ec.bg, color: ec.color, padding: '4px 10px', borderRadius: '20px', fontSize: '12px', fontWeight: 600, whiteSpace: 'nowrap' }}>
                                   <span style={{ width: '18px', height: '18px', borderRadius: '50%', background: 'rgba(255,255,255,0.2)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '9px', fontWeight: 700, flexShrink: 0 }}>{ec.initials}</span>
@@ -1873,9 +1873,9 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
                               <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
                                 {c.condiciones.length > 0
                                   ? c.condiciones.map(cond => (
-                                      <span key={cond} style={{ background: '#f1f5f9', color: '#475569', border: '1px solid #e2e8f0', padding: '2px 8px', borderRadius: '20px', fontSize: '11px', fontWeight: 500, whiteSpace: 'nowrap' }}>{cond}</span>
+                                      <span key={cond} style={{ background: '#0e1e39', color: '#b6c4de', border: '1px solid #24395f', padding: '2px 8px', borderRadius: '20px', fontSize: '11px', fontWeight: 500, whiteSpace: 'nowrap' }}>{cond}</span>
                                     ))
-                                  : <span style={{ color: '#94a3b8', fontSize: '12px' }}>---</span>}
+                                  : <span style={{ color: '#8ea0c4', fontSize: '12px' }}>---</span>}
                               </div>
                             </td>
                             {adminMode && (
@@ -1890,7 +1890,7 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
                                     updateEjecutivoLocal(c.cliente, nuevo)
                                     handleAsignarEjecutivo(c.cliente, nuevo, viejo)
                                   }}
-                                  style={{ padding: '5px 10px', borderRadius: '8px', border: '1px solid #dde3f0', fontSize: '12px', color: '#374151', background: '#fff', cursor: 'pointer', outline: 'none' }}
+                                  style={{ padding: '5px 10px', borderRadius: '8px', border: '1px solid #24395f', fontSize: '12px', color: '#e7eefb', background: '#11223f', cursor: 'pointer', outline: 'none' }}
                                 >
                                   <option value="">— cambiar —</option>
                                   {EJECUTIVOS.map(e => <option key={e} value={e}>{e}</option>)}
@@ -1913,19 +1913,19 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
             {esPanelEjecutivo && (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: '14px', marginBottom: '24px' }}>
                 {[
-                  { label: 'Tu cartera total', value: fmt(carteraTotal), sub: `${dataSel.length} comprobantes`, color: '#2554a0' },
-                  { label: 'Revisión urgente', value: fmt(totalVencido), sub: `${vencidasArr.length} facturas en mora`, color: '#dc2626' },
-                  { label: 'Próximas a vencer', value: String(proxAVencer.length), sub: 'vencen en 7 días', color: '#d97706' },
-                  { label: 'Al día', value: String(sinVencerArr.length), sub: 'comprobantes sin vencer', color: '#059669' },
+                  { label: 'Tu cartera total', value: fmt(carteraTotal), sub: `${dataSel.length} comprobantes`, color: '#8bade4' },
+                  { label: 'Revisión urgente', value: fmt(totalVencido), sub: `${vencidasArr.length} facturas en mora`, color: '#eb8484' },
+                  { label: 'Próximas a vencer', value: String(proxAVencer.length), sub: 'vencen en 7 días', color: '#f4bc7b' },
+                  { label: 'Al día', value: String(sinVencerArr.length), sub: 'comprobantes sin vencer', color: '#7bf4cf' },
                 ].map(card => (
                   <div
                     key={card.label}
-                    style={{ background: '#fff', border: '1px solid #dde3f0', borderTop: `3px solid ${card.color}`, borderRadius: '10px', padding: '18px 20px', boxShadow: '0 1px 3px rgba(10,22,40,0.08)', position: 'relative', overflow: 'hidden' }}
+                    style={{ background: '#11223f', border: '1px solid #24395f', borderTop: `3px solid ${card.color}`, borderRadius: '10px', padding: '18px 20px', boxShadow: '0 1px 3px rgba(10,22,40,0.08)', position: 'relative', overflow: 'hidden' }}
                   >
                     <div style={{ position: 'absolute', top: 0, right: 0, width: '70px', height: '70px', borderRadius: '0 10px 0 70px', background: card.color, opacity: 0.06 }} />
-                    <div style={{ fontSize: '10px', fontWeight: 700, color: '#7a8fbb', textTransform: 'uppercase', letterSpacing: '0.9px', marginBottom: '8px' }}>{card.label}</div>
+                    <div style={{ fontSize: '10px', fontWeight: 700, color: '#8ea0c4', textTransform: 'uppercase', letterSpacing: '0.9px', marginBottom: '8px' }}>{card.label}</div>
                     <div style={{ fontSize: '22px', fontWeight: 800, color: card.color, fontFamily: 'monospace', lineHeight: 1, marginBottom: '6px' }}>{card.value}</div>
-                    <div style={{ fontSize: '11px', color: '#7a8fbb' }}>{card.sub}</div>
+                    <div style={{ fontSize: '11px', color: '#8ea0c4' }}>{card.sub}</div>
                   </div>
                 ))}
               </div>
@@ -1954,11 +1954,11 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
             {!esPanelEjecutivo && filtroEstadoTabla === 'mora' && (
               <div style={{ display: 'flex', gap: '6px', marginBottom: '14px', flexWrap: 'wrap' }}>
                 {([
-                  { v: '',         label: 'Todos',            ac: '#374151', ia: '#f1f5f9', tc: '#374151', bc: '#9ca3af' },
-                  { v: 'recien',   label: '⚡ Recién 1–7d',   ac: '#d97706', ia: '#fef3c7', tc: '#92400e', bc: '#d97706' },
-                  { v: 'atencion', label: '⚠ Atención 8–15d', ac: '#ea580c', ia: '#ffedd5', tc: '#c2410c', bc: '#ea580c' },
-                  { v: 'critica',  label: '🔴 Crítica 16–30d', ac: '#dc2626', ia: '#fee2e2', tc: '#dc2626', bc: '#dc2626' },
-                  { v: 'urgente',  label: '🚨 Urgente +30d',  ac: '#7c3aed', ia: '#ede9fe', tc: '#7c3aed', bc: '#7c3aed' },
+                  { v: '',         label: 'Todos',            ac: '#e7eefb', ia: '#0e1e39', tc: '#e7eefb', bc: '#9ca3af' },
+                  { v: 'recien',   label: '⚡ Recién 1–7d',   ac: '#f4bc7b', ia: 'rgba(230,199,76,0.16)', tc: '#f3a97d', bc: '#d97706' },
+                  { v: 'atencion', label: '⚠ Atención 8–15d', ac: '#f4a47b', ia: 'rgba(230,164,76,0.16)', tc: '#f49e7b', bc: '#ea580c' },
+                  { v: 'critica',  label: '🔴 Crítica 16–30d', ac: '#eb8484', ia: 'rgba(239,68,68,0.14)', tc: '#eb8484', bc: '#dc2626' },
+                  { v: 'urgente',  label: '🚨 Urgente +30d',  ac: '#a87cf3', ia: 'rgba(139,92,246,0.16)', tc: '#a87cf3', bc: '#7c3aed' },
                 ] as { v: string; label: string; ac: string; ia: string; tc: string; bc: string }[]).map(opt => {
                   const active = filtroMoraRange === opt.v
                   return (
@@ -2010,11 +2010,11 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
               ]
 
               return (
-                <div style={{ background: '#fff', border: '1px solid #dde3f0', borderRadius: '10px', overflow: 'hidden' }}>
-                  <div style={{ padding: '12px 16px', borderBottom: '1px solid #dde3f0', display: 'flex', alignItems: 'center', gap: '8px', background: '#f8faff' }}>
-                    <span style={{ fontSize: '13px', fontWeight: 600, color: '#0d1b38' }}>Comprobantes</span>
-                    <span style={{ fontSize: '12px', color: '#7a8fbb' }}>{ordenados.length} comprobantes</span>
-                    {loading && <span style={{ fontSize: '11px', color: '#d97706' }}>Actualizando...</span>}
+                <div style={{ background: '#11223f', border: '1px solid #24395f', borderRadius: '10px', overflow: 'hidden' }}>
+                  <div style={{ padding: '12px 16px', borderBottom: '1px solid #24395f', display: 'flex', alignItems: 'center', gap: '8px', background: '#11223f' }}>
+                    <span style={{ fontSize: '13px', fontWeight: 600, color: '#e7eefb' }}>Comprobantes</span>
+                    <span style={{ fontSize: '12px', color: '#8ea0c4' }}>{ordenados.length} comprobantes</span>
+                    {loading && <span style={{ fontSize: '11px', color: '#f4bc7b' }}>Actualizando...</span>}
                     {adminMode && (
                       <button
                         onClick={handleMarcarCobradas}
@@ -2024,19 +2024,19 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
                         {marcandoCobro ? 'Marcando...' : `✓ Marcar cobradas${seleccionCobro.size > 0 ? ` (${seleccionCobro.size})` : ''}`}
                       </button>
                     )}
-                    <button onClick={exportar} style={{ marginLeft: adminMode ? 0 : 'auto', display: 'inline-flex', alignItems: 'center', gap: '6px', background: '#2554a0', color: '#fff', border: 'none', borderRadius: '8px', padding: '6px 12px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>
+                    <button onClick={exportar} style={{ marginLeft: adminMode ? 0 : 'auto', display: 'inline-flex', alignItems: 'center', gap: '6px', background: '#3b6fd9', color: '#fff', border: 'none', borderRadius: '8px', padding: '6px 12px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>
                       ↓ .xlsx
                     </button>
                   </div>
                   {loading && data.length === 0 ? (
-                    <div style={{ padding: '48px', textAlign: 'center', color: '#7a8fbb' }}>Cargando...</div>
+                    <div style={{ padding: '48px', textAlign: 'center', color: '#8ea0c4' }}>Cargando...</div>
                   ) : filtrados.length === 0 ? (
-                    <div style={{ padding: '48px', textAlign: 'center', color: '#7a8fbb' }}>No hay comprobantes para mostrar</div>
+                    <div style={{ padding: '48px', textAlign: 'center', color: '#8ea0c4' }}>No hay comprobantes para mostrar</div>
                   ) : (
                     <div style={{ overflowX: 'auto' }}>
                       <table key={tableKey} style={{ width: '100%', borderCollapse: 'collapse' }}>
                         <thead>
-                          <tr style={{ background: '#f8faff', borderBottom: '1px solid #dde3f0' }}>
+                          <tr style={{ background: '#11223f', borderBottom: '1px solid #24395f' }}>
                             {adminMode && (
                               <th style={{ padding: '10px 6px', width: '32px', textAlign: 'center' }}>
                                 <input
@@ -2050,7 +2050,7 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
                             {COLS.map((col, ci) => (
                               <th key={ci}
                                 onClick={col.sortable ? () => handleSort(col.key) : undefined}
-                                style={{ padding: '10px 16px', textAlign: col.key === 'monto' ? 'right' : 'left', fontSize: '10px', fontWeight: 600, color: sortCol === col.key ? '#2554a0' : '#7a8fbb', textTransform: 'uppercase', whiteSpace: 'nowrap', cursor: col.sortable ? 'pointer' : 'default', userSelect: 'none' }}
+                                style={{ padding: '10px 16px', textAlign: col.key === 'monto' ? 'right' : 'left', fontSize: '10px', fontWeight: 600, color: sortCol === col.key ? '#8bade4' : '#8ea0c4', textTransform: 'uppercase', whiteSpace: 'nowrap', cursor: col.sortable ? 'pointer' : 'default', userSelect: 'none' }}
                               >
                                 {col.label}{col.sortable && sortCol === col.key ? (sortDir === 'asc' ? ' ▲' : ' ▼') : ''}
                               </th>
@@ -2071,30 +2071,30 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
                             return (
                               <Fragment key={rowKey}>
                                 {/* separator — always in DOM, hidden via display to avoid insertBefore */}
-                                <tr style={{ display: showSep ? '' : 'none', background: '#d1fae5' }}>
-                                  <td colSpan={adminMode ? 10 : 9} style={{ padding: '8px 16px', fontSize: '12px', fontWeight: 700, color: '#065f46' }}>
+                                <tr style={{ display: showSep ? '' : 'none', background: 'rgba(76,230,151,0.16)' }}>
+                                  <td colSpan={adminMode ? 10 : 9} style={{ padding: '8px 16px', fontSize: '12px', fontWeight: 700, color: '#7bf4d2' }}>
                                     Al día — {sinVencer.length} {sinVencer.length === 1 ? 'factura' : 'facturas'}
                                   </td>
                                 </tr>
-                                <tr id={showRevision ? 'section-revision' : undefined} style={{ display: showRevision ? '' : 'none', background: '#fee2e2' }}>
-                                  <td colSpan={adminMode ? 10 : 9} style={{ padding: '10px 16px', fontSize: '12px', fontWeight: 700, color: '#991b1b', borderBottom: '2px solid #fca5a5' }}>
+                                <tr id={showRevision ? 'section-revision' : undefined} style={{ display: showRevision ? '' : 'none', background: 'rgba(239,68,68,0.14)' }}>
+                                  <td colSpan={adminMode ? 10 : 9} style={{ padding: '10px 16px', fontSize: '12px', fontWeight: 700, color: '#ea8686', borderBottom: '2px solid rgba(230,76,76,0.4)' }}>
                                     ⚠ Vencidas — {vencidas.length} {vencidas.length === 1 ? 'factura' : 'facturas'}
                                   </td>
                                 </tr>
-                                <tr id={showProximas ? 'section-proximas' : undefined} style={{ display: showProximas ? '' : 'none', background: '#fef3c7' }}>
-                                  <td colSpan={adminMode ? 10 : 9} style={{ padding: '10px 16px', fontSize: '12px', fontWeight: 700, color: '#92400e', borderBottom: '2px solid #fde68a' }}>
+                                <tr id={showProximas ? 'section-proximas' : undefined} style={{ display: showProximas ? '' : 'none', background: 'rgba(230,199,76,0.16)' }}>
+                                  <td colSpan={adminMode ? 10 : 9} style={{ padding: '10px 16px', fontSize: '12px', fontWeight: 700, color: '#f3a97d', borderBottom: '2px solid rgba(230,199,76,0.4)' }}>
                                     Próximas a vencer — {proximasTabla.length} {proximasTabla.length === 1 ? 'factura' : 'facturas'}
                                   </td>
                                 </tr>
-                                <tr id={showSinVencer ? 'section-sinvencer' : undefined} style={{ display: showSinVencer ? '' : 'none', background: '#d1fae5' }}>
-                                  <td colSpan={adminMode ? 10 : 9} style={{ padding: '10px 16px', fontSize: '12px', fontWeight: 700, color: '#065f46', borderBottom: '2px solid #6ee7b7' }}>
+                                <tr id={showSinVencer ? 'section-sinvencer' : undefined} style={{ display: showSinVencer ? '' : 'none', background: 'rgba(76,230,151,0.16)' }}>
+                                  <td colSpan={adminMode ? 10 : 9} style={{ padding: '10px 16px', fontSize: '12px', fontWeight: 700, color: '#7bf4d2', borderBottom: '2px solid #6ee7b7' }}>
                                     Al día — {sinVencer.length} {sinVencer.length === 1 ? 'factura' : 'facturas'}
                                   </td>
                                 </tr>
                                 <tr
-                                  style={{ borderBottom: isExp ? 'none' : '1px solid #dde3f0', background: r.dias_mora > 0 ? 'rgba(254,226,226,0.25)' : '' }}
-                                  onMouseEnter={e => (e.currentTarget.style.background = '#f8faff')}
-                                  onMouseLeave={e => (e.currentTarget.style.background = r.dias_mora > 0 ? 'rgba(254,226,226,0.25)' : '')}
+                                  style={{ borderBottom: isExp ? 'none' : '1px solid #24395f', background: r.dias_mora > 0 ? 'rgba(239,68,68,0.07)' : '' }}
+                                  onMouseEnter={e => (e.currentTarget.style.background = '#172b4d')}
+                                  onMouseLeave={e => (e.currentTarget.style.background = r.dias_mora > 0 ? 'rgba(239,68,68,0.07)' : '')}
                                 >
                                   {adminMode && (
                                     <td style={{ padding: '11px 6px', textAlign: 'center' }} onClick={e => e.stopPropagation()}>
@@ -2109,28 +2109,28 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
                                   <td style={{ padding: '8px 4px 8px 12px', width: '32px' }}>
                                     <button
                                       onClick={() => setExpandedRows(prev => { const next = new Set(prev); if (next.has(rowKey)) next.delete(rowKey); else next.add(rowKey); return next })}
-                                      style={{ width: '22px', height: '22px', border: '1px solid #dde3f0', borderRadius: '4px', background: isExp ? '#2554a0' : '#f1f5f9', color: isExp ? '#fff' : '#374151', fontSize: '14px', fontWeight: 700, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: 0, lineHeight: 1 }}
+                                      style={{ width: '22px', height: '22px', border: '1px solid #24395f', borderRadius: '4px', background: isExp ? '#3b6fd9' : '#0e1e39', color: isExp ? '#fff' : '#e7eefb', fontSize: '14px', fontWeight: 700, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: 0, lineHeight: 1 }}
                                     >
                                       {isExp ? '−' : '+'}
                                     </button>
                                   </td>
-                                  <td style={{ padding: '11px 16px', fontSize: '12px', fontFamily: 'monospace', color: '#3d5278', whiteSpace: 'nowrap' }}>{r.comprobante}</td>
-                                  <td style={{ padding: '11px 16px', fontSize: '13px', fontWeight: 600, color: '#0d1b38', maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.nombre_cliente}</td>
-                                  <td style={{ padding: '11px 16px', fontSize: '12px', color: '#7a8fbb', whiteSpace: 'nowrap' }}>{fmtFecha(r.fecha_emision)}</td>
-                                  <td style={{ padding: '11px 16px', fontSize: '12px', color: '#7a8fbb', whiteSpace: 'nowrap' }}>{condDisplay}</td>
-                                  <td style={{ padding: '11px 16px', fontSize: '12px', color: '#3d5278', whiteSpace: 'nowrap' }}>{fmtFecha(r.fecha_vencimiento)}</td>
+                                  <td style={{ padding: '11px 16px', fontSize: '12px', fontFamily: 'monospace', color: '#b6c4de', whiteSpace: 'nowrap' }}>{r.comprobante}</td>
+                                  <td style={{ padding: '11px 16px', fontSize: '13px', fontWeight: 600, color: '#e7eefb', maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.nombre_cliente}</td>
+                                  <td style={{ padding: '11px 16px', fontSize: '12px', color: '#8ea0c4', whiteSpace: 'nowrap' }}>{fmtFecha(r.fecha_emision)}</td>
+                                  <td style={{ padding: '11px 16px', fontSize: '12px', color: '#8ea0c4', whiteSpace: 'nowrap' }}>{condDisplay}</td>
+                                  <td style={{ padding: '11px 16px', fontSize: '12px', color: '#b6c4de', whiteSpace: 'nowrap' }}>{fmtFecha(r.fecha_vencimiento)}</td>
                                   <td style={{ padding: '11px 16px', fontSize: '12px', fontWeight: 700, fontFamily: 'monospace', textAlign: 'right', whiteSpace: 'nowrap' }}>{fmt(r.monto)}</td>
                                   <td style={{ padding: '11px 16px' }}>
                                     <span style={{ background: badge.bg, color: badge.color, padding: '3px 9px', borderRadius: '20px', fontSize: '11px', fontWeight: 600, whiteSpace: 'nowrap' }}>{badge.label}</span>
                                   </td>
                                   <td style={{ padding: '11px 16px' }}>
-                                    <button onClick={() => abrirPdf(r)} style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', background: '#f0f4ff', color: '#2554a0', padding: '5px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, border: 'none', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                                    <button onClick={() => abrirPdf(r)} style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', background: '#0e1e39', color: '#8bade4', padding: '5px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, border: 'none', cursor: 'pointer', whiteSpace: 'nowrap' }}>
                                       📄 Abrir PDF
                                     </button>
                                   </td>
                                 </tr>
                                 {/* expanded row — always in DOM, hidden via display to avoid insertBefore */}
-                                <tr style={{ display: isExp ? '' : 'none', borderBottom: '1px solid #dde3f0' }}>
+                                <tr style={{ display: isExp ? '' : 'none', borderBottom: '1px solid #24395f' }}>
                                   <td colSpan={adminMode ? 10 : 9} style={{ padding: 0 }}>
                                     {isExp && <DescPanel comprobante={r.comprobante} extra={extra} adminMode={adminMode} condicionActual={r.condicion || ''} onUpdate={handleUpdateExtra} />}
                                   </td>

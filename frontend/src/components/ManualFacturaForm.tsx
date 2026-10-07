@@ -11,8 +11,8 @@ const parseNumeroES = (str: string): number => {
 
 const formatNumeroES = (n: number): string => n ? n.toLocaleString('es-AR') : ''
 
-const LBL: React.CSSProperties = { fontSize: '10px', fontWeight: 700, color: '#7a8fbb', textTransform: 'uppercase', marginBottom: '4px' }
-const INPUT: React.CSSProperties = { width: '100%', padding: '8px 10px', borderRadius: '8px', border: '1px solid #dde3f0', fontSize: '13px', boxSizing: 'border-box', fontFamily: 'inherit' }
+const LBL: React.CSSProperties = { fontSize: '10px', fontWeight: 700, color: '#8ea0c4', textTransform: 'uppercase', marginBottom: '4px' }
+const INPUT: React.CSSProperties = { width: '100%', padding: '8px 10px', borderRadius: '8px', border: '1px solid #24395f', fontSize: '13px', boxSizing: 'border-box', fontFamily: 'inherit' }
 const INPUT_SM: React.CSSProperties = { ...INPUT, padding: '6px 8px', fontSize: '12px' }
 
 type Props = {
@@ -121,11 +121,11 @@ export function ManualFacturaForm({
   }
 
   return (
-    <div style={{ background: '#fff', border: '1px solid #dde3f0', borderRadius: '10px', padding: '18px 22px', boxShadow: '0 2px 12px rgba(38,63,101,0.06)' }}>
-      <div style={{ fontSize: '14px', fontWeight: 700, color: '#0d1b38', marginBottom: '6px' }}>
+    <div style={{ background: '#11223f', border: '1px solid #24395f', borderRadius: '10px', padding: '18px 22px', boxShadow: '0 2px 12px rgba(0,0,0,0.21)' }}>
+      <div style={{ fontSize: '14px', fontWeight: 700, color: '#e7eefb', marginBottom: '6px' }}>
         {factura ? '✏️ Editar factura' : '+ Nueva factura'}
       </div>
-      <div style={{ color: '#7a8fbb', fontSize: '13px', marginBottom: '14px' }}>{nombreSociedad} · Moneda: {monedas.join(' / ')}</div>
+      <div style={{ color: '#8ea0c4', fontSize: '13px', marginBottom: '14px' }}>{nombreSociedad} · Moneda: {monedas.join(' / ')}</div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: '10px' }}>
         <div>
@@ -188,15 +188,15 @@ export function ManualFacturaForm({
         <div style={{ gridColumn: '1 / -1' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
             <div style={LBL}>Detalle de ítems / servicios</div>
-            <button type="button" onClick={agregarLinea} style={{ background: '#eef2ff', color: '#2554a0', border: '1px solid #c7d3ea', borderRadius: '7px', padding: '5px 12px', fontSize: '11px', fontWeight: 700, cursor: 'pointer' }}>
+            <button type="button" onClick={agregarLinea} style={{ background: '#0e1e39', color: '#8bade4', border: '1px solid #24395f', borderRadius: '7px', padding: '5px 12px', fontSize: '11px', fontWeight: 700, cursor: 'pointer' }}>
               + Agregar línea
             </button>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '3fr 1fr 0.7fr 1fr 28px', gap: '8px', marginBottom: '4px' }}>
-            <div style={{ fontSize: '10px', color: '#94a3b8' }}>Descripción</div>
-            <div style={{ fontSize: '10px', color: '#94a3b8' }}>Unidad</div>
-            <div style={{ fontSize: '10px', color: '#94a3b8' }}>Cant.</div>
-            <div style={{ fontSize: '10px', color: '#94a3b8' }}>Valor unit.</div>
+            <div style={{ fontSize: '10px', color: '#8ea0c4' }}>Descripción</div>
+            <div style={{ fontSize: '10px', color: '#8ea0c4' }}>Unidad</div>
+            <div style={{ fontSize: '10px', color: '#8ea0c4' }}>Cant.</div>
+            <div style={{ fontSize: '10px', color: '#8ea0c4' }}>Valor unit.</div>
             <div />
           </div>
           {form.items.map((item, idx) => (
@@ -205,18 +205,18 @@ export function ManualFacturaForm({
               <input type="text" value={item.unidad} onChange={e => setItem(idx, { unidad: e.target.value })} style={INPUT_SM} />
               <input type="number" min={0} value={item.cantidad || ''} onChange={e => setItem(idx, { cantidad: Number(e.target.value) || 0 })} style={INPUT_SM} />
               <input type="number" min={0} step="0.01" value={item.valor_unitario || ''} onChange={e => setItem(idx, { valor_unitario: Number(e.target.value) || 0 })} style={INPUT_SM} />
-              <button type="button" onClick={() => quitarLinea(idx)} disabled={form.items.length <= 1} style={{ width: '26px', height: '26px', borderRadius: '6px', border: '1px solid #fecaca', background: form.items.length <= 1 ? '#f8fafc' : '#fef2f2', color: form.items.length <= 1 ? '#cbd5e1' : '#dc2626', cursor: form.items.length <= 1 ? 'not-allowed' : 'pointer', fontSize: '12px', fontWeight: 700 }}>
+              <button type="button" onClick={() => quitarLinea(idx)} disabled={form.items.length <= 1} style={{ width: '26px', height: '26px', borderRadius: '6px', border: '1px solid rgba(230,76,76,0.4)', background: form.items.length <= 1 ? '#11223f' : 'rgba(239,68,68,0.14)', color: form.items.length <= 1 ? '#cbd5e1' : '#eb8484', cursor: form.items.length <= 1 ? 'not-allowed' : 'pointer', fontSize: '12px', fontWeight: 700 }}>
                 ✕
               </button>
             </div>
           ))}
           {totalCalculado !== null ? (
             <div style={{ marginTop: '10px', display: 'flex', flexDirection: 'column', gap: '5px', maxWidth: '280px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: '#7a8fbb' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: '#8ea0c4' }}>
                 <span>Base imponible</span>
                 <span style={{ fontFamily: 'monospace' }}>{form.moneda} {totalCalculado.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px', color: '#7a8fbb' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px', color: '#8ea0c4' }}>
                 <span>IVA</span>
                 <input
                   type="text" inputMode="decimal" placeholder="0,00"
@@ -226,14 +226,14 @@ export function ManualFacturaForm({
                   style={{ ...INPUT_SM, width: '110px', textAlign: 'right' }}
                 />
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '6px', borderTop: '1px solid #dde3f0' }}>
-                <span style={{ fontSize: '12px', fontWeight: 700, color: '#0d1b38' }}>Total factura</span>
-                <span style={{ fontSize: '16px', fontWeight: 700, color: '#2554a0', fontFamily: 'monospace' }}>{form.moneda} {(totalCalculado + (form.iva || 0)).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '6px', borderTop: '1px solid #24395f' }}>
+                <span style={{ fontSize: '12px', fontWeight: 700, color: '#e7eefb' }}>Total factura</span>
+                <span style={{ fontSize: '16px', fontWeight: 700, color: '#8bade4', fontFamily: 'monospace' }}>{form.moneda} {(totalCalculado + (form.iva || 0)).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
               </div>
             </div>
           ) : (
             <div style={{ marginTop: '10px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <span style={{ fontSize: '11px', fontWeight: 600, color: '#7a8fbb' }}>Total (manual):</span>
+              <span style={{ fontSize: '11px', fontWeight: 600, color: '#8ea0c4' }}>Total (manual):</span>
               <input
                 type="text" inputMode="decimal" placeholder="Monto"
                 value={montoStr}
@@ -261,33 +261,33 @@ export function ManualFacturaForm({
         <div style={{ gridColumn: '1 / -1' }}>
           <div style={LBL}>📎 Adjuntar PDF de factura</div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <label style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', padding: '8px 16px', borderRadius: '7px', border: '1px dashed #c4d0ea', background: '#f8faff', color: '#2554a0', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>
+            <label style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', padding: '8px 16px', borderRadius: '7px', border: '1px dashed #24395f', background: '#11223f', color: '#8bade4', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>
               Seleccionar PDF
               <input type="file" accept="application/pdf" style={{ display: 'none' }} onChange={e => handlePdf(e.target.files?.[0] || null)} />
             </label>
-            <span style={{ fontSize: '12px', color: '#7a8fbb', fontStyle: 'italic' }}>{form.pdf_nombre || 'Sin archivo seleccionado'}</span>
+            <span style={{ fontSize: '12px', color: '#8ea0c4', fontStyle: 'italic' }}>{form.pdf_nombre || 'Sin archivo seleccionado'}</span>
           </div>
           {extrayendo && (
-            <div style={{ marginTop: '8px', fontSize: '12px', color: '#7a8fbb' }}>⏳ Leyendo el PDF para autocompletar los campos e ítems...</div>
+            <div style={{ marginTop: '8px', fontSize: '12px', color: '#8ea0c4' }}>⏳ Leyendo el PDF para autocompletar los campos e ítems...</div>
           )}
           {!extrayendo && autocompletado && (
-            <div style={{ marginTop: '8px', fontSize: '12px', color: '#059669', fontWeight: 600 }}>✓ Datos autocompletados desde el PDF. Revisá antes de guardar.</div>
+            <div style={{ marginTop: '8px', fontSize: '12px', color: '#7bf4cf', fontWeight: 600 }}>✓ Datos autocompletados desde el PDF. Revisá antes de guardar.</div>
           )}
           {!extrayendo && errorExtraccion && (
-            <div style={{ marginTop: '8px', fontSize: '12px', color: '#d97706' }}>⚠ {errorExtraccion}</div>
+            <div style={{ marginTop: '8px', fontSize: '12px', color: '#f4bc7b' }}>⚠ {errorExtraccion}</div>
           )}
           <div style={{ marginTop: '8px' }}>
-            <div style={{ fontSize: '10px', color: '#94a3b8', marginBottom: '4px' }}>...o pegar URL (SharePoint, etc.)</div>
+            <div style={{ fontSize: '10px', color: '#8ea0c4', marginBottom: '4px' }}>...o pegar URL (SharePoint, etc.)</div>
             <input type="text" placeholder="https://..." value={form.pdf_url} onChange={e => set({ pdf_url: e.target.value })} style={INPUT} />
           </div>
         </div>
       </div>
 
       <div style={{ marginTop: '14px', display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
-        <button onClick={onCancelar} style={{ background: 'transparent', border: '1px solid #dde3f0', color: '#7a8fbb', borderRadius: '8px', padding: '9px 18px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}>
+        <button onClick={onCancelar} style={{ background: 'transparent', border: '1px solid #24395f', color: '#8ea0c4', borderRadius: '8px', padding: '9px 18px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}>
           Cancelar
         </button>
-        <button onClick={guardar} disabled={!puedeGuardar} style={{ background: puedeGuardar ? '#2554a0' : '#94a3b8', color: '#fff', border: 'none', borderRadius: '8px', padding: '9px 18px', fontSize: '13px', fontWeight: 700, cursor: puedeGuardar ? 'pointer' : 'not-allowed' }}>
+        <button onClick={guardar} disabled={!puedeGuardar} style={{ background: puedeGuardar ? '#3b6fd9' : '#94a3b8', color: '#fff', border: 'none', borderRadius: '8px', padding: '9px 18px', fontSize: '13px', fontWeight: 700, cursor: puedeGuardar ? 'pointer' : 'not-allowed' }}>
           Guardar factura
         </button>
       </div>
