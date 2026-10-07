@@ -6,6 +6,7 @@ import { SubirReporte } from './components/SubirReporte'
 import { ManualSociedadView } from './components/ManualSociedadView'
 import { Login } from './components/Login'
 import { ModuloSelector } from './components/ModuloSelector'
+import { Sidebar, SidebarHeader, SidebarUser, SidebarNav, SidebarSeccion, SidebarItem, SidebarGrupo, SidebarFooter, Bandera, Icono } from './components/Sidebar'
 import { FacturacionApp } from './facturacion/FacturacionApp'
 import { PendientesApp } from './pendientes/PendientesApp'
 import { EJECUTIVOS, CONDICIONES_CLIENTE } from './data/ejecutivos'
@@ -1188,202 +1189,89 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
       )}
 
       {/* ── SIDEBAR ───────────────────────────────────────────────────────── */}
-      <aside style={{ width: sidebarAbierto ? '260px' : '0px', overflow: 'hidden', transition: 'width 0.25s ease', background: 'linear-gradient(180deg, #081a35 0%, #05101f 100%)', display: 'flex', flexDirection: 'column', flexShrink: 0, boxShadow: '4px 0 24px rgba(0,0,0,0.35)' }}>
+      <Sidebar colapsado={!sidebarAbierto}>
+        <SidebarHeader app="cobranzas" onColapsar={() => setSidebarAbierto(false)} />
+        <SidebarUser nombre={session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'Usuario'} />
 
-        {/* logo */}
-        <div style={{ padding: '20px 16px 16px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start', minHeight: '40px', flex: 1, marginRight: '10px' }}>
-              <img
-                src="/asap-logo.png"
-                alt="ASAP Consulting"
-                style={{ maxHeight: '48px', maxWidth: '180px', objectFit: 'contain', display: 'block' }}
-                onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none'; (e.currentTarget.nextSibling as HTMLElement).style.display = 'block' }}
-              />
-              <span style={{ display: 'none', color: '#fff', fontWeight: 800, fontSize: '13px', letterSpacing: '-0.3px' }}>ASAP Consulting</span>
-            </div>
-            <div style={{ width: '34px', height: '34px', background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '9px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, cursor: 'pointer' }} onClick={() => setSidebarAbierto(false)}>
-              <svg width="16" height="12" viewBox="0 0 16 12" fill="none"><rect y="0" width="16" height="2" rx="1" fill="rgba(255,255,255,0.5)"/><rect y="5" width="11" height="2" rx="1" fill="rgba(255,255,255,0.5)"/><rect y="10" width="7" height="2" rx="1" fill="rgba(255,255,255,0.5)"/></svg>
-            </div>
-          </div>
-          <div style={{ fontSize: '11px', fontWeight: 600, color: 'rgba(255,255,255,0.25)', textTransform: 'uppercase', letterSpacing: '1.4px' }}>Cobranzas</div>
-        </div>
+        <SidebarNav>
+          <SidebarItem label="Todos los comprobantes" icono={<Icono nombre="capas" />} activo={vista === 'global'} onClick={() => irAVista('global', 'sa')} />
 
-        {/* usuario logueado */}
-        <div style={{ padding: '0 16px 14px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#2554a0', border: '2px solid rgba(255,255,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 700, color: '#fff', flexShrink: 0 }}>
-            {(session.user.user_metadata?.full_name || session.user.email || 'U').slice(0, 2).toUpperCase()}
-          </div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ color: '#fff', fontSize: '12px', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              {session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'Usuario'}
-            </div>
-            <div style={{ color: 'rgba(255,255,255,0.3)', fontSize: '10px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#34d399', display: 'inline-block' }} />
-              Activo
-            </div>
-          </div>
-        </div>
-
-        <div style={{ height: '1px', background: 'rgba(255,255,255,0.06)', margin: '0 20px 14px' }} />
-
-        <div className="scroll-sin-barra" style={{ padding: '0 12px 10px', flex: 1, minHeight: 0, overflowY: 'auto' }}>
-          <div
-            onClick={() => irAVista('global', 'sa')}
-            style={{ display: 'flex', alignItems: 'center', gap: '9px', padding: '9px 10px', borderRadius: '9px', cursor: 'pointer', background: vista === 'global' ? 'rgba(37,84,160,0.45)' : 'transparent', border: vista === 'global' ? '1px solid rgba(107,151,232,0.3)' : '1px solid transparent', marginBottom: '8px' }}
-          >
-            <span style={{ color: '#fff', fontSize: '15px' }}>⊕</span>
-            <span style={{ color: vista === 'global' ? '#fff' : 'rgba(255,255,255,0.65)', fontSize: '13px', fontWeight: 600, flex: 1 }}>Todos los comprobantes</span>
-          </div>
-
-          <div style={{ height: '1px', background: 'rgba(255,255,255,0.08)', margin: '8px 0' }} />
-
+          <SidebarSeccion>Sociedades</SidebarSeccion>
           {(Object.entries(SOCIEDADES) as [SociedadKey, typeof SOCIEDADES[SociedadKey]][]).map(([key, sociedad]) => {
             const abierta = sociedadesAbiertas[key]
-            const activa = sociedadActiva === key && vista !== 'global'
             const pendienteCount = key === 'sa' ? data.length : manualFacturas.filter(r => r.sociedad === key).length
             const historialCount = key === 'sa' ? historial.length : manualHistorial[key].length
             const clientesCount  = key === 'sa' ? clientesMap.size : new Set(manualFacturas.filter(r => r.sociedad === key).map(r => r.cliente)).size
             return (
-              <div key={key} style={{ marginBottom: '8px' }}>
-                <button
-                  onClick={() => {
-                    setSociedadActiva(key)
-                    setSociedadesAbiertas(prev => ({ sa: false, llc: false, sl: false, [key]: !prev[key] }))
-                    setBusqueda(''); setBusquedaHistorial(''); setBusquedaClientes('')
-                    // Admin/gerencia vuelven a la vista general de la sociedad: si venían de
-                    // mirar el panel de un ejecutivo puntual, no debe quedar pegado.
-                    // Un ejecutivo sí necesita conservar su propia selección (ver efecto arriba).
-                    if (perfil?.rol !== 'ejecutivo') {
-                      setEjecutivoSeleccionado(null)
-                      setFiltroClienteTabla(''); setFiltroEstadoTabla(''); setFiltroMoraRange('')
-                      setSortCol(null); setSortDir('asc')
-                    }
-                    if (vista === 'global') setVista(perfil?.rol === 'ejecutivo' ? 'todos' : 'dashboard')
-                  }}
-                  style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', padding: '10px 12px', borderRadius: '9px', border: activa ? '1px solid #3b6bc9' : '1px solid rgba(255,255,255,0.12)', background: activa ? '#2554a0' : 'rgba(255,255,255,0.06)', color: '#fff', cursor: 'pointer', fontSize: '13px', fontWeight: 700 }}
-                >
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
-                    <span className={`fi fi-${sociedad.flagCode}`} style={{ borderRadius: '2px', flexShrink: 0 }} />
-                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{sociedad.nombre}</span>
-                  </span>
-                  <span>{abierta ? '▼' : '▶'}</span>
-                </button>
-                {abierta && (
-                  <div style={{ padding: '6px 0 0 10px' }}>
-                    {[
-                      ...(perfil?.rol !== 'ejecutivo' ? [{ vista: 'dashboard' as Vista, label: 'Dashboard', count: pendienteCount }] : []),
-                      { vista: 'todos' as Vista, label: 'Comprobantes por cobrar', count: pendienteCount },
-                      ...(sociedad.manual && adminMode ? [{ vista: 'nueva' as Vista, label: 'Agregar factura', count: 0 }] : []),
-                      { vista: 'historial' as Vista, label: 'Historial cobranzas', count: historialCount },
-                      { vista: 'clientes' as Vista, label: 'Listado de clientes', count: clientesCount },
-                    ].map(item => {
-                      const itemActivo = sociedadActiva === key && vista === item.vista
+              <SidebarGrupo
+                key={key}
+                label={sociedad.nombre}
+                icono={<Bandera code={sociedad.flagCode} />}
+                abierto={abierta}
+                onClick={() => {
+                  setSociedadActiva(key)
+                  setSociedadesAbiertas(prev => ({ sa: false, llc: false, sl: false, [key]: !prev[key] }))
+                  setBusqueda(''); setBusquedaHistorial(''); setBusquedaClientes('')
+                  // Admin/gerencia vuelven a la vista general de la sociedad: si venían de
+                  // mirar el panel de un ejecutivo puntual, no debe quedar pegado.
+                  // Un ejecutivo sí necesita conservar su propia selección (ver efecto arriba).
+                  if (perfil?.rol !== 'ejecutivo') {
+                    setEjecutivoSeleccionado(null)
+                    setFiltroClienteTabla(''); setFiltroEstadoTabla(''); setFiltroMoraRange('')
+                    setSortCol(null); setSortDir('asc')
+                  }
+                  if (vista === 'global') setVista(perfil?.rol === 'ejecutivo' ? 'todos' : 'dashboard')
+                }}
+              >
+                {[
+                  ...(perfil?.rol !== 'ejecutivo' ? [{ vista: 'dashboard' as Vista, label: 'Dashboard', count: pendienteCount }] : []),
+                  { vista: 'todos' as Vista, label: 'Comprobantes por cobrar', count: pendienteCount },
+                  ...(sociedad.manual && adminMode ? [{ vista: 'nueva' as Vista, label: 'Agregar factura', count: 0 }] : []),
+                  { vista: 'historial' as Vista, label: 'Historial cobranzas', count: historialCount },
+                  { vista: 'clientes' as Vista, label: 'Listado de clientes', count: clientesCount },
+                ].map(item => (
+                  <SidebarItem
+                    key={`${key}-${item.vista}`}
+                    compacto
+                    label={item.label}
+                    icono={<Icono nombre={item.vista === 'nueva' ? 'mas' : item.vista === 'historial' ? 'reloj' : item.vista === 'clientes' ? 'clientes' : item.vista === 'todos' ? 'lista' : 'dashboard'} />}
+                    activo={sociedadActiva === key && vista === item.vista && !(key === 'sa' && item.vista === 'todos' && perfil?.rol !== 'ejecutivo' && ejecutivoSeleccionado)}
+                    onClick={() => irAVista(item.vista, key)}
+                    badge={item.vista === 'todos' || item.vista === 'historial' ? item.count : undefined}
+                    badgeTono={item.vista === 'historial' ? 'green' : 'red'}
+                  />
+                ))}
+                {key === 'sa' && perfil?.rol !== 'ejecutivo' && (
+                  <>
+                    <SidebarSeccion>Por ejecutivo</SidebarSeccion>
+                    {[...ejecutivos, ...(data.some(r => esSinAsignar(r.ejecutivo)) ? ['Sin asignar'] : [])].map(exec => {
+                      const sinAsignar = exec === 'Sin asignar'
+                      const ec = sinAsignar ? { bg: '#f8fafc', color: '#475569', initials: 'Sa' } : getExecColor(exec)
+                      const count     = data.filter(r => sinAsignar ? esSinAsignar(r.ejecutivo) : r.ejecutivo === exec).length
+                      const moraCount = data.filter(r => (sinAsignar ? esSinAsignar(r.ejecutivo) : r.ejecutivo === exec) && r.dias_mora > 0).length
                       return (
-                        <div
-                          key={`${key}-${item.vista}`}
-                          onClick={() => irAVista(item.vista, key)}
-                          style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '7px 10px', borderRadius: '8px', cursor: 'pointer', background: itemActivo ? 'rgba(37,84,160,0.4)' : 'transparent', color: itemActivo ? '#fff' : 'rgba(255,255,255,0.52)', fontSize: '12px', marginBottom: '1px' }}
-                        >
-                          <span>{item.vista === 'nueva' ? '+' : item.vista === 'historial' ? '○' : item.vista === 'clientes' ? '♧' : '▥'}</span>
-                          <span style={{ flex: 1 }}>{item.label}</span>
-                          {(item.vista === 'todos' || item.vista === 'historial') && <span style={{ fontSize: '10px', padding: '1px 7px', borderRadius: '20px', background: item.vista === 'historial' ? 'rgba(5,150,105,0.25)' : 'rgba(220,38,38,0.3)', color: item.vista === 'historial' ? '#6ee7b7' : '#fca5a5', fontWeight: 700 }}>{item.count}</span>}
-                        </div>
+                        <SidebarItem
+                          key={`sa-exec-${exec}`}
+                          compacto
+                          label={exec}
+                          icono={<span style={{ width: 22, height: 22, borderRadius: '50%', background: ec.bg, color: ec.color, display: 'grid', placeItems: 'center', fontSize: 9, fontWeight: 700, boxShadow: '0 2px 6px rgba(0,0,0,0.3)' }}>{ec.initials}</span>}
+                          activo={sociedadActiva === 'sa' && ejecutivoSeleccionado === exec}
+                          onClick={() => { setSociedadActiva('sa'); setEjecutivoSeleccionado(exec); setVista('todos'); setBusqueda(''); setBusquedaHistorial(''); setBusquedaClientes(''); setFiltroClienteTabla(''); setFiltroEstadoTabla(''); setFiltroMoraRange(''); setSortCol(null); setSortDir('asc'); setExpandedRows(new Set()) }}
+                          extra={moraCount > 0 ? <span title="Tiene comprobantes en mora" style={{ width: 6, height: 6, borderRadius: '50%', background: '#f87171', flexShrink: 0 }} /> : undefined}
+                          badge={count}
+                          badgeTono="gray"
+                        />
                       )
                     })}
-                    {key === 'sa' && perfil?.rol !== 'ejecutivo' && (
-                      <div style={{ padding: '10px 0 0' }}>
-                        <div style={{ fontSize: '9px', fontWeight: 700, letterSpacing: '1.6px', textTransform: 'uppercase', color: 'rgba(255,255,255,0.22)', padding: '0 8px', marginBottom: '6px' }}>Por ejecutivo</div>
-                        {[...ejecutivos, ...(data.some(r => esSinAsignar(r.ejecutivo)) ? ['Sin asignar'] : [])].map(exec => {
-                          const sinAsignar = exec === 'Sin asignar'
-                          const ec = sinAsignar ? { bg: '#f8fafc', color: '#475569', initials: 'Sa' } : getExecColor(exec)
-                          const count     = data.filter(r => sinAsignar ? esSinAsignar(r.ejecutivo) : r.ejecutivo === exec).length
-                          const moraCount = data.filter(r => (sinAsignar ? esSinAsignar(r.ejecutivo) : r.ejecutivo === exec) && r.dias_mora > 0).length
-                          const isActive  = sociedadActiva === 'sa' && ejecutivoSeleccionado === exec
-                          return (
-                            <div key={`sa-exec-${exec}`} onClick={() => { setSociedadActiva('sa'); setEjecutivoSeleccionado(exec); setVista('todos'); setBusqueda(''); setBusquedaHistorial(''); setBusquedaClientes(''); setFiltroClienteTabla(''); setFiltroEstadoTabla(''); setFiltroMoraRange(''); setSortCol(null); setSortDir('asc'); setExpandedRows(new Set()) }} style={{ display: 'flex', alignItems: 'center', gap: '9px', padding: '7px 10px', borderRadius: '9px', cursor: 'pointer', background: isActive ? 'rgba(255,255,255,0.1)' : 'transparent', marginBottom: '2px', transition: 'background 0.15s' }}>
-                              <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: ec.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: 700, color: ec.color, flexShrink: 0, boxShadow: '0 2px 8px rgba(0,0,0,0.3)' }}>{ec.initials}</div>
-                              <span style={{ color: isActive ? '#fff' : 'rgba(255,255,255,0.55)', fontSize: '12px', flex: 1, fontWeight: isActive ? 600 : 400, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{exec}</span>
-                              {moraCount > 0 && <div style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#f87171', flexShrink: 0 }} />}
-                              <span style={{ fontSize: '10px', fontWeight: 700, padding: '2px 7px', borderRadius: '20px', background: 'rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.3)' }}>{count}</span>
-                            </div>
-                          )
-                        })}
-                      </div>
-                    )}
-                  </div>
+                  </>
                 )}
-              </div>
+              </SidebarGrupo>
             )
           })}
-        </div>
+        </SidebarNav>
 
-        {/* vistas */}
-        <div style={{ display: 'none', padding: '0 12px 8px' }}>
-          <div style={{ fontSize: '9px', fontWeight: 700, letterSpacing: '1.6px', textTransform: 'uppercase', color: 'rgba(255,255,255,0.22)', padding: '0 8px', marginBottom: '6px' }}>Vistas</div>
-          {([
-            { key: 'dashboard', label: 'Dashboard',              count: data.length,       badgeStyle: 'blue'  },
-            { key: 'todos',     label: 'Todos los comprobantes', count: data.length,       badgeStyle: 'blue'  },
-            { key: 'historial', label: 'Historial cobrado',      count: historial.length,  badgeStyle: 'green' },
-            { key: 'clientes',  label: 'Listado de clientes',    count: clientesMap.size,  badgeStyle: 'gray'  },
-          ] as { key: string; label: string; count: number; badgeStyle: 'blue' | 'red' | 'green' | 'gray' }[]).map(item => {
-            const isActive = vista === item.key
-            const badgeColors = {
-              blue:  { bg: 'rgba(37,84,160,0.55)',  text: '#93b8ff' },
-              red:   { bg: 'rgba(220,38,38,0.35)',  text: '#fca5a5' },
-              green: { bg: 'rgba(5,150,105,0.25)',  text: '#6ee7b7' },
-              gray:  { bg: 'rgba(255,255,255,0.1)', text: 'rgba(255,255,255,0.45)' },
-            }
-            const bc = badgeColors[item.badgeStyle]
-            return (
-              <div
-                key={item.key}
-                onClick={() => {
-                  setVista(item.key as Vista)
-                  setEjecutivoSeleccionado(null)
-                  setFiltroClienteTabla(''); setFiltroEstadoTabla(''); setFiltroMoraRange('')
-                  setFiltroEjecutivoHistorial(''); setFiltroClienteHistorial('')
-                  setFiltroEjecutivoClientes(''); setBusquedaClientes('')
-                  setSortCol(null); setSortDir('asc'); setExpandedRows(new Set())
-                  if (item.key === 'historial') refetchHistorial()
-                  else refetch()
-                }}
-                style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 10px', borderRadius: '9px', cursor: 'pointer', background: isActive ? 'rgba(37,84,160,0.4)' : 'transparent', marginBottom: '1px', transition: 'background 0.15s' }}
-              >
-                <span style={{ fontSize: '13px', color: isActive ? '#fff' : 'rgba(255,255,255,0.48)', flex: 1, fontWeight: isActive ? 600 : 400 }}>{item.label}</span>
-                {item.count > 0 && (
-                  <span style={{ fontSize: '10px', fontWeight: 700, padding: '2px 7px', borderRadius: '20px', background: bc.bg, color: bc.text, letterSpacing: '0.2px' }}>
-                    {item.count}
-                  </span>
-                )}
-              </div>
-            )
-          })}
-        </div>
-
-        {/* footer */}
-        <div style={{ padding: '14px 20px', borderTop: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
-            <div style={{ width: '7px', height: '7px', borderRadius: '50%', background: '#34d399', boxShadow: '0 0 6px #34d399' }} />
-            <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.25)' }}>{fmtUltimaActualizacion(fechaUltimoReporte)}</span>
-          </div>
-          <div style={{ display: 'flex', gap: '6px' }}>
-            <button
-              onClick={onCambiarModulo}
-              title="Cambiar de app"
-              style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer', fontSize: '11px', color: 'rgba(255,255,255,0.4)', padding: '4px 10px', borderRadius: '6px', fontWeight: 600 }}
-            >
-              ⇄
-            </button>
-            <button
-              onClick={() => supabase.auth.signOut()}
-              style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer', fontSize: '11px', color: 'rgba(255,255,255,0.4)', padding: '4px 10px', borderRadius: '6px', fontWeight: 600 }}
-            >
-              Salir
-            </button>
-          </div>
-        </div>
-      </aside>
+        <SidebarFooter onCambiarModulo={onCambiarModulo} status={fmtUltimaActualizacion(fechaUltimoReporte)} />
+      </Sidebar>
 
       {/* ── MAIN ──────────────────────────────────────────────────────────── */}
       <main ref={mainRef} style={{ flex: 1, minWidth: 0, padding: '28px 32px', overflowY: 'auto', background: '#eef2f8' }}>
@@ -1411,7 +1299,7 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
           <div style={{ display: 'flex', alignItems: 'center' }}>
             {!sidebarAbierto && (
-              <button onClick={() => setSidebarAbierto(true)} style={{ background: '#0a1628', border: 'none', borderRadius: '8px', width: '36px', height: '36px', cursor: 'pointer', color: '#fff', fontSize: '16px', marginRight: '12px' }}>≡</button>
+              <button onClick={() => setSidebarAbierto(true)} style={{ background: 'linear-gradient(180deg,#0e2549,#06122a)', border: 'none', borderRadius: '8px', width: '36px', height: '36px', cursor: 'pointer', color: '#fff', fontSize: '16px', marginRight: '12px' }}>≡</button>
             )}
             <div>
               <h1 style={{ fontSize: '18px', fontWeight: 700, color: '#0d1b38', margin: 0 }}>

@@ -2,6 +2,7 @@ import { Fragment, useEffect, useMemo, useState } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
 import { usePendientes, type Pendiente } from './usePendientes'
+import { Sidebar, SidebarHeader, SidebarUser, SidebarNav, SidebarSeccion, SidebarItem, SidebarFooter, Bandera, Icono } from '../components/Sidebar'
 
 type Entidad = 'sa' | 'llc' | 'sl'
 type Vista = 'todos' | Entidad | 'historico' | 'resumen'
@@ -18,10 +19,11 @@ const MONEDAS_ENT: Record<Entidad, string[]> = { sa: ['ARS', 'USD'], llc: ['USD'
 const EXEC_COLOR: Record<string, { color: string; bg: string }> = {
   'Joaquin Ramirez':       { color: '#065f46', bg: '#d1fae5' },
   'Leonardo Nocera':       { color: '#1e40af', bg: '#dbeafe' },
-  'Maria Fernanda Dugini': { color: '#b45309', bg: '#fef3c7' },
+  'Fernanda Dugini':       { color: '#b45309', bg: '#fef3c7' },
   'Julieta Salvucci':      { color: '#4c1d95', bg: '#ede9fe' },
   'Silvina Buczer':        { color: '#744210', bg: '#fef3c7' },
   'Emiliano Angelinetta':  { color: '#1d4170', bg: '#dbeafe' },
+  'Agustin Fazio':         { color: '#7c2d12', bg: '#ffedd5' },
 }
 const execColor = (n: string) => EXEC_COLOR[n] || { color: '#6b7280', bg: '#f3f4f6' }
 
@@ -46,6 +48,8 @@ const fmtDate = (iso: string | null) => {
   const d = parseISO(iso)
   return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`
 }
+// aprobado_el se guarda como YYYY-MM-DD; si viniera en otro formato lo mostramos tal cual.
+const fmtAprobado = (v: string | null) => v && /^\d{4}-\d{2}-\d{2}/.test(v) ? fmtDate(v) : (v || '—')
 const fmtPeriodo = (iso: string) => {
   if (!iso) return ''
   const [y, m] = iso.split('-').map(Number)
@@ -66,25 +70,7 @@ const CSS = `
   --radius:10px;--shadow:0 1px 3px rgba(10,22,40,0.08),0 1px 2px rgba(10,22,40,0.05);--shadow-md:0 6px 24px rgba(10,22,40,0.14);
   font-family:'Inter',system-ui,sans-serif; font-size:14px; color:var(--text);
 }
-.pfc .shell { display:grid; grid-template-columns:258px 1fr; grid-template-rows:auto 1fr; height:100vh; width:100vw; background:var(--bg); }
-.pfc .sidebar { grid-row:1/3; background:var(--navy-900); display:flex; flex-direction:column; box-shadow:2px 0 12px rgba(10,22,40,0.18); }
-.pfc .sidebar-logo { padding:24px 20px 18px; border-bottom:1px solid rgba(255,255,255,0.07); }
-.pfc .logo-mark { display:flex; align-items:center; gap:10px; }
-.pfc .logo-icon { width:34px; height:34px; background:var(--navy-500); border-radius:8px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
-.pfc .logo-name { font-size:15px; font-weight:600; color:#fff; letter-spacing:-0.2px; }
-.pfc .logo-sub { font-size:10px; color:rgba(255,255,255,0.3); text-transform:uppercase; letter-spacing:1px; margin-left:44px; margin-top:3px; }
-.pfc .sidebar-nav { padding:16px 14px 8px; flex:1; overflow-y:auto; }
-.pfc .nav-item { display:flex; align-items:center; gap:8px; padding:10px 11px; border-radius:8px; cursor:pointer; font-size:13px; color:rgba(255,255,255,0.55); transition:all .15s; margin-bottom:3px; }
-.pfc .nav-item img { border-radius:2px; flex-shrink:0; }
-.pfc .nav-item .nlabel { flex:1; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.pfc .nav-item:hover { background:rgba(255,255,255,0.07); color:rgba(255,255,255,0.9); }
-.pfc .nav-item.active { background:rgba(79,70,229,0.4); color:#fff; }
-.pfc .nav-badge { flex-shrink:0; font-size:10px; font-weight:700; background:rgba(220,38,38,0.28); color:#fca5a5; padding:1px 7px; border-radius:20px; }
-.pfc .nav-divider { height:1px; background:rgba(255,255,255,0.09); margin:10px 4px; }
-.pfc .sidebar-footer { padding:14px 20px; border-top:1px solid rgba(255,255,255,0.07); font-size:11px; color:rgba(255,255,255,0.28); display:flex; flex-direction:column; align-items:flex-start; gap:5px; }
-.pfc .status-dot { width:6px; height:6px; border-radius:50%; background:var(--green); flex-shrink:0; }
-.pfc .side-link { color:rgba(255,255,255,0.4); font-size:11px; cursor:pointer; font-weight:600; }
-.pfc .side-link:hover { color:#fff; }
+.pfc .shell { display:grid; grid-template-columns:260px 1fr; grid-template-rows:auto 1fr; height:100vh; width:100vw; background:var(--bg); }
 .pfc .topbar { background:var(--surface); border-bottom:1px solid var(--border); padding:0 28px; display:flex; align-items:center; gap:14px; height:56px; box-shadow:var(--shadow); }
 .pfc .topbar-title { font-size:18px; font-weight:700; letter-spacing:-0.3px; }
 .pfc .topbar-spacer { flex:1; }
@@ -157,7 +143,11 @@ const CSS = `
 .pfc .edit-actions { display:flex; justify-content:flex-end; gap:8px; margin-top:10px; }
 .pfc .edit-actions .btn-save { background:var(--navy-500); color:#fff; border:none; padding:7px 15px; border-radius:7px; font-size:12.5px; font-weight:600; cursor:pointer; font:inherit; }
 .pfc .edit-actions .btn-cancel { background:none; border:1px solid var(--border); padding:7px 15px; border-radius:7px; font-size:12.5px; cursor:pointer; font:inherit; color:var(--text2); }
-.pfc .hist-final { font-size:12.5px; color:var(--green-text); padding:8px 10px; background:var(--green-dim); border-radius:8px; margin-top:8px; }
+.pfc .aprob-box { background:var(--green-dim); border:1px solid #a7f3d0; border-left:3px solid var(--green); border-radius:8px; padding:7px 10px; margin-bottom:6px; }
+.pfc .aprob-head { display:flex; align-items:center; gap:6px; font-size:12.5px; font-weight:700; color:var(--green-text); }
+.pfc .aprob-head svg { flex-shrink:0; color:var(--green); }
+.pfc .aprob-com { font-size:12px; color:var(--green-text); margin-top:3px; padding-left:19px; line-height:1.4; }
+.pfc .demora-badge { display:inline-flex; align-items:center; font-weight:700; font-size:12px; padding:3px 10px; border-radius:20px; background:var(--surface3); color:var(--text2); border:1px solid var(--border2); white-space:nowrap; }
 .pfc .repeat-btn { font-size:11.5px; font-weight:600; padding:5px 11px; border-radius:20px; border:1px solid var(--navy-300); background:var(--navy-50); color:var(--navy-700); cursor:pointer; font:inherit; white-space:nowrap; }
 .pfc .repeat-btn:hover { background:var(--navy-100); }
 .pfc .undo-btn { font-size:11.5px; font-weight:600; padding:5px 11px; border-radius:20px; border:1px solid #fecaca; background:#fff5f5; color:var(--red-text); cursor:pointer; font:inherit; white-space:nowrap; margin-left:6px; }
@@ -397,7 +387,6 @@ export function PendientesApp({ session, onCambiarModulo }: { session: Session; 
     : vista === 'resumen' ? 'Resumen de demoras por cliente'
     : ENTIDADES[vista as Entidad].label
 
-  const badge = (n: number) => n > 0 ? <span className="nav-badge">{n}</span> : null
   const q = busqueda.trim().toLowerCase()
   const filtroEntidad: Entidad | null = (['sa', 'llc', 'sl'] as const).includes(vista as Entidad) ? vista as Entidad : null
   let base = filtroEntidad ? activos.filter(r => r.entidad === filtroEntidad) : activos
@@ -552,9 +541,9 @@ export function PendientesApp({ session, onCambiarModulo }: { session: Session; 
         <div className="ebox-head"><span className="en">Histórico de aprobados</span><span className="ec">{historico.length} resueltos</span></div>
         <table>
           <thead><tr>
-            <th style={{ width: '18%' }}>Cliente</th><th style={{ width: '30%' }}>Motivo</th>
+            <th style={{ width: '18%' }}>Cliente</th><th style={{ width: '32%' }}>Aprobación</th>
             <th style={{ width: '13%', textAlign: 'right' }}>Importe</th><th style={{ width: '17%' }}>Ejecutivo</th>
-            <th style={{ width: '12%' }}>Resolución</th><th style={{ width: '10%', textAlign: 'center' }}>Acción</th>
+            <th style={{ width: '10%', textAlign: 'center' }}>Demora</th><th style={{ width: '10%', textAlign: 'center' }}>Acción</th>
           </tr></thead>
           <tbody>
             {sorted.map(r => {
@@ -564,10 +553,20 @@ export function PendientesApp({ session, onCambiarModulo }: { session: Session; 
                 <Fragment key={r.id}>
                   <tr className={`data-row ${isOpen ? 'open' : ''}`} onClick={() => setOpenHist(o => o === r.id ? null : r.id)}>
                     <td><div className="client-name"><span className="chev">▸</span>{r.cliente}</div></td>
-                    <td><div className="motivo-chip">{r.motivo}</div>{r.periodo && <div className="periodo-chip">{fmtPeriodo(r.periodo)}</div>}<div className="concepto-txt">{r.concepto}</div></td>
+                    <td>
+                      <div className="aprob-box">
+                        <div className="aprob-head">
+                          <svg viewBox="0 0 16 16" width={13} height={13} fill="none"><path d="m3.5 8.3 2.8 2.8 6.2-6.4" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" /></svg>
+                          Aprobado el {fmtAprobado(r.aprobado_el)}{r.via && r.via !== 'Otro' && <> · vía {r.via}</>}
+                        </div>
+                        {r.comentario && r.comentario !== '—' && <div className="aprob-com">{r.comentario}</div>}
+                      </div>
+                      {r.periodo && <div className="periodo-chip">{fmtPeriodo(r.periodo)}</div>}
+                      <div className="concepto-txt">{r.concepto}</div>
+                    </td>
                     <td style={{ textAlign: 'right' }}><span className="monto">{fmtMoneda(r.moneda, r.importe)}</span></td>
                     <td><span className="exec-tag" style={{ background: st.bg, color: st.color }}><span className="exec-dot" style={{ background: st.color }} />{r.resp}</span></td>
-                    <td style={{ fontSize: 12 }}>Aprobado {r.aprobado_el}</td>
+                    <td style={{ textAlign: 'center' }}><span className="demora-badge">{r.dias_al_aprobar ?? 0} día{r.dias_al_aprobar === 1 ? '' : 's'}</span></td>
                     <td style={{ textAlign: 'center', whiteSpace: 'nowrap' }}>
                       {modoAdmin && (
                         <>
@@ -580,13 +579,14 @@ export function PendientesApp({ session, onCambiarModulo }: { session: Session; 
                   {isOpen && (
                     <tr className="detail-row">
                       <td colSpan={6}>
+                        <div className="hist-title">Motivo original del retraso</div>
+                        <div style={{ marginBottom: 6 }}><span className="motivo-chip">{r.motivo}</span></div>
                         <div className="deber-line">
                           {r.periodo ? <>Período <b>{fmtPeriodo(r.periodo)}</b> — </> : null}
                           Debió facturarse el <b>{fmtDate(r.deber)}</b> — estuvo pendiente {r.dias_al_aprobar} días antes de resolverse.
                         </div>
                         <div className="hist-title">Seguimiento completo</div>
                         {r.hist.map((h, i) => <div key={i} className="hist-line"><b>{h.f}</b> — {h.t}{h.by && <span className="hist-by"> · {h.by}</span>}</div>)}
-                        <div className="hist-final">Aprobado el {r.aprobado_el} vía {r.via}. {r.comentario}</div>
                       </td>
                     </tr>
                   )}
@@ -666,12 +666,15 @@ export function PendientesApp({ session, onCambiarModulo }: { session: Session; 
     return <>{ORDEN_ENT.map(cajaEntidad)}</>
   }
 
-  const navItem = (v: Vista, label: React.ReactNode, n?: number, flag?: string) => (
-    <div className={`nav-item ${vista === v ? 'active' : ''}`} onClick={() => cambiarVista(v)}>
-      {flag && <img src={flagUrl(flag)} width={16} height={12} alt="" />}
-      <span className="nlabel">{label}</span>
-      {n !== undefined && badge(n)}
-    </div>
+  const navItem = (v: Vista, label: string, icono: 'capas' | 'check' | 'demora' | 'ar' | 'us' | 'es', n?: number) => (
+    <SidebarItem
+      label={label}
+      icono={icono === 'ar' || icono === 'us' || icono === 'es' ? <Bandera code={icono} /> : <Icono nombre={icono} />}
+      activo={vista === v}
+      onClick={() => cambiarVista(v)}
+      badge={n ? n : undefined}
+      badgeTono="red"
+    />
   )
 
   return (
@@ -681,34 +684,23 @@ export function PendientesApp({ session, onCambiarModulo }: { session: Session; 
       <datalist id="pfc-ejecutivos">{ejecutivosConocidos.map(e => <option key={e} value={e} />)}</datalist>
 
       <div className="shell">
-        <aside className="sidebar">
-          <div className="sidebar-logo">
-            <div className="logo-mark">
-              <div className="logo-icon">
-                <svg viewBox="0 0 20 20" fill="none" width={17} height={17}><path d="M10 3v14M4 10h12" stroke="#fff" strokeWidth={1.8} strokeLinecap="round" /></svg>
-              </div>
-              <span className="logo-name">Pendientes de Facturación</span>
-            </div>
-            <div className="logo-sub">ASAP Consulting</div>
-          </div>
+        <Sidebar style={{ gridRow: '1 / 3' }}>
+          <SidebarHeader app="pendientes" />
+          <SidebarUser nombre={session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'Usuario'} />
 
-          <div className="sidebar-nav">
-            {navItem('todos', 'Todos los pendientes', activos.length)}
-            <div className="nav-divider" />
-            {navItem('sa', 'ASAP Consulting SA', activos.filter(r => r.entidad === 'sa').length, 'ar')}
-            {navItem('llc', 'ASAP Consulting LLC', activos.filter(r => r.entidad === 'llc').length, 'us')}
-            {navItem('sl', 'IT ASAP Solutions SL', activos.filter(r => r.entidad === 'sl').length, 'es')}
-            <div className="nav-divider" />
-            {navItem('historico', 'Histórico de aprobados')}
-            {navItem('resumen', 'Resumen de demoras')}
-          </div>
+          <SidebarNav>
+            {navItem('todos', 'Todos los pendientes', 'capas', activos.length)}
+            <SidebarSeccion>Sociedades</SidebarSeccion>
+            {navItem('sa', 'ASAP Consulting SA', 'ar', activos.filter(r => r.entidad === 'sa').length)}
+            {navItem('llc', 'ASAP Consulting LLC', 'us', activos.filter(r => r.entidad === 'llc').length)}
+            {navItem('sl', 'IT ASAP Solutions SL', 'es', activos.filter(r => r.entidad === 'sl').length)}
+            <SidebarSeccion>Reportes</SidebarSeccion>
+            {navItem('historico', 'Histórico de aprobados', 'check')}
+            {navItem('resumen', 'Resumen de demoras', 'demora')}
+          </SidebarNav>
 
-          <div className="sidebar-footer">
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}><span className="status-dot" />Actualizado: {fmtFechaLarga(hoy)}</div>
-            <div className="side-link" onClick={onCambiarModulo}>← Cambiar de app</div>
-            <div className="side-link" onClick={() => supabase.auth.signOut()}>Salir</div>
-          </div>
-        </aside>
+          <SidebarFooter onCambiarModulo={onCambiarModulo} status={`Actualizado: ${fmtFechaLarga(hoy)}`} />
+        </Sidebar>
 
         <header className="topbar">
           <span className="topbar-title">{titulo}</span>

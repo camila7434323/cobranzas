@@ -7,6 +7,7 @@ import { useFacturacionLineas, type FacturacionLinea } from './hooks/useFacturac
 import { SubirFacturacionExcel } from './components/SubirFacturacionExcel'
 import { usePdfsStorage } from '../hooks/usePdfsStorage'
 import { usePdfsManuales } from '../hooks/usePdfsManuales'
+import { Sidebar, SidebarHeader, SidebarUser, SidebarNav, SidebarSeccion, SidebarItem, SidebarFooter, Bandera, Icono } from '../components/Sidebar'
 
 type Vista = 'dashboard' | 'detalle'
 type Modo = 'compania' | 'cliente' | 'cc'
@@ -186,8 +187,6 @@ export function FacturacionApp({ session, onCambiarModulo }: { session: Session;
   )
   const loading = loadingLineas || perfil === undefined
   const nombreUsuario = session.user.user_metadata?.full_name || perfil?.ejecutivo_nombre || session.user.email?.split('@')[0] || 'Usuario'
-  const palabras = nombreUsuario.trim().split(/\s+/)
-  const iniciales = (palabras.length > 1 ? palabras[0][0] + palabras[palabras.length - 1][0] : nombreUsuario.slice(0, 2)).toUpperCase()
   const [vista, setVista] = useState<Vista>('detalle')
   const [empresaActiva, setEmpresaActiva] = useState('all')
   const [busqueda, setBusqueda] = useState('')
@@ -282,51 +281,39 @@ export function FacturacionApp({ session, onCambiarModulo }: { session: Session;
   }
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '280px minmax(0, 1fr)', width: '100vw', height: '100vh', overflow: 'hidden', background: '#eaf7fd', color: '#0d1b38', fontFamily: 'Inter, sans-serif', fontSize: 13 }}>
-      <aside className="scroll-sin-barra" style={{ background: '#0c2a3d', display: 'flex', flexDirection: 'column', position: 'sticky', top: 0, height: '100vh', overflowY: 'auto', boxShadow: '2px 0 14px rgba(10,22,40,0.2)' }}>
-        <div style={{ padding: '20px 18px 16px', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <div style={{ width: 34, height: 34, background: '#14a9e1', borderRadius: 9, display: 'grid', placeItems: 'center', color: '#fff', fontWeight: 800 }}>F</div>
-            <div>
-              <div style={{ color: '#fff', fontSize: 16, fontWeight: 800 }}>Facturación</div>
-              <div style={{ color: 'rgba(255,255,255,.35)', fontSize: 10, fontWeight: 700, letterSpacing: 1.6, textTransform: 'uppercase', marginTop: 4 }}>ASAP Consulting</div>
-            </div>
-          </div>
-        </div>
+    <div style={{ display: 'grid', gridTemplateColumns: '260px minmax(0, 1fr)', width: '100vw', height: '100vh', overflow: 'hidden', background: '#eaf7fd', color: '#0d1b38', fontFamily: 'Inter, sans-serif', fontSize: 13 }}>
+      <Sidebar>
+        <SidebarHeader app="facturacion" />
+        <SidebarUser nombre={nombreUsuario} estado={soloEjecutivo !== null ? 'Solo tus cuentas' : 'Activo'} />
 
-        <div style={{ padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#14a9e1', border: '2px solid rgba(255,255,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: '#fff', flexShrink: 0 }}>
-            {iniciales}
-          </div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ color: '#fff', fontSize: 12, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{nombreUsuario}</div>
-            <div style={{ color: 'rgba(255,255,255,0.3)', fontSize: 10, display: 'flex', alignItems: 'center', gap: 4 }}>
-              <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#34d399', display: 'inline-block' }} />
-              {soloEjecutivo !== null ? 'Solo tus cuentas' : 'Activo'}
-            </div>
-          </div>
-        </div>
-        <div style={{ height: 1, background: 'rgba(255,255,255,.08)', margin: '0 20px 6px' }} />
+        <SidebarNav>
+          <SidebarSeccion>Vistas</SidebarSeccion>
+          <SidebarItem
+            label="Panel de Ventas"
+            icono={<Icono nombre="chart" />}
+            activo={vista === 'dashboard'}
+            onClick={abrirDashboard}
+            extra={!ventasDesbloqueado ? <span style={{ opacity: 0.55, display: 'grid' }} title="Requiere contraseña"><Icono nombre="candado" size={13} /></span> : undefined}
+          />
 
-        <SideTitle>Vistas</SideTitle>
-        <button onClick={abrirDashboard} style={navStyle(vista === 'dashboard')}>▥ <span>Panel de Ventas</span>{!ventasDesbloqueado && <span style={{ marginLeft: 'auto', fontSize: 11 }}>🔒</span>}</button>
-        <div style={{ height: 1, background: 'rgba(255,255,255,.08)', margin: '10px 20px' }} />
-        <SideTitle>Compañías</SideTitle>
-        <button onClick={() => irEmpresa('all')} style={navStyle(vista === 'detalle' && empresaActiva === 'all')}><span style={dot} /> Todas las compañías</button>
-        {empresas.map(e => (
-          <button key={e.nombre} onClick={() => irEmpresa(e.nombre)} style={navStyle(vista === 'detalle' && empresaActiva === e.nombre)}>
-            <span className={`fi fi-${flagEmpresa(e.nombre, e.moneda)}`} style={{ borderRadius: 2, flexShrink: 0 }} />
-            <span>{e.nombre}</span>
-          </button>
-        ))}
+          <SidebarSeccion>Compañías</SidebarSeccion>
+          <SidebarItem label="Todas las compañías" icono={<Icono nombre="capas" />} activo={vista === 'detalle' && empresaActiva === 'all'} onClick={() => irEmpresa('all')} />
+          {empresas.map(e => (
+            <SidebarItem
+              key={e.nombre}
+              label={e.nombre}
+              icono={<Bandera code={flagEmpresa(e.nombre, e.moneda)} />}
+              activo={vista === 'detalle' && empresaActiva === e.nombre}
+              onClick={() => irEmpresa(e.nombre)}
+            />
+          ))}
+        </SidebarNav>
 
-        <div style={{ marginTop: 'auto', padding: 14, borderTop: '1px solid rgba(255,255,255,0.08)', display: 'grid', gap: 10 }}>
+        <SidebarFooter onCambiarModulo={onCambiarModulo}>
           <SubirFacturacionExcel insertarLote={insertarLote} compact />
           <div style={{ color: 'rgba(255,255,255,.42)', fontSize: 11, lineHeight: 1.35 }}>Facturación global por cliente, ejecutivo y período.</div>
-          <button onClick={onCambiarModulo} style={sideButton}>Cambiar de app</button>
-          <button onClick={() => supabase.auth.signOut()} style={sideButton}>Salir</button>
-        </div>
-      </aside>
+        </SidebarFooter>
+      </Sidebar>
 
       <section style={{ minWidth: 0, overflow: 'hidden' }}>
         <header style={{ height: 58, background: '#fff', borderBottom: '1px solid #d3eaf6', padding: '0 28px', display: 'flex', alignItems: 'center', gap: 12, boxShadow: '0 1px 5px rgba(10,22,40,0.08)' }}>
@@ -1036,10 +1023,6 @@ function Kpi({ label, value, color = '#19a8e6' }: { label: string; value: string
   return <div style={{ background: '#fff', border: '1px solid #cbe5f3', borderTop: `3px solid ${color}`, borderRadius: 8, padding: '13px 16px', boxShadow: '0 1px 4px rgba(14,74,103,.1)' }}><div style={{ color: '#7286bd', fontSize: 10.5, fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1 }}>{label}</div><div style={{ color: '#087fa8', marginTop: 7, fontFamily: 'monospace', fontSize: 17, fontWeight: 800 }}>{value}</div></div>
 }
 
-function SideTitle({ children }: { children: React.ReactNode }) {
-  return <div style={{ color: 'rgba(255,255,255,.36)', fontSize: 10, fontWeight: 800, letterSpacing: 1.6, textTransform: 'uppercase', padding: '16px 18px 7px' }}>{children}</div>
-}
-
 function Insight({ children, color, bg }: { children: React.ReactNode; color: string; bg: string }) {
   return <div style={{ background: bg, border: `1px solid ${color}`, color: '#0b4b5d', borderRadius: 8, padding: '10px 12px', fontSize: 13, lineHeight: 1.45 }}>{children}</div>
 }
@@ -1062,12 +1045,7 @@ function pieSlice(cx: number, cy: number, r: number, start: number, end: number)
   return `M ${cx} ${cy} L ${x0} ${y0} A ${r} ${r} 0 ${end - start > 0.5 ? 1 : 0} 1 ${x1} ${y1} Z`
 }
 
-const navStyle = (active: boolean): React.CSSProperties => ({
-  display: 'flex', alignItems: 'center', gap: 9, width: 'calc(100% - 24px)', margin: '0 12px 6px', padding: '9px 12px', borderRadius: 8, border: 'none', background: active ? '#18a9e5' : 'transparent', color: active ? '#fff' : 'rgba(255,255,255,.66)', cursor: 'pointer', fontSize: 13, fontWeight: active ? 800 : 600, textAlign: 'left'
-})
 
-const sideButton: React.CSSProperties = { background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer', fontSize: 11, color: 'rgba(255,255,255,0.55)', padding: '8px 10px', borderRadius: 6, fontWeight: 800 }
-const dot: React.CSSProperties = { width: 9, height: 9, borderRadius: '50%', background: '#7dd3fc' }
 const inputStyle: React.CSSProperties = { width: 340, background: '#f7fcff', border: '1px solid #bfe1f3', borderRadius: 8, color: '#0d1b38', fontSize: 13, padding: '8px 10px', outline: 'none' }
 const emptyStyle: React.CSSProperties = { background: '#fff', border: '1.5px dashed #b7dcf0', borderRadius: 10, padding: '78px 20px', textAlign: 'center', color: '#7286bd' }
 const tableStyle: React.CSSProperties = { width: '100%', borderCollapse: 'collapse' }

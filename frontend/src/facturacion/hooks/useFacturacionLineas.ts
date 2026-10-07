@@ -92,6 +92,29 @@ export function useFacturacionLineas() {
       if (error) throw error
     })
 
+    // Además, el Excel reemplaza todo lo que había para cada empresa dentro del
+    // rango de fechas que cubre. Así una factura anulada y rehecha con otro
+    // número (que ya no viene en el Excel) no queda colgada de una carga vieja.
+    const rangoPorEmpresa = new Map<string, { desde: string; hasta: string }>()
+    for (const f of filas) {
+      if (!f.fecha_factura) continue
+      const r = rangoPorEmpresa.get(f.empresa)
+      if (!r) rangoPorEmpresa.set(f.empresa, { desde: f.fecha_factura, hasta: f.fecha_factura })
+      else {
+        if (f.fecha_factura < r.desde) r.desde = f.fecha_factura
+        if (f.fecha_factura > r.hasta) r.hasta = f.fecha_factura
+      }
+    }
+    for (const [empresa, { desde, hasta }] of rangoPorEmpresa) {
+      const { error } = await supabase
+        .from('facturacion_lineas')
+        .delete()
+        .eq('empresa', empresa)
+        .gte('fecha_factura', desde)
+        .lte('fecha_factura', hasta)
+      if (error) throw error
+    }
+
     // Líneas sin número de factura: se limpian por empresa para no acumularlas
     // entre reimportaciones del mismo archivo.
     const empresasSinFactura = Array.from(new Set(filas.filter(f => !f.n_factura).map(f => f.empresa).filter(Boolean)))

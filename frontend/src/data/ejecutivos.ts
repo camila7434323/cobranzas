@@ -72,11 +72,11 @@ export const ejecutivosPorCliente: Record<string, string> = {
   'Toyota':                 'Leonardo Nocera',
   'Usina de Innovación':    'Pablo Cruz',
   'AEROBOX S.A.':           'Joaquin Ramirez',
-  'Caja de Seguros S.A':    'Julieta Salvucci',
+  'Caja de Seguros S.A':    'Leonardo Nocera',
   'ACTIVA BI':              'Lucas Roca',
   'Enjoy Selling SA':       'Joaquin Ramirez',
 }
 
 export const EJECUTIVOS: string[] = [
-  ...new Set([...Object.values(ejecutivosPorCliente), 'Agustina Soria']),
+  ...new Set([...Object.values(ejecutivosPorCliente), 'Agustina Soria', 'Agustin Fazio']),
 ].sort()

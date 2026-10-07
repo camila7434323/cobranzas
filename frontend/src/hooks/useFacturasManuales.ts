@@ -1,8 +1,22 @@
 import { useEffect, useState, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 import type { ManualFactura, SociedadKey } from '../types/sociedades'
+import { EJECUTIVOS } from '../data/ejecutivos'
 
 type Row = ManualFactura & { estado: 'pendiente' | 'cobrado' }
+
+// Combina lo que ya haya cargado en facturas_manuales con la lista canónica
+// de ejecutivos (mismo nombre que usa `perfiles.ejecutivo_nombre`). Sin esto,
+// el desplegable de "cambiar ejecutivo" ofrecía como opción lo que ya
+// estuviera mal tipeado en la tabla (ej. "JULIETA SALVUCCI" en vez de
+// "Julieta Salvucci"), perpetuando el mismatch de mayúsculas que hacía que
+// esa cuenta no viera sus propios clientes por el filtro de RLS.
+function combinarConCanonicos(propios: string[]): string[] {
+  const porClave = new Map<string, string>()
+  propios.forEach(n => { if (n) porClave.set(n.trim().toUpperCase(), n) })
+  EJECUTIVOS.forEach(n => porClave.set(n.trim().toUpperCase(), n))
+  return [...porClave.values()].sort((a, b) => a.localeCompare(b))
+}
 
 export function useFacturasManuales() {
   const [rows, setRows] = useState<Row[]>([])
@@ -36,8 +50,8 @@ export function useFacturasManuales() {
   } as Record<SociedadKey, ManualFactura[]>
   const execsConocidos = {
     sa: [] as string[],
-    llc: [...new Set(rows.filter(r => r.sociedad === 'llc').map(r => r.ejecutivo).filter(e => e && e !== 'Sin asignar'))].sort(),
-    sl:  [...new Set(rows.filter(r => r.sociedad === 'sl').map(r => r.ejecutivo).filter(e => e && e !== 'Sin asignar'))].sort(),
+    llc: combinarConCanonicos([...new Set(rows.filter(r => r.sociedad === 'llc').map(r => r.ejecutivo).filter(e => e && e !== 'Sin asignar'))]),
+    sl:  combinarConCanonicos([...new Set(rows.filter(r => r.sociedad === 'sl').map(r => r.ejecutivo).filter(e => e && e !== 'Sin asignar'))]),
   } as Record<SociedadKey, string[]>
   const clientesConocidos = {
     sa: [] as string[],

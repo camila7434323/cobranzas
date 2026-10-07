@@ -68,8 +68,10 @@ export const ejecutivosPorCliente: Record<string, string> = {
   'Toyota': 'Leonardo Nocera',
   'Usina de Innovación': 'Pablo Cruz',
   'AEROBOX S.A.': 'Joaquin Ramirez',
-  'Caja de Seguros S.A': 'Julieta Salvucci',
-  'Enjoy Selling SA': 'Joaquin Ramirez'
+  'Caja de Seguros S.A': 'Leonardo Nocera',
+  'Enjoy Selling SA': 'Joaquin Ramirez',
+  'TECNOPERFILES S.A.': 'Fernanda Dugini',
+  'YPF SOCIEDAD ANONIMA': 'Leonardo Nocera'
 }
 
 const normalizar = (valor: string) =>

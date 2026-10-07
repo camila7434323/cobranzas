@@ -546,6 +546,37 @@ export async function procesarExcel(buffer: Buffer, usuario: string, nombreArchi
   return sincronizarComprobantes(comprobantes, usuario, nombreArchivo)
 }
 
+// Supabase devuelve como máximo 1000 filas por consulta: paginamos para no
+// perder comprobantes cuando la tabla crece.
+async function traerTodasLasFilas(tabla: string, columnas: string): Promise<any[]> {
+  const PAGINA = 1000
+  const filas: any[] = []
+  for (let desde = 0; ; desde += PAGINA) {
+    const { data, error } = await supabase.from(tabla).select(columnas).order('id').range(desde, desde + PAGINA - 1)
+    if (error) throw error
+    filas.push(...(data || []))
+    if (!data || data.length < PAGINA) return filas
+  }
+}
+
+const esSinAsignar = (ejecutivo?: string | null) =>
+  !ejecutivo || ejecutivo.trim().toLowerCase() === 'sin asignar'
+
+// Códigos genéricos que ponen los parsers cuando el archivo no trae código de cliente.
+const CODIGOS_GENERICOS = new Set(['', 'SIN_COD', 'CLI'])
+const claveCodigo = (codigo?: string | null) => {
+  const c = String(codigo || '').trim().toUpperCase()
+  return CODIGOS_GENERICOS.has(c) ? '' : c
+}
+
+const claveNombre = (nombre?: string | null) =>
+  String(nombre || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim()
+
 async function sincronizarComprobantes(
   comprobantes: ComprobanteImportado[],
   usuario: string,
@@ -553,12 +584,10 @@ async function sincronizarComprobantes(
 ) {
   console.log(`ðŸ”„ Sincronizando ${comprobantes.length} comprobantes...`)
 
-  const [{ data: todos, error: errorSelect }, { data: historialExistente }] = await Promise.all([
-    supabase.from('comprobantes').select('*'),
-    supabase.from('historial_cobros').select('comprobante_id')
+  const [todos, historialExistente] = await Promise.all([
+    traerTodasLasFilas('comprobantes', '*'),
+    traerTodasLasFilas('historial_cobros', 'id, comprobante_id')
   ])
-
-  if (errorSelect) throw errorSelect
 
   const yaEnHistorial = new Set((historialExistente || []).map((h: any) => h.comprobante_id))
   const todosMap = new Map<string, any>((todos || []).map((c: any) => [c.comprobante, c]))
@@ -599,12 +628,33 @@ async function sincronizarComprobantes(
     }
   }
 
+  // Memoria de ejecutivo por cliente: el último ejecutivo asignado (a mano o no)
+  // a cualquier comprobante de ese cliente. Así una factura nueva de un cliente
+  // ya conocido hereda la reasignación hecha en la app, en vez de volver al
+  // valor "de fábrica" de ejecutivosPorCliente.
+  const ejecutivoPorCodigo = new Map<string, string>()
+  const ejecutivoPorNombre = new Map<string, string>()
+  const recientesPrimero = [...(todos || [])].sort((a: any, b: any) =>
+    String(b.updated_at || '').localeCompare(String(a.updated_at || ''))
+  )
+  for (const c of recientesPrimero) {
+    if (esSinAsignar(c.ejecutivo)) continue
+    const codigo = claveCodigo(c.codigo)
+    if (codigo && !ejecutivoPorCodigo.has(codigo)) ejecutivoPorCodigo.set(codigo, c.ejecutivo)
+    const nombre = claveNombre(c.nombre_cliente)
+    if (nombre && !ejecutivoPorNombre.has(nombre)) ejecutivoPorNombre.set(nombre, c.ejecutivo)
+  }
+  const ejecutivoRecordado = (c: ComprobanteImportado) =>
+    ejecutivoPorCodigo.get(claveCodigo(c.codigo)) || ejecutivoPorNombre.get(claveNombre(c.nombre_cliente))
+
   // No pisar el ejecutivo si el comprobante ya existe: puede haber sido
-  // reasignado manualmente desde la app, y no queremos que un reimport lo
-  // devuelva al valor "de fábrica" de ejecutivosPorCliente.
+  // reasignado manualmente desde la app. Si es nuevo, usar el que recordamos
+  // para ese cliente y recién si no hay ninguno, el de ejecutivosPorCliente.
   const comprobantesActivos = comprobantes.map(cRaw => {
     const existente = todosMap.get(cRaw.comprobante)
-    const ejecutivo = existente ? existente.ejecutivo : cRaw.ejecutivo
+    const ejecutivo = existente && !esSinAsignar(existente.ejecutivo)
+      ? existente.ejecutivo
+      : (ejecutivoRecordado(cRaw) || existente?.ejecutivo || cRaw.ejecutivo)
     // Si este XML no trajo condición pero el comprobante ya tenía una, no la
     // borramos: un reimport parcial no debe dejar la condición vacía.
     const c = { ...cRaw, condicion: cRaw.condicion || existente?.condicion || '' }
