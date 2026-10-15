@@ -1,19 +1,41 @@
 import { useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { OPCIONES, type Modulo } from './modulos'
+import { LogoAsap, AZUL, NAVY } from './Marca'
 
-// Mismo fondo que el selector de apps.
-const FONDO = [
-  'radial-gradient(900px 500px at 15% 10%, rgba(37,84,160,.45), transparent 60%)',
-  'radial-gradient(700px 500px at 90% 90%, rgba(79,70,229,.30), transparent 60%)',
-  'radial-gradient(600px 400px at 70% 20%, rgba(14,116,144,.25), transparent 60%)',
-  'linear-gradient(180deg,#0e2549 0%,#091a35 55%,#06122a 100%)',
-].join(', ')
+const CSS = `
+.wlog { flex:1; min-height:100vh; background:#f4f8fd; font-family:'Poppins',system-ui,sans-serif; color:#1f2a44;
+  display:grid; grid-template-columns:1fr 1fr; align-items:start; padding:100px 6vw 80px; gap:40px; position:relative; }
+.wlog-izq { display:flex; flex-direction:column; align-items:center; gap:36px; padding-top:120px; }
+.wlog-card { justify-self:center; width:100%; max-width:500px; background:#edf1f6; border-radius:22px; padding:28px 44px 22px;
+  box-shadow:0 2px 6px rgba(31,42,68,.12); }
+.wlog-hola { font-size:15px; color:#555e70; }
+.wlog-titulo { font-size:30px; font-weight:600; color:#2a2f3a; margin:6px 0 22px; }
+.wlog-campo { position:relative; border:1px solid #c9d2de; border-radius:6px; margin-bottom:36px; padding:22px 44px 14px 12px; background:#edf1f6; }
+.wlog-campo:focus-within { border-color:${AZUL}; }
+.wlog-campo label { position:absolute; top:-9px; left:9px; padding:0 4px; background:#edf1f6; font-size:12.5px; color:#555e70; }
+.wlog-campo:focus-within label { color:${AZUL}; }
+.wlog-campo input { width:100%; border:none; outline:none; background:#e8f0fe; font:inherit; font-size:16px; color:#1f2a44; padding:4px 2px; }
+.wlog-campo .ic { position:absolute; right:14px; top:50%; transform:translateY(-50%); color:#1f2a44; background:none; border:none; padding:0; cursor:pointer; display:grid; }
+.wlog-btn { width:92%; padding:15px; border:none; border-radius:8px; background:${AZUL}; color:#fff; font:inherit; font-size:22px; font-weight:500;
+  cursor:pointer; box-shadow:0 4px 10px rgba(26,143,208,.35); transition:background .15s; }
+.wlog-btn:hover { background:#1477b0; }
+.wlog-btn:disabled { background:#7fb9df; cursor:wait; }
+.wlog-link { display:inline-block; margin-top:12px; font-size:16px; font-weight:500; color:${AZUL}; cursor:pointer; background:none; border:none; padding:0; font-family:inherit; }
+.wlog-error { background:#fee2e2; color:#b91c1c; padding:10px 14px; border-radius:8px; font-size:13.5px; margin:-16px 0 22px; border:1px solid #fca5a5; }
+.wlog-pie { position:absolute; left:16px; bottom:16px; font-size:15px; font-weight:600; color:#2a2f3a; line-height:1.6; }
+@media (max-width: 900px) {
+  .wlog { grid-template-columns:1fr; padding:32px 16px 90px; }
+  .wlog-izq { padding-top:0; }
+  .wlog-card { padding:24px 20px 18px; }
+}
+`
 
 export function Login({ modulo = 'cobranzas', onVolver }: { modulo?: Modulo; onVolver?: () => void }) {
   const info = OPCIONES.find(o => o.key === modulo)!
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [verPassword, setVerPassword] = useState(false)
   const [cargando, setCargando] = useState(false)
   const [error, setError] = useState('')
 
@@ -29,97 +51,51 @@ export function Login({ modulo = 'cobranzas', onVolver }: { modulo?: Modulo; onV
   }
 
   return (
-    <div style={{
-      flex: 1, minHeight: '100vh', display: 'flex', alignItems: 'center', padding: '24px 16px',
-      justifyContent: 'center', background: FONDO, fontFamily: 'Inter, sans-serif',
-    }}>
-      <div style={{
-        background: 'linear-gradient(180deg, rgba(255,255,255,.075), rgba(255,255,255,.03))', borderRadius: '18px', padding: '40px 44px',
-        width: '100%', maxWidth: '400px', boxShadow: '0 24px 60px -20px rgba(0,0,0,0.7)',
-        border: '1px solid rgba(255,255,255,0.1)', backdropFilter: 'blur(8px)',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '32px' }}>
-          <div style={{ width: '42px', height: '42px', background: `linear-gradient(135deg, ${info.color}, color-mix(in srgb, ${info.color} 60%, #000))`, borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 8px 20px -6px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.25)' }}>
-            <span style={{ color: '#fff', fontSize: '18px', fontWeight: 800 }}>{info.inicial}</span>
-          </div>
-          <div>
-            <div style={{ fontWeight: 700, fontSize: '17px', color: '#e7eefb' }}>{info.nombre}</div>
-            <div style={{ fontSize: '11px', color: '#8ea0c4', textTransform: 'uppercase', letterSpacing: '1px' }}>ASAP Consulting</div>
-          </div>
+    <div className="wlog">
+      <style>{CSS}</style>
+
+      <div className="wlog-izq">
+        <div style={{ textAlign: 'center' }}>
+          <LogoAsap alto={130} color={NAVY} />
+          <div style={{ fontSize: 22, fontWeight: 500, fontStyle: 'italic', color: AZUL, marginTop: 10 }}>{info.nombre}</div>
+        </div>
+      </div>
+
+      <form className="wlog-card" onSubmit={handleSubmit}>
+        <div className="wlog-hola">Bienvenido de nuevo! 👋</div>
+        <div className="wlog-titulo">Ingrese a su cuenta</div>
+
+        <div className="wlog-campo">
+          <label htmlFor="wlog-user">Usuario *</label>
+          <input id="wlog-user" type="email" value={email} onChange={e => setEmail(e.target.value)} required autoComplete="username" />
+          <span className="ic">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm0 4a3.5 3.5 0 1 1 0 7 3.5 3.5 0 0 1 0-7Zm0 14a8 8 0 0 1-6.2-2.95C7 15.3 9.4 14.5 12 14.5s5 .8 6.2 2.55A8 8 0 0 1 12 20Z" /></svg>
+          </span>
         </div>
 
-        <h2 style={{ fontSize: '20px', fontWeight: 700, color: '#e7eefb', margin: '0 0 6px' }}>Iniciar sesión</h2>
-        <p style={{ fontSize: '13px', color: '#8ea0c4', margin: '0 0 28px' }}>Ingresá con tu cuenta de acceso</p>
-
-        <form onSubmit={handleSubmit}>
-          <div style={{ marginBottom: '16px' }}>
-            <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#b6c4de', marginBottom: '6px' }}>
-              Usuario
-            </label>
-            <input
-              type="email"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              required
-              placeholder="usuario@asap.com"
-              style={{
-                width: '100%', boxSizing: 'border-box', padding: '10px 14px',
-                borderRadius: '8px', border: '1px solid rgba(255,255,255,0.14)', fontSize: '14px',
-                outline: 'none', color: '#e7eefb', background: 'rgba(6,18,42,0.55)',
-              }}
-            />
-          </div>
-
-          <div style={{ marginBottom: '24px' }}>
-            <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#b6c4de', marginBottom: '6px' }}>
-              Contraseña
-            </label>
-            <input
-              type="password"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              required
-              placeholder="••••••••"
-              style={{
-                width: '100%', boxSizing: 'border-box', padding: '10px 14px',
-                borderRadius: '8px', border: '1px solid rgba(255,255,255,0.14)', fontSize: '14px',
-                outline: 'none', color: '#e7eefb', background: 'rgba(6,18,42,0.55)',
-              }}
-            />
-          </div>
-
-          {error && (
-            <div style={{
-              background: 'rgba(239,68,68,0.14)', color: '#eb8484', padding: '10px 14px',
-              borderRadius: '8px', fontSize: '13px', marginBottom: '16px',
-              border: '1px solid rgba(230,76,76,0.4)',
-            }}>
-              {error}
-            </div>
-          )}
-
-          <button
-            type="submit"
-            disabled={cargando}
-            style={{
-              width: '100%', padding: '12px', borderRadius: '8px', border: 'none',
-              background: cargando ? '#7a8fbb' : '#3b6fd9', color: '#fff',
-              fontSize: '14px', fontWeight: 700, cursor: cargando ? 'wait' : 'pointer',
-              boxShadow: cargando ? 'none' : '0 10px 24px -8px rgba(59,111,217,0.7)',
-            }}
-          >
-            {cargando ? 'Ingresando...' : 'Ingresar'}
+        <div className="wlog-campo">
+          <label htmlFor="wlog-pass">Contraseña *</label>
+          <input id="wlog-pass" type={verPassword ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)} required autoComplete="current-password" />
+          <button type="button" className="ic" onClick={() => setVerPassword(v => !v)} title={verPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z" /><circle cx="12" cy="12" r="3" />
+              {!verPassword && <path d="M3 3l18 18" />}
+            </svg>
           </button>
-        </form>
+        </div>
 
+        {error && <div className="wlog-error">{error}</div>}
+
+        <button type="submit" className="wlog-btn" disabled={cargando}>
+          {cargando ? 'Ingresando...' : 'Iniciar Sesión'}
+        </button>
         {onVolver && (
-          <div
-            onClick={onVolver}
-            style={{ marginTop: '18px', textAlign: 'center', fontSize: '12px', color: '#8ea0c4', cursor: 'pointer', fontWeight: 600 }}
-          >
-            ← Cambiar de app
-          </div>
+          <div><button type="button" className="wlog-link" onClick={onVolver}>← Cambiar de app</button></div>
         )}
+      </form>
+
+      <div className="wlog-pie">
+        ASAP Consulting<br />{info.nombre}
       </div>
     </div>
   )

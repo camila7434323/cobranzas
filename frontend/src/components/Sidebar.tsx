@@ -1,72 +1,67 @@
 import type { ReactNode } from 'react'
 import { supabase } from '../lib/supabase'
 import { OPCIONES, type Modulo } from './modulos'
+import { LogoAsap } from './Marca'
 
 // Menú lateral compartido por las 3 apps (Cobranzas, Facturación, Pendientes).
 // Mismo color, tipografía y estados en todas; solo cambia el ícono de la app.
 
 const CSS = `
 .asb { width:260px; flex-shrink:0; height:100vh; position:sticky; top:0; overflow:hidden; transition:width .25s ease;
-  background:linear-gradient(180deg,#0e2549 0%,#091a35 50%,#06122a 100%); color:#fff;
-  font-family:'Inter',system-ui,sans-serif; box-shadow:4px 0 24px rgba(5,16,31,.35); }
-.asb.colapsado { width:0; }
+  background:#b9dcf0; color:#1f2a44; font-family:'Poppins',system-ui,sans-serif; border-right:1px solid #a6cfe7; }
+.asb.colapsado { width:0; border-right:none; }
 .asb *, .asb *::before, .asb *::after { box-sizing:border-box; }
 .asb-inner { width:260px; height:100%; display:flex; flex-direction:column; }
 
-.asb-head { padding:20px 16px 16px; display:flex; align-items:center; gap:12px; }
-.asb-tile { width:38px; height:38px; border-radius:11px; display:grid; place-items:center; flex-shrink:0;
-  font-size:17px; font-weight:800; color:#fff; box-shadow:0 6px 16px -4px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.25); }
-.asb-titulo { font-size:15px; font-weight:700; letter-spacing:-.2px; line-height:1.2; }
-.asb-sub { font-size:10px; font-weight:600; letter-spacing:1.4px; text-transform:uppercase; color:rgba(255,255,255,.38); margin-top:3px; }
-.asb-colapsar { margin-left:auto; width:30px; height:30px; flex-shrink:0; display:grid; place-items:center; cursor:pointer;
-  border-radius:8px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); color:rgba(255,255,255,.55); transition:all .15s; }
-.asb-colapsar:hover { background:rgba(255,255,255,.12); color:#fff; }
+.asb-head { padding:14px 12px 12px; display:flex; align-items:flex-start; gap:10px; background:#45a3d6; color:#fff; }
+.asb-tile { width:36px; height:36px; border-radius:8px; display:grid; place-items:center; flex-shrink:0;
+  font-size:16px; font-weight:700; color:#fff; box-shadow:0 2px 6px rgba(20,60,110,.25); }
+.asb-titulo { font-size:15px; font-weight:600; line-height:1.2; }
+.asb-sub { font-size:10px; font-weight:500; letter-spacing:1.2px; text-transform:uppercase; color:rgba(255,255,255,.8); margin-top:2px; }
+.asb-colapsar { margin-left:auto; width:28px; height:28px; flex-shrink:0; display:grid; place-items:center; cursor:pointer;
+  border-radius:4px; border:none; background:#1a8fd0; color:#fff; transition:background .15s; }
+.asb-colapsar:hover { background:#1477b0; }
 
-.asb-user { margin:0 12px 6px; padding:10px; border-radius:12px; display:flex; align-items:center; gap:10px;
-  background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.06); }
-.asb-avatar { width:32px; height:32px; border-radius:50%; flex-shrink:0; display:grid; place-items:center;
-  font-size:11px; font-weight:700; color:#fff; background:linear-gradient(135deg,#5b8def,#3b5fc4); box-shadow:0 0 0 2px rgba(255,255,255,.12); }
-.asb-user-nombre { font-size:12.5px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.asb-user-estado { font-size:10.5px; color:rgba(255,255,255,.45); display:flex; align-items:center; gap:5px; margin-top:1px; }
-.asb-dot { width:6px; height:6px; border-radius:50%; background:#34d399; box-shadow:0 0 6px #34d399; flex-shrink:0; }
+.asb-user { padding:0 12px 12px; display:flex; align-items:center; gap:9px; background:#45a3d6; color:#fff; }
+.asb-avatar { width:26px; height:26px; border-radius:50%; flex-shrink:0; display:grid; place-items:center;
+  font-size:10px; font-weight:700; color:#45a3d6; background:#fff; }
+.asb-user-nombre { font-size:12.5px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.asb-user-estado { font-size:10.5px; color:rgba(255,255,255,.85); display:flex; align-items:center; gap:5px; margin-top:1px; }
+.asb-dot { width:6px; height:6px; border-radius:50%; background:#22c55e; flex-shrink:0; }
 
-.asb-nav { flex:1; min-height:0; overflow-y:auto; padding:4px 10px 12px; scrollbar-width:none; }
-.asb-nav::-webkit-scrollbar { display:none; }
-.asb-seccion { font-size:10px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; color:rgba(255,255,255,.32); padding:14px 10px 6px; }
-.asb-divider { height:1px; background:rgba(255,255,255,.07); margin:10px 6px; }
+.asb-nav { flex:1; min-height:0; overflow-y:auto; margin:12px; padding:6px 8px 10px; background:#fff; border-radius:4px; scrollbar-width:thin; }
+.asb-seccion { font-size:12.5px; font-weight:600; color:#1f2a44; padding:12px 8px 6px; }
+.asb-seccion:first-child { padding-top:6px; }
+.asb-divider { height:1px; background:#e3eaf2; margin:8px 4px; }
 
-.asb-item { position:relative; display:flex; align-items:center; gap:10px; width:100%; padding:8px 10px; margin-bottom:2px;
-  border:none; border-radius:9px; background:transparent; color:rgba(255,255,255,.62); font:inherit; font-size:13px; font-weight:500;
-  text-align:left; cursor:pointer; transition:background .15s, color .15s; }
-.asb-item:hover { background:rgba(255,255,255,.06); color:#fff; }
-.asb-item.activo { background:linear-gradient(90deg,rgba(91,141,239,.30),rgba(91,141,239,.10)); color:#fff; font-weight:600;
-  box-shadow:inset 0 0 0 1px rgba(124,163,245,.22); }
-.asb-item.activo::before { content:''; position:absolute; left:-10px; top:7px; bottom:7px; width:3px; border-radius:0 3px 3px 0;
-  background:#7ca3f5; box-shadow:0 0 10px #5b8def; }
-.asb-item.compacto { padding:6px 10px; font-size:12.5px; }
-.asb-item.grupo { color:rgba(255,255,255,.85); font-weight:600; }
-.asb-item.grupo.abierto { background:rgba(255,255,255,.05); }
-.asb-icono { min-width:18px; min-height:18px; display:grid; place-items:center; flex-shrink:0; opacity:.8; }
-.asb-item:hover .asb-icono, .asb-item.activo .asb-icono { opacity:1; }
-.asb-item.activo .asb-icono { color:#a9c4ff; }
+.asb-item { position:relative; display:flex; align-items:center; gap:12px; width:100%; padding:11px 10px; margin-bottom:2px;
+  border:none; border-radius:4px; background:transparent; color:#1f2a44; font:inherit; font-size:12.5px; font-weight:400;
+  text-align:left; cursor:pointer; transition:background .15s; }
+.asb-item:hover { background:#f1f4f7; }
+.asb-item.activo { background:#e8e8e8; font-weight:500; }
+.asb-item.compacto { padding:7px 10px; font-size:12px; }
+.asb-item.grupo { font-weight:500; }
+.asb-item.grupo.abierto { background:#f1f4f7; }
+.asb-icono { min-width:16px; min-height:16px; display:grid; place-items:center; flex-shrink:0; color:#1f2a44; }
+.asb-item.activo .asb-icono { color:#1a8fd0; }
 .asb-label { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .asb-chevron { flex-shrink:0; opacity:.5; transition:transform .2s; }
 .asb-item.abierto .asb-chevron { transform:rotate(90deg); }
-.asb-subitems { margin:2px 0 8px 18px; padding-left:10px; border-left:1px solid rgba(255,255,255,.09); }
-.asb-badge { flex-shrink:0; font-size:10px; font-weight:700; padding:2px 7px; border-radius:20px; }
-.asb-badge.red   { background:rgba(239,68,68,.22);  color:#fca5a5; }
-.asb-badge.green { background:rgba(16,185,129,.2);  color:#6ee7b7; }
-.asb-badge.blue  { background:rgba(91,141,239,.25); color:#b8cdff; }
-.asb-badge.gray  { background:rgba(255,255,255,.08); color:rgba(255,255,255,.5); }
+.asb-subitems { margin:2px 0 8px 16px; padding-left:8px; border-left:2px solid #dcecf8; }
+.asb-badge { flex-shrink:0; font-size:10px; font-weight:600; padding:2px 7px; border-radius:20px; }
+.asb-badge.red   { background:#fee2e2; color:#b91c1c; }
+.asb-badge.green { background:#d1fae5; color:#047857; }
+.asb-badge.blue  { background:#dcecf8; color:#1477b0; }
+.asb-badge.gray  { background:#eef1f5; color:#5b6680; }
 
-.asb-foot { padding:12px 14px 14px; border-top:1px solid rgba(255,255,255,.07); background:rgba(0,0,0,.14); display:flex; flex-direction:column; gap:10px; }
-.asb-status { font-size:11px; color:rgba(255,255,255,.4); display:flex; align-items:center; gap:7px; }
+.asb-foot { padding:0 12px 12px; display:flex; flex-direction:column; gap:8px; }
+.asb-status { font-size:11px; color:#3f4d6b; display:flex; align-items:center; gap:7px; }
 .asb-acciones { display:flex; gap:6px; }
-.asb-btn { display:flex; align-items:center; justify-content:center; gap:7px; padding:9px 12px; border-radius:8px; cursor:pointer;
-  font:inherit; font-size:12px; font-weight:600; white-space:nowrap; transition:background .15s, border-color .15s, color .15s;
-  background:transparent; border:1px solid rgba(255,255,255,.16); color:rgba(255,255,255,.55); }
-.asb-btn.principal { flex:1; background:rgba(255,255,255,.09); color:rgba(255,255,255,.9); }
-.asb-btn:hover { background:rgba(255,255,255,.16); border-color:rgba(255,255,255,.3); color:#fff; }
+.asb-btn { display:flex; align-items:center; justify-content:center; gap:7px; padding:8px 10px; border-radius:2px; cursor:pointer;
+  font:inherit; font-size:12px; font-weight:500; white-space:nowrap; transition:background .15s;
+  background:#1a8fd0; border:none; color:#fff; }
+.asb-btn.principal { flex:1; }
+.asb-btn:hover { background:#1477b0; }
 `
 
 export function Sidebar({ colapsado, style, children }: { colapsado?: boolean; style?: React.CSSProperties; children: ReactNode }) {
@@ -82,10 +77,9 @@ export function SidebarHeader({ app, onColapsar }: { app: Modulo; onColapsar?: (
   const o = OPCIONES.find(x => x.key === app)!
   return (
     <div className="asb-head">
-      <div className="asb-tile" style={{ background: `linear-gradient(135deg, ${o.color}, color-mix(in srgb, ${o.color} 60%, #000))` }}>{o.inicial}</div>
       <div style={{ minWidth: 0 }}>
-        <div className="asb-titulo">{o.nombre}</div>
-        <div className="asb-sub">ASAP Consulting</div>
+        <LogoAsap alto={24} />
+        <div className="asb-titulo" style={{ marginTop: 8 }}>{o.nombre}</div>
       </div>
       {onColapsar && (
         <button className="asb-colapsar" onClick={onColapsar} title="Ocultar menú">

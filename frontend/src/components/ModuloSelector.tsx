@@ -1,89 +1,91 @@
+import { supabase } from '../lib/supabase'
 import { OPCIONES, type Modulo } from './modulos'
+import { LogoAsap, NAVY } from './Marca'
 
+// Mismo esquema que el inicio de WiSoft: panel celeste a la izquierda y "Secciones Disponibles" a la derecha.
 const CSS = `
-.msel { flex:1; min-height:100vh; position:relative; overflow:hidden; display:flex; flex-direction:column; align-items:center; justify-content:center;
-  padding:48px 16px; font-family:'Inter',system-ui,sans-serif; color:#fff;
-  background:
-    radial-gradient(900px 500px at 15% 10%, rgba(37,84,160,.45), transparent 60%),
-    radial-gradient(700px 500px at 90% 90%, rgba(79,70,229,.30), transparent 60%),
-    radial-gradient(600px 400px at 70% 20%, rgba(14,116,144,.25), transparent 60%),
-    linear-gradient(180deg,#0e2549 0%,#091a35 55%,#06122a 100%); }
-.msel::before { content:''; position:absolute; inset:0; pointer-events:none; opacity:.5;
-  background-image:linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px);
-  background-size:44px 44px; mask-image:radial-gradient(ellipse at center, #000 30%, transparent 75%); }
-.msel-head { position:relative; text-align:center; margin-bottom:44px; animation:msel-in .5s ease both; }
-.msel-logo { height:52px; max-width:220px; object-fit:contain; display:block; margin:0 auto 22px; }
-.msel-marca { display:none; font-size:15px; font-weight:800; letter-spacing:2px; text-transform:uppercase; color:rgba(255,255,255,.7); margin-bottom:18px; }
-.msel-titulo { font-size:30px; font-weight:800; letter-spacing:-.6px; margin:0; }
-.msel-bajada { font-size:14.5px; color:rgba(255,255,255,.55); margin-top:8px; }
-.msel-grid { position:relative; display:grid; grid-template-columns:repeat(3, 280px); gap:20px; }
-@media (max-width: 940px) { .msel-grid { grid-template-columns:minmax(0, 420px); width:100%; justify-content:center; } }
-.msel-card { position:relative; text-align:left; cursor:pointer; font:inherit; color:inherit; display:flex; flex-direction:column;
-  padding:26px 24px 22px; border-radius:18px; min-height:230px;
-  background:linear-gradient(180deg, rgba(255,255,255,.075), rgba(255,255,255,.03));
-  border:1px solid rgba(255,255,255,.1); backdrop-filter:blur(8px);
-  box-shadow:0 20px 40px -20px rgba(0,0,0,.6);
-  transition:transform .2s ease, border-color .2s ease, box-shadow .2s ease, background .2s ease;
-  animation:msel-in .5s ease both; }
-.msel-card::after { content:''; position:absolute; inset:0; border-radius:inherit; pointer-events:none; opacity:0; transition:opacity .2s;
-  background:radial-gradient(400px 200px at 0% 0%, var(--c-glow), transparent 70%); }
-.msel-card:hover, .msel-card:focus-visible { transform:translateY(-4px); border-color:var(--c-borde);
-  box-shadow:0 28px 50px -20px rgba(0,0,0,.7), 0 0 0 1px var(--c-borde); outline:none; }
-.msel-card:hover::after, .msel-card:focus-visible::after { opacity:1; }
-.msel-tile { width:50px; height:50px; border-radius:14px; display:grid; place-items:center; font-size:21px; font-weight:800; color:#fff; margin-bottom:20px;
-  box-shadow:0 10px 24px -8px var(--c-glow), inset 0 1px 0 rgba(255,255,255,.25); }
-.msel-nombre { font-size:17px; font-weight:700; letter-spacing:-.2px; margin-bottom:8px; }
-.msel-desc { font-size:13px; line-height:1.55; color:rgba(255,255,255,.55); flex:1; }
-.msel-entrar { margin-top:18px; display:flex; align-items:center; gap:6px; font-size:12.5px; font-weight:600; color:rgba(255,255,255,.45); transition:color .2s; }
-.msel-entrar svg { transition:transform .2s; }
-.msel-card:hover .msel-entrar, .msel-card:focus-visible .msel-entrar { color:#fff; }
-.msel-card:hover .msel-entrar svg, .msel-card:focus-visible .msel-entrar svg { transform:translateX(4px); }
-.msel-pie { position:relative; margin-top:48px; font-size:11.5px; color:rgba(255,255,255,.3); letter-spacing:.3px; }
-@keyframes msel-in { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:none; } }
-@media (prefers-reduced-motion: reduce) { .msel-card, .msel-head { animation:none; } .msel-card { transition:none; } }
+.msel { flex:1; min-height:100vh; display:flex; font-family:'Poppins',system-ui,sans-serif; color:#1f2a44; background:#fff; }
+.msel-lat { width:260px; flex-shrink:0; background:#b9dcf0; display:flex; flex-direction:column; }
+.msel-lat-top { background:#45a3d6; padding:12px 12px 10px; color:#fff; }
+.msel-user { display:flex; align-items:center; gap:8px; font-size:13px; margin-bottom:12px; min-width:0; }
+.msel-user span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.msel-avatar { width:24px; height:24px; border-radius:50%; background:#fff; color:#45a3d6; display:grid; place-items:center; flex-shrink:0; }
+.msel-btn { width:100%; padding:7px 10px; border:none; border-radius:2px; background:#1a8fd0; color:#fff; font:inherit; font-size:12px; font-weight:500; cursor:pointer; }
+.msel-btn:hover { background:#1477b0; }
+.msel-grupos { padding:14px 12px; flex:1; }
+.msel-grupos h3 { font-size:13px; font-weight:600; margin:0 0 10px; color:#1f2a44; }
+.msel-lista { background:#fff; border-radius:4px; padding:10px 8px; }
+.msel-item { display:flex; align-items:center; gap:12px; width:100%; padding:16px 10px; border:none; border-radius:4px; background:transparent;
+  font:inherit; font-size:12.5px; color:#1f2a44; cursor:default; text-align:left; }
+.msel-item.activo { background:#e8e8e8; }
+.msel-main { flex:1; min-width:0; display:flex; flex-direction:column; align-items:center; padding:24px 24px 40px; background:#f4f8fd; }
+.msel-panel { width:100%; max-width:1100px; background:#fff; border-radius:4px; padding:26px 22px; margin-top:28px; box-shadow:0 1px 3px rgba(31,42,68,.08); min-height:60vh; }
+.msel-panel h2 { font-size:15px; font-weight:600; margin:0 0 10px; color:#1f2a44; }
+.msel-grid { display:flex; flex-wrap:wrap; gap:14px; }
+.msel-card { width:250px; height:118px; border:none; border-radius:3px; background:#45a3d6; color:#fff; font:inherit; cursor:pointer;
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; padding:12px; text-align:center;
+  box-shadow:0 1px 3px rgba(31,42,68,.15); transition:background .15s, transform .15s, box-shadow .15s; }
+.msel-card:hover, .msel-card:focus-visible { background:#1a8fd0; transform:translateY(-2px); box-shadow:0 6px 14px rgba(26,143,208,.3); outline:none; }
+.msel-card-nombre { font-size:13px; font-weight:500; }
+.msel-card-desc { font-size:11px; opacity:.85; line-height:1.35; max-width:210px; }
+@media (max-width: 800px) {
+  .msel { flex-direction:column; }
+  .msel-lat { width:100%; }
+  .msel-grupos { display:none; }
+  .msel-card { width:100%; }
+}
 `
 
-export function ModuloSelector({ onSelect }: { onSelect: (modulo: Modulo) => void }) {
+const ICONOS: Record<Modulo, React.ReactNode> = {
+  cobranzas: <><rect x="2" y="5" width="20" height="14" rx="2" /><path d="M6 10h.01M6 14h.01M10 10h8M10 14h8" /></>,
+  facturacion: <><path d="M6 2h9l5 5v15H6z" /><path d="M14 2v6h6M9 13h8M9 17h5" /></>,
+  pendientes: <><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></>,
+}
+
+export function ModuloSelector({ onSelect, email }: { onSelect: (modulo: Modulo) => void; email?: string }) {
   return (
     <div className="msel">
       <style>{CSS}</style>
 
-      <div className="msel-head">
-        <img
-          className="msel-logo"
-          src="/asap-logo.png"
-          alt="ASAP Consulting"
-          onError={e => { e.currentTarget.style.display = 'none'; (e.currentTarget.nextSibling as HTMLElement).style.display = 'block' }}
-        />
-        <div className="msel-marca">ASAP Consulting</div>
-        <h1 className="msel-titulo">¿Con qué querés trabajar hoy?</h1>
-        <div className="msel-bajada">Elegí una app para empezar. Podés cambiar en cualquier momento desde el menú.</div>
-      </div>
-
-      <div className="msel-grid">
-        {OPCIONES.map((o, i) => (
-          <button
-            key={o.key}
-            className="msel-card"
-            onClick={() => onSelect(o.key)}
-            style={{
-              '--c-glow': `color-mix(in srgb, ${o.color} 55%, transparent)`,
-              '--c-borde': `color-mix(in srgb, ${o.color} 70%, #fff 10%)`,
-              animationDelay: `${0.08 + i * 0.07}s`,
-            } as React.CSSProperties}
-          >
-            <div className="msel-tile" style={{ background: `linear-gradient(135deg, ${o.color}, color-mix(in srgb, ${o.color} 60%, #000))` }}>{o.inicial}</div>
-            <div className="msel-nombre">{o.nombre}</div>
-            <div className="msel-desc">{o.desc}</div>
-            <div className="msel-entrar">
-              Entrar
-              <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" /></svg>
+      <aside className="msel-lat">
+        <div className="msel-lat-top">
+          <div style={{ marginBottom: 12 }}><LogoAsap alto={26} /></div>
+          {email && (<>
+            <div className="msel-user">
+              <span className="msel-avatar">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="8" r="4.5" /><path d="M3 21c0-5 4-8 9-8s9 3 9 8Z" /></svg>
+              </span>
+              <span>{email}</span>
             </div>
-          </button>
-        ))}
-      </div>
+            <button className="msel-btn" onClick={() => supabase.auth.signOut()}>Cerrar Sesión</button>
+          </>)}
+        </div>
+        <div className="msel-grupos">
+          <h3>Grupos Disponibles</h3>
+          <div className="msel-lista">
+            <div className="msel-item activo">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" /></svg>
+              Finanzas
+            </div>
+          </div>
+        </div>
+      </aside>
 
-      <div className="msel-pie">ASAP Consulting · Herramientas internas</div>
+      <main className="msel-main">
+        <LogoAsap alto={60} color={NAVY} />
+        <section className="msel-panel">
+          <h2>Secciones Disponibles</h2>
+          <div className="msel-grid">
+            {OPCIONES.map(o => (
+              <button key={o.key} className="msel-card" onClick={() => onSelect(o.key)} title={o.desc}>
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">{ICONOS[o.key]}</svg>
+                <span className="msel-card-nombre">{o.nombre}</span>
+                <span className="msel-card-desc">{o.desc}</span>
+              </button>
+            ))}
+          </div>
+        </section>
+      </main>
     </div>
   )
 }

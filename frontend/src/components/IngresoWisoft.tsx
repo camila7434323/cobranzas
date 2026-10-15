@@ -33,27 +33,27 @@ export function IngresoWisoft({ token, onListo }: { token: string; onListo: () =
   return (
     <div style={{
       width: '100vw', height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
-      background: '#eef2f8', fontFamily: 'Inter, sans-serif',
+      background: '#f4f8fd', fontFamily: 'Poppins, sans-serif',
     }}>
       <div style={{
         background: '#fff', borderRadius: '16px', padding: '36px 40px', width: '100%', maxWidth: '420px',
-        boxShadow: '0 20px 60px rgba(10,22,40,0.12)', border: '1px solid #dde3f0', textAlign: 'center',
+        boxShadow: '0 20px 60px rgba(10,22,40,0.12)', border: '1px solid #dfe7f1', textAlign: 'center',
       }}>
         {!error ? (
           <>
-            <div style={{ fontWeight: 700, fontSize: '17px', color: '#0d1b38', marginBottom: '8px' }}>Ingresando desde WiSoft…</div>
-            <div style={{ fontSize: '13px', color: '#7a8fbb' }}>Estamos validando tu usuario.</div>
+            <div style={{ fontWeight: 700, fontSize: '17px', color: '#1f2a44', marginBottom: '8px' }}>Ingresando desde WiSoft…</div>
+            <div style={{ fontSize: '13px', color: '#6b7a99' }}>Estamos validando tu usuario.</div>
           </>
         ) : (
           <>
-            <div style={{ fontWeight: 700, fontSize: '17px', color: '#0d1b38', marginBottom: '10px' }}>No pudimos ingresarte</div>
+            <div style={{ fontWeight: 700, fontSize: '17px', color: '#1f2a44', marginBottom: '10px' }}>No pudimos ingresarte</div>
             <div style={{
               background: '#fee2e2', color: '#dc2626', padding: '10px 14px', borderRadius: '8px',
               fontSize: '13px', border: '1px solid #fca5a5', marginBottom: '18px',
             }}>
               {error}
             </div>
-            <div onClick={onListo} style={{ fontSize: '12px', color: '#7a8fbb', cursor: 'pointer', fontWeight: 600 }}>
+            <div onClick={onListo} style={{ fontSize: '12px', color: '#6b7a99', cursor: 'pointer', fontWeight: 600 }}>
               Ingresar con usuario y contraseña
             </div>
           </>
