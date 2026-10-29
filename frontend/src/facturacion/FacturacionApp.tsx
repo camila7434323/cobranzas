@@ -194,6 +194,9 @@ export function FacturacionApp({ session, onCambiarModulo }: { session: Session;
     () => soloEjecutivo === null ? dataTodas : dataTodas.filter(r => !!soloEjecutivo && normalizar(r.ejecutivo || '').trim() === soloEjecutivo),
     [dataTodas, soloEjecutivo]
   )
+  // Primer mes con datos importados (sobre todo lo cargado, no solo lo del ejecutivo),
+  // para aclarar desde cuándo cuenta el "Total facturado".
+  const desdePeriodo = useMemo(() => dataTodas.map(periodoKey).filter(Boolean).sort()[0] || '', [dataTodas])
   const loading = loadingLineas || perfil === undefined
   const nombreUsuario = session.user.user_metadata?.full_name || perfil?.ejecutivo_nombre || session.user.email?.split('@')[0] || 'Usuario'
   const [vista, setVista] = useState<Vista>('detalle')
@@ -390,7 +393,7 @@ export function FacturacionApp({ session, onCambiarModulo }: { session: Session;
               <div style={{ marginBottom: 16 }}>
                 <input value={busqueda} onChange={e => setBusqueda(e.target.value)} placeholder="Buscar en toda la facturación (cliente, CUIT, ejecutivo, factura, período, artículo, importe...)" style={inputStyle} />
               </div>
-              <Detalle key={empresaActiva} filas={filas} empresaActiva={empresaActiva} onAbrirPdf={abrirPdf} />
+              <Detalle key={empresaActiva} filas={filas} empresaActiva={empresaActiva} desdePeriodo={desdePeriodo} onAbrirPdf={abrirPdf} />
             </div>
           )}
         </main>
@@ -731,7 +734,7 @@ function ClientMonthTable({ rows, moneda }: { rows: FacturacionLinea[]; moneda: 
 
 type SortCol = 'cliente' | 'ejecutivo' | 'periodo' | 'fecha' | 'nfactura' | 'cc' | 'total'
 
-function Detalle({ filas, empresaActiva, onAbrirPdf }: { filas: FacturacionLinea[]; empresaActiva: string; onAbrirPdf: (row: FacturacionLinea) => void }) {
+function Detalle({ filas, empresaActiva, desdePeriodo, onAbrirPdf }: { filas: FacturacionLinea[]; empresaActiva: string; desdePeriodo: string; onAbrirPdf: (row: FacturacionLinea) => void }) {
   const [openRows, setOpenRows] = useState<Set<string>>(new Set())
   const [clientesSel, setClientesSel] = useState<string[]>([])
   const [ejecutivosSel, setEjecutivosSel] = useState<string[]>([])
@@ -811,6 +814,11 @@ function Detalle({ filas, empresaActiva, onAbrirPdf }: { filas: FacturacionLinea
   ]
 
   const kpiColors = ['#1a8fd0', '#059669', '#d97706', '#7c3aed']
+  // Sin período elegido el total es todo lo importado, así que se aclara desde cuándo hay datos;
+  // con períodos elegidos se aclara que es solo lo de esa selección.
+  const hintTotal = periodosSel.length === 1 ? `Período: ${mesLabel(periodosSel[0])}`
+    : periodosSel.length > 1 ? `De los ${periodosSel.length} períodos seleccionados`
+    : desdePeriodo ? `Acumulado desde ${mesLabel(desdePeriodo).toLowerCase()} (inicio de los datos cargados)` : undefined
 
   return (
     <Card noPadding>
@@ -818,7 +826,7 @@ function Detalle({ filas, empresaActiva, onAbrirPdf }: { filas: FacturacionLinea
         <div style={notice}>ℹ️ <strong>Facturación desglosada por línea</strong> (una factura puede tener varias filas). Filtrá lo que necesites — los indicadores de abajo se recalculan automáticamente con tu selección.</div>
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12, padding: 14 }}>
-        {porMoneda.map(([m, v]) => <Kpi key={m} label={`Total facturado (${m})`} value={fmtMoney(v, m)} color={kpiColors[0]} />)}
+        {porMoneda.map(([m, v]) => <Kpi key={m} label={`Total facturado (${m})`} value={fmtMoney(v, m)} color={kpiColors[0]} hint={hintTotal} />)}
         <Kpi label="Clientes" value={String(clientesCount)} color={kpiColors[1]} />
         <Kpi label="Facturas" value={String(facturasCount)} color={kpiColors[2]} />
         <Kpi label="Líneas" value={String(sorted.length)} color={kpiColors[3]} />
@@ -990,7 +998,7 @@ function MultiSelect({ options, selected, onChange, placeholderAll, formatLabel 
       </button>
       {open && createPortal(
         <div ref={panelRef} style={{ ...mselPanel, position: 'fixed', top: coords.top, left: coords.left, width: Math.max(coords.width, 220) }}>
-          {options.length > 8 && <input autoFocus value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar..." style={mselSearch} />}
+          {options.length > 0 && <input autoFocus value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar..." style={mselSearch} />}
           <div style={mselActions}>
             <span onClick={() => onChange(options)}>Todos</span>
             <span onClick={() => onChange([])}>Limpiar</span>
@@ -1028,8 +1036,8 @@ function CardTitle({ title, badge }: { title: string; badge?: string }) {
   return <div style={{ display: 'flex', alignItems: 'center', gap: 9, fontSize: 15, fontWeight: 800 }}>{title}{badge && <span style={{ background: '#e8f8ff', color: '#1477b0', border: '1px solid #cfe5f5', borderRadius: 999, padding: '2px 8px', fontSize: 10, fontWeight: 800 }}>{badge}</span>}</div>
 }
 
-function Kpi({ label, value, color = '#1a8fd0' }: { label: string; value: string; color?: string }) {
-  return <div style={{ background: '#fff', border: '1px solid #cbe5f3', borderTop: `3px solid ${color}`, borderRadius: 8, padding: '13px 16px', boxShadow: '0 1px 4px rgba(14,74,103,.1)' }}><div style={{ color: '#6b7a99', fontSize: 10.5, fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1 }}>{label}</div><div style={{ color: '#1477b0', marginTop: 7, fontFamily: 'monospace', fontSize: 17, fontWeight: 800 }}>{value}</div></div>
+function Kpi({ label, value, color = '#1a8fd0', hint }: { label: string; value: string; color?: string; hint?: string }) {
+  return <div style={{ background: '#fff', border: '1px solid #cbe5f3', borderTop: `3px solid ${color}`, borderRadius: 8, padding: '13px 16px', boxShadow: '0 1px 4px rgba(14,74,103,.1)' }}><div style={{ color: '#6b7a99', fontSize: 10.5, fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1 }}>{label}</div><div style={{ color: '#1477b0', marginTop: 7, fontFamily: 'monospace', fontSize: 17, fontWeight: 800 }}>{value}</div>{hint && <div style={{ color: '#6b7a99', marginTop: 5, fontSize: 11, lineHeight: 1.35 }}>{hint}</div>}</div>
 }
 
 function Insight({ children, color, bg }: { children: React.ReactNode; color: string; bg: string }) {

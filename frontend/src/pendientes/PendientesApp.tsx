@@ -36,6 +36,7 @@ const fmt: Record<string, (n: number) => string> = {
   EUR: n => '€ ' + n.toLocaleString('es-AR'),
 }
 const fmtMoneda = (moneda: string, n: number) => (fmt[moneda] || fmt.ARS)(n)
+const normalizar = (v: string) => v.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase()
 
 const parseISO = (iso: string) => {
   const [y, m, d] = iso.split('-').map(Number)
@@ -162,6 +163,10 @@ const CSS = `
 .pfc .avg-high { background:var(--red-dim); color:var(--red-text); }
 .pfc .minmax-txt { font-size:12px; color:var(--muted); }
 .pfc .empty { text-align:center; padding:42px; color:var(--muted); font-size:13px; }
+.pfc .felicidades { text-align:center; padding:40px 24px; background:var(--green-dim); border:1px solid #a7f3d0; border-radius:var(--radius); box-shadow:var(--shadow); }
+.pfc .felicidades .fel-emoji { font-size:34px; margin-bottom:8px; }
+.pfc .felicidades .fel-title { font-size:16px; font-weight:700; color:var(--green-text); }
+.pfc .felicidades .fel-sub { font-size:13px; color:var(--green-text); opacity:.85; margin-top:6px; }
 .pfc .modal-bg { position:fixed; inset:0; background:rgba(14,10,40,0.45); display:flex; align-items:center; justify-content:center; z-index:50; }
 .pfc .modal { background:#fff; border-radius:14px; width:520px; max-width:92vw; max-height:88vh; overflow:auto; padding:24px 26px; box-shadow:var(--shadow-md); }
 .pfc .modal h3 { font-size:16px; margin:0 0 4px; }
@@ -181,7 +186,7 @@ const CSS = `
 const flagUrl = (f: string) => `https://flagcdn.com/16x12/${f}.png`
 
 export function PendientesApp({ session, onCambiarModulo }: { session: Session; onCambiarModulo: () => void }) {
-  const { rows, loading, error, crear, actualizar, eliminar, agregarComentario } = usePendientes()
+  const { rows: rowsTodos, loading: loadingRows, error, crear, actualizar, eliminar, agregarComentario } = usePendientes()
 
   const hoy = useMemo(() => new Date(), [])
   const [vista, setVista] = useState<Vista>('todos')
@@ -189,14 +194,24 @@ export function PendientesApp({ session, onCambiarModulo }: { session: Session; 
 
   // El Modo administrador lo define el rol de la cuenta y no se puede cambiar a mano:
   // admin => ON (edita, elimina, aprueba); cualquier otra cuenta => OFF (solo lectura).
-  const [esAdmin, setEsAdmin] = useState(false)
+  const [perfil, setPerfil] = useState<{ rol: string; ejecutivo_nombre: string | null } | null | undefined>(undefined)
   useEffect(() => {
     let vivo = true
-    supabase.from('perfiles').select('rol').eq('id', session.user.id).single()
-      .then(({ data }) => { if (vivo) setEsAdmin(data?.rol === 'admin') })
+    supabase.from('perfiles').select('rol, ejecutivo_nombre').eq('id', session.user.id).single()
+      .then(({ data }) => { if (vivo) setPerfil(data ?? null) })
     return () => { vivo = false }
   }, [session.user.id])
-  const modoAdmin = esAdmin
+  const modoAdmin = perfil?.rol === 'admin'
+
+  // Igual que en Facturación: un ejecutivo ve solo sus pendientes; admin, gerencia
+  // (o cualquier otro rol) ven todo. Mientras no se sabe el rol se sigue en "cargando"
+  // para no mostrarle por un instante pendientes ajenos a un ejecutivo.
+  const soloEjecutivo = perfil?.rol === 'ejecutivo' ? normalizar(perfil.ejecutivo_nombre || '').trim() : null
+  const rows = useMemo(
+    () => soloEjecutivo === null ? rowsTodos : rowsTodos.filter(r => !!soloEjecutivo && normalizar(r.resp || '').trim() === soloEjecutivo),
+    [rowsTodos, soloEjecutivo]
+  )
+  const loading = loadingRows || perfil === undefined
   const [sort, setSort] = useState<{ key: SortKey; dir: 'asc' | 'desc' }>({ key: 'dias', dir: 'desc' })
   const [openRow, setOpenRow] = useState<string | null>(null)
   const [openHist, setOpenHist] = useState<string | null>(null)
@@ -662,6 +677,15 @@ export function PendientesApp({ session, onCambiarModulo }: { session: Session; 
     if (error) return <div className="empty" style={{ color: '#b91c1c' }}>Error: {error}</div>
     if (vista === 'historico') return renderHistorico()
     if (vista === 'resumen') return renderResumen()
+    if (!base.length && !q && soloEjecutivo !== null && !activos.length) {
+      return (
+        <div className="felicidades">
+          <div className="fel-emoji">🎉</div>
+          <div className="fel-title">¡Felicitaciones! No tenés pendientes ni retrasos en facturación.</div>
+          <div className="fel-sub">Todo lo tuyo está al día. Si aparece algo nuevo lo vas a ver acá.</div>
+        </div>
+      )
+    }
     if (!base.length) return <div className="empty">{q ? 'No hay pendientes que coincidan con la búsqueda.' : 'No hay pendientes registrados.'}</div>
     return <>{ORDEN_ENT.map(cajaEntidad)}</>
   }
