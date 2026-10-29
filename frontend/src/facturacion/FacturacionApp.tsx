@@ -83,6 +83,15 @@ const flagEmpresa = (empresa: string, moneda: string) => {
   return flagCode(moneda)
 }
 
+// Nombre corto de la sociedad emisora para exportar: ASAP SA, ASAP LLC o ASAP SL.
+const sociedadCorta = (empresa: string) => {
+  const e = normalizar(empresa || '')
+  if (/\bllc\b/.test(e)) return 'ASAP LLC'
+  if (/\bsl\b/.test(e)) return 'ASAP SL'
+  if (/\bsa\b/.test(e)) return 'ASAP SA'
+  return empresa || ''
+}
+
 const ORDEN_EMPRESAS = ['ASAP CONSULTING SA', 'ASAP CONSULTING LLC', 'IT ASAP CONSULTING SOLUTIONS, SL']
 const ordenEmpresa = (nombre: string) => {
   const i = ORDEN_EMPRESAS.indexOf(nombre)
@@ -819,9 +828,9 @@ function Detalle({ filas, empresaActiva, onAbrirPdf }: { filas: FacturacionLinea
         <span style={{ color: '#6b7a99' }}>{sorted.length} línea{sorted.length === 1 ? '' : 's'}</span>
         <span style={{ marginLeft: 'auto' }} />
         <button style={excelBtn} onClick={() => exportXlsx('facturacion_detalle.xlsx', [
-          ['Cliente', 'CUIT', 'Ejecutivo', 'Período', 'Fecha Factura', 'N° Factura', 'Cond. Venta', 'Colaborador', 'Legajo', 'CC Descripción', 'Moneda', 'Cantidad', 'Precio Unitario', 'Total Neto', 'OC', 'Leyenda'],
+          ['Sociedad', 'Cliente', 'CUIT', 'Ejecutivo', 'Período', 'Fecha Factura', 'N° Factura', 'Cond. Venta', 'Colaborador', 'Legajo', 'CC Descripción', 'Moneda', 'Cantidad', 'Precio Unitario', 'Total Neto', 'OC', 'Leyenda'],
           ...sorted.map(r => [
-            nombreCliente(r), r.cuit || '', r.ejecutivo || '', r.periodo ? mesLabel(periodoKey(r)) : '',
+            sociedadCorta(r.empresa), nombreCliente(r), r.cuit || '', r.ejecutivo || '', r.periodo ? mesLabel(periodoKey(r)) : '',
             fmtFecha(r.fecha_factura), r.n_factura || '', r.cond_venta || '', r.colaborador || '', r.legajo || '',
             nombreCc(r), monedaFila(r), r.cantidad || 0, r.precio_unitario, r.total_neto,
             r.oc || '', r.leyenda || '',
