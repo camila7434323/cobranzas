@@ -3,6 +3,7 @@ import * as XLSX from 'xlsx-js-style'
 import { useComprobantes } from './hooks/useComprobantes'
 import { useHistorial } from './hooks/useHistorial'
 import { SubirReporte } from './components/SubirReporte'
+import { MultiSelect } from './components/MultiSelect'
 import { ManualSociedadView } from './components/ManualSociedadView'
 import { Login } from './components/Login'
 import { ModuloSelector } from './components/ModuloSelector'
@@ -302,8 +303,11 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
   const [linkCopiado, setLinkCopiado] = useState(false)
   const [mostrarTodosClientesDash, setMostrarTodosClientesDash] = useState(false)
   const [pdfNoEncontrado, setPdfNoEncontrado] = useState('')
-  const [perfil, setPerfil] = useState<{ rol: 'admin' | 'gerencia' | 'ejecutivo'; ejecutivo_nombre: string | null; nombre: string } | null | undefined>(undefined)
+  const [perfil, setPerfil] = useState<{ rol: 'admin' | 'gerencia' | 'ejecutivo'; ejecutivo_nombre: string | null; nombre: string; sociedad: SociedadKey | null } | null | undefined>(undefined)
   const adminMode = perfil?.rol === 'admin'
+  // Cuenta limitada a una sola sociedad (perfiles.sociedad, ej. España): solo se
+  // le muestra esa sociedad en el menú. La RLS ya le oculta los datos del resto.
+  const soloSociedad = perfil?.sociedad || null
   // Un ejecutivo solo ve sus propios datos (RLS), así que los selectores de
   // "ejecutivo" no deben ofrecer toda la lista: únicamente su propio nombre.
   const soloMiEjecutivo = perfil?.rol === 'ejecutivo' && perfil.ejecutivo_nombre ? [perfil.ejecutivo_nombre] : null
@@ -313,7 +317,9 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
   const ejecutivoPorDefecto = perfil?.rol === 'ejecutivo' ? (perfil.ejecutivo_nombre || null) : null
   useEffect(() => {
     let activo = true
-    supabase.from('perfiles').select('rol, ejecutivo_nombre, nombre').eq('id', session.user.id).single()
+    // '*' y no la lista de columnas: así no se rompe el ingreso si la columna
+    // `sociedad` (20261028_perfil_limitado_a_sociedad.sql) todavía no se creó.
+    supabase.from('perfiles').select('*').eq('id', session.user.id).single()
       .then(({ data }) => { if (activo) setPerfil(data ?? null) })
     return () => { activo = false }
   }, [session.user.id])
@@ -321,6 +327,15 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
   // así que nunca podría seleccionarse a sí mismo ahí. Sin esto, su propia cuenta
   // caía en la tabla plana en vez del panel con cards de vencidas/próximas/al día.
   useEffect(() => {
+    // Cuenta limitada a una sociedad que no es SA: arranca directo en esa sociedad
+    // (la vista "global" y SA son solo de ASAP SA y le quedarían vacías).
+    if (perfil?.sociedad && perfil.sociedad !== 'sa') {
+      const soc = perfil.sociedad
+      setSociedadActiva(soc)
+      setSociedadesAbiertas({ sa: false, llc: false, sl: false, [soc]: true })
+      setVista(prev => prev === 'global' ? (perfil.rol === 'ejecutivo' ? 'todos' : 'dashboard') : prev)
+      return
+    }
     if (perfil?.rol === 'ejecutivo' && perfil.ejecutivo_nombre) {
       const propioNombre = perfil.ejecutivo_nombre
       setEjecutivoSeleccionado(prev => prev ?? propioNombre)
@@ -375,7 +390,7 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
   }, [toastExito])
 
   // filtros – tabla
-  const [filtroClienteTabla, setFiltroClienteTabla] = useState('')
+  const [filtroClienteTabla, setFiltroClienteTabla] = useState<string[]>([])
   const [filtroEstadoTabla, setFiltroEstadoTabla] = useState('')
 
   // filtros – historial
@@ -415,7 +430,7 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
     if (ejecutivoSeleccionado === 'Sin asignar') {
       if (!esSinAsignar(r.ejecutivo)) return false
     } else if (ejecutivoSeleccionado && r.ejecutivo !== ejecutivoSeleccionado) return false
-    if (filtroClienteTabla && r.nombre_cliente !== filtroClienteTabla) return false
+    if (filtroClienteTabla.length && !filtroClienteTabla.includes(r.nombre_cliente)) return false
     if (busqueda) {
       const q = busqueda.toLowerCase()
       const ex = extras.get(r.comprobante)
@@ -659,7 +674,7 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
 
   const limpiarSeleccionTabla = () => {
     setEjecutivoSeleccionado(ejecutivoPorDefecto)
-    setFiltroClienteTabla('')
+    setFiltroClienteTabla([])
     setFiltroEstadoTabla('')
     setFiltroMoraRange('')
     setBusqueda('')
@@ -1117,15 +1132,15 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
   }
 
   // opciones de clientes para dropdowns
-  const clientesTablaOpts    = [...new Set(data.map(r => r.nombre_cliente).filter(Boolean))].sort() as string[]
+  const clientesTablaOpts    = [...new Set(dataSel.map(r => r.nombre_cliente).filter(Boolean))].sort() as string[]
   const clientesHistorialOpts = [...new Set(historial.map(r => r.cliente).filter(Boolean))].sort() as string[]
 
-  const hayFiltrosTabla     = !!(ejecutivoSeleccionado || filtroClienteTabla || filtroEstadoTabla)
+  const esPanelEjecutivo    = esTabla && !!ejecutivoSeleccionado
+  const hayFiltrosTabla     = !!((ejecutivoSeleccionado && !esPanelEjecutivo) || filtroClienteTabla.length || filtroEstadoTabla)
   const hayFiltrosHistorial = !!(busquedaHistorial || filtroEjecutivoHistorial || filtroClienteHistorial || filtroFechaDesde || filtroFechaHasta)
   const hayFiltrosClientes  = !!(filtroEjecutivoClientes || busquedaClientes)
-  const esPanelEjecutivo    = esTabla && !!ejecutivoSeleccionado
 
-  const limpiarFiltrosTabla     = () => { if (!esPanelEjecutivo) setEjecutivoSeleccionado(null); setFiltroClienteTabla(''); setFiltroEstadoTabla(''); setFiltroMoraRange(''); setSortCol(null); setSortDir('asc') }
+  const limpiarFiltrosTabla     = () => { if (!esPanelEjecutivo) setEjecutivoSeleccionado(null); setFiltroClienteTabla([]); setFiltroEstadoTabla(''); setFiltroMoraRange(''); setSortCol(null); setSortDir('asc') }
   const limpiarFiltrosHistorial = () => { setBusquedaHistorial(''); setFiltroEjecutivoHistorial(''); setFiltroClienteHistorial(''); setFiltroFechaDesde(''); setFiltroFechaHasta('') }
   const limpiarFiltrosClientes  = () => { setFiltroEjecutivoClientes(''); setBusquedaClientes('') }
 
@@ -1218,10 +1233,10 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
         <SidebarUser nombre={session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'Usuario'} />
 
         <SidebarNav>
-          <SidebarItem label="Todos los comprobantes" icono={<Icono nombre="capas" />} activo={vista === 'global'} onClick={() => irAVista('global', 'sa')} />
+          {(!soloSociedad || soloSociedad === 'sa') && <SidebarItem label="Todos los comprobantes" icono={<Icono nombre="capas" />} activo={vista === 'global'} onClick={() => irAVista('global', 'sa')} />}
 
           <SidebarSeccion>Sociedades</SidebarSeccion>
-          {(Object.entries(SOCIEDADES) as [SociedadKey, typeof SOCIEDADES[SociedadKey]][]).map(([key, sociedad]) => {
+          {(Object.entries(SOCIEDADES) as [SociedadKey, typeof SOCIEDADES[SociedadKey]][]).filter(([key]) => !soloSociedad || key === soloSociedad).map(([key, sociedad]) => {
             const abierta = sociedadesAbiertas[key]
             const pendienteCount = key === 'sa' ? data.length : manualFacturas.filter(r => r.sociedad === key).length
             const historialCount = key === 'sa' ? historial.length : manualHistorial[key].length
@@ -1241,7 +1256,7 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
                   // Un ejecutivo sí necesita conservar su propia selección (ver efecto arriba).
                   if (perfil?.rol !== 'ejecutivo') {
                     setEjecutivoSeleccionado(null)
-                    setFiltroClienteTabla(''); setFiltroEstadoTabla(''); setFiltroMoraRange('')
+                    setFiltroClienteTabla([]); setFiltroEstadoTabla(''); setFiltroMoraRange('')
                     setSortCol(null); setSortDir('asc')
                   }
                   if (vista === 'global') setVista(perfil?.rol === 'ejecutivo' ? 'todos' : 'dashboard')
@@ -1280,7 +1295,7 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
                           label={exec}
                           icono={<span style={{ width: 22, height: 22, borderRadius: '50%', background: ec.bg, color: ec.color, display: 'grid', placeItems: 'center', fontSize: 9, fontWeight: 700, boxShadow: '0 2px 6px rgba(0,0,0,0.3)' }}>{ec.initials}</span>}
                           activo={sociedadActiva === 'sa' && ejecutivoSeleccionado === exec}
-                          onClick={() => { setSociedadActiva('sa'); setEjecutivoSeleccionado(exec); setVista('todos'); setBusqueda(''); setBusquedaHistorial(''); setBusquedaClientes(''); setFiltroClienteTabla(''); setFiltroEstadoTabla(''); setFiltroMoraRange(''); setSortCol(null); setSortDir('asc'); setExpandedRows(new Set()) }}
+                          onClick={() => { setSociedadActiva('sa'); setEjecutivoSeleccionado(exec); setVista('todos'); setBusqueda(''); setBusquedaHistorial(''); setBusquedaClientes(''); setFiltroClienteTabla([]); setFiltroEstadoTabla(''); setFiltroMoraRange(''); setSortCol(null); setSortDir('asc'); setExpandedRows(new Set()) }}
                           extra={moraCount > 0 ? <span title="Tiene comprobantes en mora" style={{ width: 6, height: 6, borderRadius: '50%', background: '#f87171', flexShrink: 0 }} /> : undefined}
                           badge={count}
                           badgeTono="gray"
@@ -1294,7 +1309,9 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
           })}
         </SidebarNav>
 
-        <SidebarFooter onCambiarModulo={onCambiarModulo} status={fmtUltimaActualizacion(fechaUltimoReporte)} />
+        <SidebarFooter onCambiarModulo={onCambiarModulo} status={fmtUltimaActualizacion(fechaUltimoReporte)}>
+          {adminMode && <SubirReporte batchUpsert={batchUpsert} compact />}
+        </SidebarFooter>
       </Sidebar>
 
       {/* ── MAIN ──────────────────────────────────────────────────────────── */}
@@ -1342,6 +1359,11 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
                 <input type="text" placeholder="Buscar cliente o factura..." value={busqueda} onChange={e => setBusqueda(e.target.value)} style={{ padding: '8px 12px 8px 32px', borderRadius: '8px', border: '1px solid #dfe7f1', fontSize: '13px', width: '220px', outline: 'none', color: '#1f2a44', background: '#fff' }} />
               </div>
             )}
+            {esDashboard && !esSociedadManual && (
+              <button onClick={exportDashboard} style={{ background: '#065f46', color: '#fff', border: 'none', padding: '8px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}>
+                ↓ Exportar Excel
+              </button>
+            )}
             {(esClientes || esHistorial) && (
               <button onClick={exportar} style={{ background: '#1a8fd0', color: '#fff', border: 'none', padding: '8px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}>
                 ↗ Exportar .xlsx
@@ -1350,7 +1372,6 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
           </div>
         </div>
 
-        {adminMode && sociedadActiva === 'sa' && !esDashboard && !esGlobal && <SubirReporte batchUpsert={batchUpsert} />}
 
         {/* ── DASHBOARD ─────────────────────────────────────────────────── */}
         {esGlobal ? (
@@ -1486,7 +1507,6 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
           />
         ) : esDashboard ? (
           <>
-            <SubirReporte batchUpsert={batchUpsert} onExport={exportDashboard} soloExport={!adminMode} />
             {loading && data.length === 0 ? (
               <div style={{ padding: '80px 20px', textAlign: 'center', color: '#6b7a99', fontSize: '16px' }}>
                 <div style={{ display: 'inline-block', width: '32px', height: '32px', border: '3px solid #dfe7f1', borderTopColor: '#1a8fd0', borderRadius: '50%', animation: 'spin 0.8s linear infinite', marginBottom: '16px' }} />
@@ -1508,7 +1528,7 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
               {/* KPI CARDS */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '14px' }}>
                 <div
-                  onClick={() => { setFiltroEstadoTabla('mora'); setFiltroMoraRange(''); setFiltroClienteTabla(''); setVista('todos') }}
+                  onClick={() => { setFiltroEstadoTabla('mora'); setFiltroMoraRange(''); setFiltroClienteTabla([]); setVista('todos') }}
                   style={{ background: '#fff', border: '1px solid #dfe7f1', borderRadius: '12px', padding: '22px 24px', boxShadow: '0 2px 8px rgba(10,22,40,0.08)', borderLeft: '5px solid #dc2626', position: 'relative', overflow: 'hidden', cursor: 'pointer' }}
                 >
                   <div style={{ position: 'absolute', right: '-10px', top: '-10px', width: '70px', height: '70px', background: '#fee2e2', borderRadius: '50%', opacity: 0.4 }} />
@@ -1518,7 +1538,7 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
                   <div style={{ fontSize: '11px', fontWeight: 700, color: '#dc2626', marginTop: '8px', textDecoration: 'underline' }}>Ver facturas ⋯</div>
                 </div>
                 <div
-                  onClick={() => { setFiltroEstadoTabla('proximas'); setFiltroMoraRange(''); setFiltroClienteTabla(''); setVista('todos') }}
+                  onClick={() => { setFiltroEstadoTabla('proximas'); setFiltroMoraRange(''); setFiltroClienteTabla([]); setVista('todos') }}
                   style={{ background: '#fff', border: '1px solid #dfe7f1', borderRadius: '12px', padding: '22px 24px', boxShadow: '0 2px 8px rgba(10,22,40,0.08)', borderLeft: '5px solid #d97706', position: 'relative', overflow: 'hidden', cursor: 'pointer' }}
                 >
                   <div style={{ position: 'absolute', right: '-10px', top: '-10px', width: '70px', height: '70px', background: '#fef3c7', borderRadius: '50%', opacity: 0.4 }} />
@@ -1528,7 +1548,7 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
                   <div style={{ fontSize: '11px', fontWeight: 700, color: '#d97706', marginTop: '8px', textDecoration: 'underline' }}>Ver facturas ⋯</div>
                 </div>
                 <div
-                  onClick={() => { setFiltroEstadoTabla('sinvencer'); setFiltroMoraRange(''); setFiltroClienteTabla(''); setVista('todos') }}
+                  onClick={() => { setFiltroEstadoTabla('sinvencer'); setFiltroMoraRange(''); setFiltroClienteTabla([]); setVista('todos') }}
                   style={{ background: '#fff', border: '1px solid #dfe7f1', borderRadius: '12px', padding: '22px 24px', boxShadow: '0 2px 8px rgba(10,22,40,0.08)', borderLeft: '5px solid #059669', position: 'relative', overflow: 'hidden', cursor: 'pointer' }}
                 >
                   <div style={{ position: 'absolute', right: '-10px', top: '-10px', width: '70px', height: '70px', background: '#d1fae5', borderRadius: '50%', opacity: 0.4 }} />
@@ -1583,7 +1603,7 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
                       return (
                         <div key={c.name} style={{ marginBottom: '10px' }}>
                           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px', gap: '8px' }}>
-                            <span onClick={() => { setFiltroClienteTabla(c.name); setBusqueda(''); setFiltroEstadoTabla(''); setFiltroMoraRange(''); setEjecutivoSeleccionado(null); setVista('todos') }} style={{ fontSize: '13px', fontWeight: 600, color: '#1477b0', textDecoration: 'underline', textDecorationColor: '#a8c4f5', cursor: 'pointer', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '45%' }}>{c.name}</span>
+                            <span onClick={() => { setFiltroClienteTabla([c.name]); setBusqueda(''); setFiltroEstadoTabla(''); setFiltroMoraRange(''); setEjecutivoSeleccionado(null); setVista('todos') }} style={{ fontSize: '13px', fontWeight: 600, color: '#1477b0', textDecoration: 'underline', textDecorationColor: '#a8c4f5', cursor: 'pointer', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '45%' }}>{c.name}</span>
                             <span style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
                               <span title="Monto total vencido de este cliente" style={{ fontFamily: 'monospace', fontSize: '13px', fontWeight: 700, color: '#1f2a44', minWidth: '110px', textAlign: 'right' }}>{fmt(c.monto)}</span>
                               <span title="% que representa este cliente sobre el total de la deuda vencida" style={{ fontSize: '11px', fontWeight: 700, padding: '2px 6px', borderRadius: '20px', background: bc + '18', border: '1px solid ' + bc + '35', color: bc }}>{c.pct}%</span>
@@ -1955,15 +1975,16 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
               </div>
             )}
             {/* barra de filtros */}
-            {!esPanelEjecutivo && <div style={{ display: 'flex', gap: '8px', marginBottom: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
-              <select value={ejecutivoSeleccionado || ''} onChange={e => setEjecutivoSeleccionado(e.target.value || null)} style={SEL}>
-                <option value="">Todos los ejecutivos</option>
-                {(soloMiEjecutivo ?? EJECUTIVOS).map(e => <option key={e} value={e}>{e}</option>)}
-              </select>
-              <select value={filtroClienteTabla} onChange={e => setFiltroClienteTabla(e.target.value)} style={SEL}>
-                <option value="">Todos los clientes</option>
-                {clientesTablaOpts.map(c => <option key={c} value={c}>{c}</option>)}
-              </select>
+            <div style={{ display: 'flex', gap: '8px', marginBottom: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+              {!soloMiEjecutivo && (
+                <select value={ejecutivoSeleccionado || ''} onChange={e => setEjecutivoSeleccionado(e.target.value || null)} style={SEL}>
+                  <option value="">Todos los ejecutivos</option>
+                  {EJECUTIVOS.map(e => <option key={e} value={e}>{e}</option>)}
+                </select>
+              )}
+              <div style={{ minWidth: '210px' }}>
+                <MultiSelect options={clientesTablaOpts} selected={filtroClienteTabla} onChange={setFiltroClienteTabla} placeholderAll="Todos los clientes" plural="clientes" maxLabel={26} buttonStyle={SEL} />
+              </div>
               <select value={filtroEstadoTabla} onChange={e => { setFiltroEstadoTabla(e.target.value); setFiltroMoraRange('') }} style={SEL}>
                 <option value="">Todos los estados</option>
                 <option value="sinvencer">Al día (sin vencer)</option>
@@ -1974,8 +1995,8 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
                 <option value="60+">Mora +60 días</option>
               </select>
               {hayFiltrosTabla && <button onClick={limpiarFiltrosTabla} style={BTN_LIMPIAR}>✕ Limpiar</button>}
-            </div>}
-            {!esPanelEjecutivo && filtroEstadoTabla === 'mora' && (
+            </div>
+            {filtroEstadoTabla === 'mora' && (
               <div style={{ display: 'flex', gap: '6px', marginBottom: '14px', flexWrap: 'wrap' }}>
                 {([
                   { v: '',         label: 'Todos',            ac: '#374151', ia: '#f1f5f9', tc: '#374151', bc: '#9ca3af' },
@@ -2021,6 +2042,12 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
 
               const ordenados = [...ordenarGrupo(vencidas), ...ordenarGrupo(proximasTabla), ...ordenarGrupo(sinVencer)]
 
+              // Autosuma de los comprobantes tildados (aunque un filtro los esté ocultando).
+              const seleccionadas = data.filter(r => seleccionCobro.has(String(r.id)))
+              const totalSeleccionado = seleccionadas.reduce((s, r) => s + r.monto, 0)
+              const visiblesIds = new Set(ordenados.map(r => String(r.id)))
+              const seleccionadasOcultas = seleccionadas.filter(r => !visiblesIds.has(String(r.id))).length
+
               const COLS = [
                 { key: '',                  label: '',            sortable: false },
                 { key: 'comprobante',       label: 'Comprobante', sortable: true  },
@@ -2039,6 +2066,14 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
                     <span style={{ fontSize: '13px', fontWeight: 600, color: '#1f2a44' }}>Comprobantes</span>
                     <span style={{ fontSize: '12px', color: '#6b7a99' }}>{ordenados.length} comprobantes</span>
                     {loading && <span style={{ fontSize: '11px', color: '#d97706' }}>Actualizando...</span>}
+                    {seleccionadas.length > 0 && (
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '10px', marginLeft: '8px', background: '#eef6fd', border: '1px solid #b7dcf0', borderRadius: '8px', padding: '5px 6px 5px 12px', fontSize: '12px', color: '#1d5a8a' }}>
+                        <span><strong>{seleccionadas.length}</strong> seleccionada{seleccionadas.length === 1 ? '' : 's'}</span>
+                        <span>Total pendiente: <strong style={{ fontFamily: 'monospace', fontSize: '13px', color: '#1477b0' }}>{fmt(totalSeleccionado)}</strong></span>
+                        {seleccionadasOcultas > 0 && <span style={{ color: '#6b7a99' }} title="Están seleccionadas pero no se ven con los filtros actuales">({seleccionadasOcultas} fuera del filtro)</span>}
+                        <button onClick={() => setSeleccionCobro(new Set())} style={{ background: 'none', border: 'none', color: '#6b7a99', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>✕ Quitar selección</button>
+                      </span>
+                    )}
                     {adminMode && (
                       <button
                         onClick={handleMarcarCobradas}
@@ -2061,16 +2096,20 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
                       <table key={tableKey} style={{ width: '100%', borderCollapse: 'collapse' }}>
                         <thead>
                           <tr style={{ background: '#f7fafd', borderBottom: '1px solid #dfe7f1' }}>
-                            {adminMode && (
-                              <th style={{ padding: '10px 6px', width: '32px', textAlign: 'center' }}>
-                                <input
-                                  type="checkbox"
-                                  checked={ordenados.length > 0 && ordenados.every(r => seleccionCobro.has(String(r.id)))}
-                                  onChange={e => setSeleccionCobro(e.target.checked ? new Set(ordenados.map(r => String(r.id))) : new Set())}
-                                  style={{ cursor: 'pointer', width: '15px', height: '15px' }}
-                                />
-                              </th>
-                            )}
+                            <th style={{ padding: '10px 6px', width: '32px', textAlign: 'center' }}>
+                              <input
+                                type="checkbox"
+                                title="Seleccionar todos los comprobantes visibles"
+                                checked={ordenados.length > 0 && ordenados.every(r => seleccionCobro.has(String(r.id)))}
+                                onChange={e => setSeleccionCobro(prev => {
+                                  // Suma/quita solo los visibles: lo elegido con otro filtro se conserva.
+                                  const next = new Set(prev)
+                                  ordenados.forEach(r => { if (e.target.checked) next.add(String(r.id)); else next.delete(String(r.id)) })
+                                  return next
+                                })}
+                                style={{ cursor: 'pointer', width: '15px', height: '15px' }}
+                              />
+                            </th>
                             {COLS.map((col, ci) => (
                               <th key={ci}
                                 onClick={col.sortable ? () => handleSort(col.key) : undefined}
@@ -2096,22 +2135,22 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
                               <Fragment key={rowKey}>
                                 {/* separator — always in DOM, hidden via display to avoid insertBefore */}
                                 <tr style={{ display: showSep ? '' : 'none', background: '#d1fae5' }}>
-                                  <td colSpan={adminMode ? 10 : 9} style={{ padding: '8px 16px', fontSize: '12px', fontWeight: 700, color: '#065f46' }}>
+                                  <td colSpan={10} style={{ padding: '8px 16px', fontSize: '12px', fontWeight: 700, color: '#065f46' }}>
                                     Al día — {sinVencer.length} {sinVencer.length === 1 ? 'factura' : 'facturas'}
                                   </td>
                                 </tr>
                                 <tr id={showRevision ? 'section-revision' : undefined} style={{ display: showRevision ? '' : 'none', background: '#fee2e2' }}>
-                                  <td colSpan={adminMode ? 10 : 9} style={{ padding: '10px 16px', fontSize: '12px', fontWeight: 700, color: '#991b1b', borderBottom: '2px solid #fca5a5' }}>
+                                  <td colSpan={10} style={{ padding: '10px 16px', fontSize: '12px', fontWeight: 700, color: '#991b1b', borderBottom: '2px solid #fca5a5' }}>
                                     ⚠ Vencidas — {vencidas.length} {vencidas.length === 1 ? 'factura' : 'facturas'}
                                   </td>
                                 </tr>
                                 <tr id={showProximas ? 'section-proximas' : undefined} style={{ display: showProximas ? '' : 'none', background: '#fef3c7' }}>
-                                  <td colSpan={adminMode ? 10 : 9} style={{ padding: '10px 16px', fontSize: '12px', fontWeight: 700, color: '#92400e', borderBottom: '2px solid #fde68a' }}>
+                                  <td colSpan={10} style={{ padding: '10px 16px', fontSize: '12px', fontWeight: 700, color: '#92400e', borderBottom: '2px solid #fde68a' }}>
                                     Próximas a vencer — {proximasTabla.length} {proximasTabla.length === 1 ? 'factura' : 'facturas'}
                                   </td>
                                 </tr>
                                 <tr id={showSinVencer ? 'section-sinvencer' : undefined} style={{ display: showSinVencer ? '' : 'none', background: '#d1fae5' }}>
-                                  <td colSpan={adminMode ? 10 : 9} style={{ padding: '10px 16px', fontSize: '12px', fontWeight: 700, color: '#065f46', borderBottom: '2px solid #6ee7b7' }}>
+                                  <td colSpan={10} style={{ padding: '10px 16px', fontSize: '12px', fontWeight: 700, color: '#065f46', borderBottom: '2px solid #6ee7b7' }}>
                                     Al día — {sinVencer.length} {sinVencer.length === 1 ? 'factura' : 'facturas'}
                                   </td>
                                 </tr>
@@ -2120,16 +2159,14 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
                                   onMouseEnter={e => (e.currentTarget.style.background = '#f7fafd')}
                                   onMouseLeave={e => (e.currentTarget.style.background = r.dias_mora > 0 ? 'rgba(254,226,226,0.25)' : '')}
                                 >
-                                  {adminMode && (
-                                    <td style={{ padding: '11px 6px', textAlign: 'center' }} onClick={e => e.stopPropagation()}>
-                                      <input
-                                        type="checkbox"
-                                        checked={seleccionCobro.has(String(r.id))}
-                                        onChange={e => setSeleccionCobro(prev => { const next = new Set(prev); const key = String(r.id); if (e.target.checked) next.add(key); else next.delete(key); return next })}
-                                        style={{ cursor: 'pointer', width: '15px', height: '15px' }}
-                                      />
-                                    </td>
-                                  )}
+                                  <td style={{ padding: '11px 6px', textAlign: 'center' }} onClick={e => e.stopPropagation()}>
+                                    <input
+                                      type="checkbox"
+                                      checked={seleccionCobro.has(String(r.id))}
+                                      onChange={e => setSeleccionCobro(prev => { const next = new Set(prev); const key = String(r.id); if (e.target.checked) next.add(key); else next.delete(key); return next })}
+                                      style={{ cursor: 'pointer', width: '15px', height: '15px' }}
+                                    />
+                                  </td>
                                   <td style={{ padding: '8px 4px 8px 12px', width: '32px' }}>
                                     <button
                                       onClick={() => setExpandedRows(prev => { const next = new Set(prev); if (next.has(rowKey)) next.delete(rowKey); else next.add(rowKey); return next })}
@@ -2155,7 +2192,7 @@ function AppInterna({ session, onCambiarModulo }: { session: Session; onCambiarM
                                 </tr>
                                 {/* expanded row — always in DOM, hidden via display to avoid insertBefore */}
                                 <tr style={{ display: isExp ? '' : 'none', borderBottom: '1px solid #dfe7f1' }}>
-                                  <td colSpan={adminMode ? 10 : 9} style={{ padding: 0 }}>
+                                  <td colSpan={10} style={{ padding: 0 }}>
                                     {isExp && <DescPanel comprobante={r.comprobante} extra={extra} adminMode={adminMode} condicionActual={r.condicion || ''} onUpdate={handleUpdateExtra} />}
                                   </td>
                                 </tr>

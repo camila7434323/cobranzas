@@ -194,10 +194,11 @@ export function PendientesApp({ session, onCambiarModulo }: { session: Session; 
 
   // El Modo administrador lo define el rol de la cuenta y no se puede cambiar a mano:
   // admin => ON (edita, elimina, aprueba); cualquier otra cuenta => OFF (solo lectura).
-  const [perfil, setPerfil] = useState<{ rol: string; ejecutivo_nombre: string | null } | null | undefined>(undefined)
+  const [perfil, setPerfil] = useState<{ rol: string; ejecutivo_nombre: string | null; sociedad?: Entidad | null } | null | undefined>(undefined)
   useEffect(() => {
     let vivo = true
-    supabase.from('perfiles').select('rol, ejecutivo_nombre').eq('id', session.user.id).single()
+    // '*' para no romper el ingreso si la columna `sociedad` todavía no existe.
+    supabase.from('perfiles').select('*').eq('id', session.user.id).single()
       .then(({ data }) => { if (vivo) setPerfil(data ?? null) })
     return () => { vivo = false }
   }, [session.user.id])
@@ -207,9 +208,14 @@ export function PendientesApp({ session, onCambiarModulo }: { session: Session; 
   // (o cualquier otro rol) ven todo. Mientras no se sabe el rol se sigue en "cargando"
   // para no mostrarle por un instante pendientes ajenos a un ejecutivo.
   const soloEjecutivo = perfil?.rol === 'ejecutivo' ? normalizar(perfil.ejecutivo_nombre || '').trim() : null
+  // Cuenta limitada a una sociedad (perfiles.sociedad, ej. España): solo ve esa sociedad.
+  const soloSociedad = perfil?.sociedad || null
+  const entidadesVisibles = soloSociedad ? [soloSociedad] : ORDEN_ENT
   const rows = useMemo(
-    () => soloEjecutivo === null ? rowsTodos : rowsTodos.filter(r => !!soloEjecutivo && normalizar(r.resp || '').trim() === soloEjecutivo),
-    [rowsTodos, soloEjecutivo]
+    () => rowsTodos.filter(r =>
+      (soloEjecutivo === null || (!!soloEjecutivo && normalizar(r.resp || '').trim() === soloEjecutivo))
+      && (!soloSociedad || r.entidad === soloSociedad)),
+    [rowsTodos, soloEjecutivo, soloSociedad]
   )
   const loading = loadingRows || perfil === undefined
   const [sort, setSort] = useState<{ key: SortKey; dir: 'asc' | 'desc' }>({ key: 'dias', dir: 'desc' })
@@ -528,8 +534,8 @@ export function PendientesApp({ session, onCambiarModulo }: { session: Session; 
   const renderTags = () => {
     if (vista !== 'todos') return null
     return (
-      <div className="entity-tags">
-        {ORDEN_ENT.map(k => {
+      <div className="entity-tags" style={entidadesVisibles.length === 1 ? { gridTemplateColumns: 'minmax(0, 360px)' } : undefined}>
+        {entidadesVisibles.map(k => {
           const meta = ENTIDADES[k]
           const items = activos.filter(r => r.entidad === k)
           const sums = MONEDAS_ENT[k].map(c => [c, items.filter(r => r.moneda === c).reduce((a, r) => a + r.importe, 0)] as const).filter(([, v]) => v > 0)
@@ -715,9 +721,7 @@ export function PendientesApp({ session, onCambiarModulo }: { session: Session; 
           <SidebarNav>
             {navItem('todos', 'Todos los pendientes', 'capas', activos.length)}
             <SidebarSeccion>Sociedades</SidebarSeccion>
-            {navItem('sa', 'ASAP Consulting SA', 'ar', activos.filter(r => r.entidad === 'sa').length)}
-            {navItem('llc', 'ASAP Consulting LLC', 'us', activos.filter(r => r.entidad === 'llc').length)}
-            {navItem('sl', 'IT ASAP Solutions SL', 'es', activos.filter(r => r.entidad === 'sl').length)}
+            {entidadesVisibles.map(k => <Fragment key={k}>{navItem(k, ENTIDADES[k].label, ENTIDADES[k].flag as 'ar' | 'us' | 'es', activos.filter(r => r.entidad === k).length)}</Fragment>)}
             <SidebarSeccion>Reportes</SidebarSeccion>
             {navItem('historico', 'Histórico de aprobados', 'check')}
             {navItem('resumen', 'Resumen de demoras', 'demora')}

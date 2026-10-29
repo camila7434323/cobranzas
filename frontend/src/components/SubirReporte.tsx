@@ -239,9 +239,11 @@ interface Props {
   onExport?: () => void
   /** Modo solo lectura (gerencia): oculta la carga de XML, deja únicamente Exportar Excel. */
   soloExport?: boolean
+  /** Versión chica para el pie del sidebar: solo los dos botones de carga de XML. */
+  compact?: boolean
 }
 
-export function SubirReporte({ batchUpsert, onExport, soloExport = false }: Props) {
+export function SubirReporte({ batchUpsert, onExport, soloExport = false, compact = false }: Props) {
   const inputRef        = useRef<HTMLInputElement | null>(null)
   const xmlRef          = useRef<HTMLInputElement | null>(null)
   const pendingRowsRef  = useRef<Extra[]>([])
@@ -345,6 +347,34 @@ export function SubirReporte({ batchUpsert, onExport, soloExport = false }: Prop
       setCargandoXml(false)
       if (xmlRef.current) xmlRef.current.value = ''
     }
+  }
+
+  if (compact) {
+    const btn = (activo: boolean, color: string): React.CSSProperties => ({ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '7px', background: activo ? '#6b7a99' : color, color: '#fff', padding: '8px 10px', borderRadius: '8px', fontSize: '12px', fontWeight: 700, cursor: activo ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap', userSelect: 'none' })
+    return (
+      <>
+        <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
+        <Overlay
+          state={overlay}
+          onClose={() => { setOverlay(null); pendingRowsRef.current = [] }}
+          onContinue={() => doSaveRows(pendingRowsRef.current)}
+        />
+        <div style={{ display: 'grid', gap: '6px' }}>
+          <div style={{ color: 'rgba(255,255,255,.55)', fontSize: '10.5px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.6px' }}>Actualizar datos</div>
+          <label style={btn(cargando, '#1a8fd0')} title="Detecta cobros automáticamente">
+            {cargando ? 'Procesando...' : '↑ XML cobranzas'}
+            <input ref={inputRef} type="file" accept=".xls,.xlsx,.csv,.xml" onChange={handleArchivo} disabled={cargando} style={{ display: 'none' }} />
+          </label>
+          {batchUpsert && (
+            <label style={btn(cargandoXml, '#0f766e')}>
+              {cargandoXml ? 'Procesando...' : '↑ XML descripciones'}
+              <input ref={xmlRef} type="file" accept=".xml" onChange={handleXml} disabled={cargandoXml} style={{ display: 'none' }} />
+            </label>
+          )}
+          {error && <div style={{ color: '#fecaca', fontSize: '11px', lineHeight: 1.35 }}>{error}</div>}
+        </div>
+      </>
+    )
   }
 
   return (
