@@ -59,6 +59,16 @@ const fmtPeriodo = (iso: string) => {
 const fmtFechaLarga = (d: Date) => `${d.getDate()} de ${MESES[d.getMonth()].toLowerCase()} de ${d.getFullYear()}`
 const shortHoy = (d: Date) => `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`
 const periodoActual = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+// Período de gracia: del 1.º al 5.º día hábil del mes (lunes a viernes; no contempla feriados).
+const enPeriodoGracia = (d: Date) => {
+  if (d.getDay() === 0 || d.getDay() === 6) return false
+  let habiles = 0
+  for (let dia = 1; dia <= d.getDate(); dia++) {
+    const dow = new Date(d.getFullYear(), d.getMonth(), dia).getDay()
+    if (dow !== 0 && dow !== 6) habiles++
+  }
+  return habiles <= 5
+}
 
 const CSS = `
 .pfc *, .pfc *::before, .pfc *::after { box-sizing: border-box; }
@@ -180,6 +190,10 @@ const CSS = `
 .pfc .modal-actions { display:flex; justify-content:flex-end; gap:10px; margin-top:18px; }
 .pfc .btn-ghost { background:none; border:1px solid var(--border); padding:9px 15px; border-radius:8px; font-size:13px; cursor:pointer; font:inherit; color:var(--text2); }
 .pfc .btn-primary { background:var(--navy-500); color:#fff; border:none; padding:9px 16px; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer; font:inherit; }
+.pfc .gracia-banner { display:flex; gap:12px; align-items:flex-start; background:#fef3c7; border:1px solid #fcd34d; border-left:4px solid #d97706; border-radius:var(--radius); padding:14px 18px; margin-bottom:20px; box-shadow:var(--shadow); color:#78350f; }
+.pfc .gracia-banner .gb-icon { font-size:20px; line-height:1.2; }
+.pfc .gracia-banner .gb-title { font-size:14px; font-weight:700; margin-bottom:3px; }
+.pfc .gracia-banner .gb-txt { font-size:13px; line-height:1.5; }
 .pfc .toast { position:fixed; bottom:22px; left:50%; transform:translateX(-50%); background:var(--navy-900); color:#fff; padding:11px 20px; border-radius:9px; font-size:13px; z-index:60; box-shadow:var(--shadow-md); }
 `
 
@@ -749,6 +763,15 @@ export function PendientesApp({ session, onCambiarModulo }: { session: Session; 
         </header>
 
         <main className="main">
+          {enPeriodoGracia(hoy) && (
+            <div className="gracia-banner" role="status">
+              <span className="gb-icon">⏳</span>
+              <div>
+                <div className="gb-title">Período de gracia</div>
+                <div className="gb-txt">Entre el 1.º y el 5.º día hábil de cada mes, los servicios del mes anterior pueden no estar actualizados mientras se reciben horas y aprobaciones. Desde la segunda semana hábil, todo pendiente sin resolver se registra como demora.</div>
+              </div>
+            </div>
+          )}
           {renderTags()}
           {renderContenido()}
         </main>
