@@ -1,43 +1,8 @@
 import { useEffect, useState, useCallback } from 'react'
 import { supabase } from '../../lib/supabase'
+import { reemplazarLineas, PAGE_SIZE, type FacturacionLinea, type LineaNueva } from '../lib/facturacionExcel'
 
-export type FacturacionLinea = {
-  id: string
-  empresa: string
-  cliente: string
-  cuit: string
-  ejecutivo: string
-  legajo: string
-  colaborador: string
-  otros_conceptos: string
-  periodo: string | null
-  oc: string
-  leyenda: string
-  moneda: string
-  cantidad: number
-  precio_unitario: number
-  total_neto: number
-  fecha_factura: string | null
-  n_factura: string
-  cond_venta: string
-  articulo_codigo: string
-  articulo_descripcion: string
-  cc_descripcion: string
-  reporte_id: string | null
-  creado_el: string
-}
-
-const PAGE_SIZE = 1000
-
-// Corre `fn` sobre los trozos de `items` en tandas paralelas (hasta
-// `concurrencia` requests a la vez) en lugar de una por una.
-async function enTandas<T>(items: T[], tam: number, fn: (trozo: T[]) => Promise<void>, concurrencia = 6) {
-  const trozos: T[][] = []
-  for (let i = 0; i < items.length; i += tam) trozos.push(items.slice(i, i + tam))
-  for (let i = 0; i < trozos.length; i += concurrencia) {
-    await Promise.all(trozos.slice(i, i + concurrencia).map(fn))
-  }
-}
+export type { FacturacionLinea } from '../lib/facturacionExcel'
 
 export function useFacturacionLineas() {
   const [data, setData] = useState<FacturacionLinea[]>([])
@@ -80,57 +45,8 @@ export function useFacturacionLineas() {
 
   useEffect(() => { cargar() }, [cargar])
 
-  const insertarLote = async (filas: Omit<FacturacionLinea, 'id' | 'creado_el'>[]) => {
-    // El Excel es la fuente de verdad de las facturas que contiene. Reimportar
-    // no debe duplicar ni colapsar líneas: borramos las líneas existentes de
-    // esas facturas y reinsertamos el desglose completo tal cual viene el Excel
-    // (una misma factura puede tener muchas líneas que comparten cliente,
-    // artículo y centro de costo, y solo cambian el colaborador o el importe).
-    const facturas = Array.from(new Set(filas.map(f => f.n_factura).filter(Boolean)))
-    await enTandas(facturas, 500, async trozo => {
-      const { error } = await supabase.from('facturacion_lineas').delete().in('n_factura', trozo)
-      if (error) throw error
-    })
-
-    // Además, el Excel reemplaza todo lo que había para cada empresa dentro del
-    // rango de fechas que cubre. Así una factura anulada y rehecha con otro
-    // número (que ya no viene en el Excel) no queda colgada de una carga vieja.
-    const rangoPorEmpresa = new Map<string, { desde: string; hasta: string }>()
-    for (const f of filas) {
-      if (!f.fecha_factura) continue
-      const r = rangoPorEmpresa.get(f.empresa)
-      if (!r) rangoPorEmpresa.set(f.empresa, { desde: f.fecha_factura, hasta: f.fecha_factura })
-      else {
-        if (f.fecha_factura < r.desde) r.desde = f.fecha_factura
-        if (f.fecha_factura > r.hasta) r.hasta = f.fecha_factura
-      }
-    }
-    for (const [empresa, { desde, hasta }] of rangoPorEmpresa) {
-      const { error } = await supabase
-        .from('facturacion_lineas')
-        .delete()
-        .eq('empresa', empresa)
-        .gte('fecha_factura', desde)
-        .lte('fecha_factura', hasta)
-      if (error) throw error
-    }
-
-    // Líneas sin número de factura: se limpian por empresa para no acumularlas
-    // entre reimportaciones del mismo archivo.
-    const empresasSinFactura = Array.from(new Set(filas.filter(f => !f.n_factura).map(f => f.empresa).filter(Boolean)))
-    if (empresasSinFactura.length) {
-      const { error } = await supabase
-        .from('facturacion_lineas')
-        .delete()
-        .eq('n_factura', '')
-        .in('empresa', empresasSinFactura)
-      if (error) throw error
-    }
-
-    await enTandas(filas, PAGE_SIZE, async trozo => {
-      const { error } = await supabase.from('facturacion_lineas').insert(trozo)
-      if (error) throw error
-    })
+  const insertarLote = async (filas: LineaNueva[]) => {
+    await reemplazarLineas(supabase, filas)
     await cargar()
   }
 

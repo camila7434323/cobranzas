@@ -3,5 +3,11 @@
   "outputDirectory": "frontend/dist",
   "rewrites": [
     { "source": "/((?!api/).*)", "destination": "/index.html" }
+  ],
+  "functions": {
+    "api/facturacion/sincronizar.ts": { "maxDuration": 60 }
+  },
+  "crons": [
+    { "path": "/api/facturacion/sincronizar", "schedule": "0 10 * * *" }
   ]
 }
